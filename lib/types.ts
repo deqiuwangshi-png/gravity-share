@@ -5,56 +5,16 @@
 /** 内容形态（详情页媒体展示，发布时按 URL 后缀自动识别） */
 export type DiscoveryKind = "link" | "video" | "doc" | "image";
 
-/** 一条"发现"内容（营销页与 app 首页共用同一数据源） */
-export interface DiscoveryItem {
-  /** 唯一 id（详情页 /discover/[id] 用） */
-  id: string;
-  /** 内容类型，如「开发工具」「知识产品」 */
-  type: string;
-  /** 标题（可选元信息：编辑精选才有；随手写发布不设，卡片/详情页用正文兜底） */
-  title?: string;
-  /** 内容简介（这个东西的事实描述，预置内容有；发布内容不重复写） */
-  description?: string;
-  /** 正文（内容本体）——发布时用户写的一段话；卡片显示 note ?? description */
-  note: string;
-  /** 推荐人昵称（mock：预置内容可空，发布内容必填） */
-  author?: string;
-  /** 发布时间（相对时间文案，mock） */
-  publishTime?: string;
-  /** 社会证明（mock 数值）：浏览 / 赞 / 评论 */
-  views?: number;
-  likes?: number;
-  comments?: number;
-  /** 纯来源名称，展示前缀由页面负责（如「推荐自：」） */
-  source: string;
-  tags: string[];
-  /** 商业推广内容标记（走入口 B 发布） */
-  commercial?: boolean;
-  /** 推广类型：返佣 / 订阅分成 / 付费课程 / 积分活动 / 其他（commercial 时） */
-  promoType?: string;
-  /** 佣金条件说明（commercial 时必填，如「分享得 30% 分佣」） */
-  commission?: string;
-  /** 原平台外链（点击跳转回流原平台） */
-  url?: string;
-  /** 来源平台：微信 / 知乎 / CSDN / FlowUs / 个人博客 / 活动 */
-  origin?: string;
-  /** 内容形态（详情页媒体展示；发布时自动识别，默认 link） */
-  kind?: DiscoveryKind;
-  /** 媒体直链（图片内容为直链图 URL，详情页内联渲染；视频/文档跳 url 即可可不填） */
-  mediaUrl?: string;
-}
-
-/** 推荐页内容：在发现内容基础上增加推荐理由 */
-export interface RecommendItem extends DiscoveryItem {
-  /** 推荐理由，如「因为你看过：AI 编程工具合集」 */
-  reason: string;
-}
-
-/** 分类总览：一个分类（图标 + 名称 + 内容数） */
-export interface CategoryDetail {
-  icon: string;
+/** 分类：以 discoveries.type 为事实源（内容有什么类型，分类就有什么） */
+export interface Category {
+  /** URL 用英文 slug，如 开发工具 → dev-tools */
+  slug: string;
+  /** 分类名（与 discoveries.type 对应） */
   name: string;
-  count: number;
+  /** 入口卡片一句话描述 */
+  description: string;
+  /** 图标（复用 ICONS） */
+  icon: string;
 }
 
 /** 站内公告（走马灯）：icon 为图标标识，组件内映射为 SVG */
@@ -64,44 +24,75 @@ export interface Announcement {
   desc: string;
 }
 
-/** 已发布内容（发布管理） */
-export interface MyPublish {
-  title: string;
+/* ---------- 2b 数据库 DTO（组件消费形态，author_name 由查询层 join users 填充） ---------- */
+
+/** 发现内容展示模型（对应 discoveries 表） */
+export interface DiscoveryDTO {
+  id: string;
   type: string;
-  status: "published" | "removed";
-  date: string;
+  title?: string;
+  note: string;
+  description?: string;
+  /** 作者用户 id（跳转他人主页用） */
+  authorId: string;
+  authorName: string;
+  /** 作者头像存储 path（S-1 起，空则首字母回退） */
+  authorAvatar?: string;
+  time: string;
+  views: number;
+  likes: number;
+  comments: number;
+  tags: string[];
+  source: string;
+  origin?: string;
+  commercial?: boolean;
+  promoType?: string;
+  commission?: string;
+  url?: string;
+  kind: DiscoveryKind;
+  mediaUrl?: string;
+  /** 推荐位内容才填（/home 推荐理由展示） */
+  reason?: string;
 }
 
-/** 广场帖子（站内交流分享） */
-export interface SquarePost {
+/** 广场帖子展示模型（对应 square_posts 表） */
+export interface SquarePostDTO {
   id: string;
-  author: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
   content: string;
   tags: string[];
   likes: number;
   comments: number;
   views: number;
   time: string;
-  /** 可选外链（解决方案 / 商品 / 服务链接） */
   url?: string;
+  /** 原创配图存储 path（S-1 起，广场详情展示） */
+  imageUrl?: string;
 }
 
-/** 广场评论（详情页评论区） */
-export interface SquareComment {
+/** 评论展示模型（对应 comments 表，discovery / square 归一） */
+export interface CommentDTO {
   id: string;
-  postId: string;
-  author: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
   content: string;
   time: string;
   likes: number;
 }
 
-/** 发现内容评论（发现详情页评论区） */
-export interface DiscoveryComment {
+/** 通知展示模型（对应 notifications 表，2c 起接库） */
+export interface NotificationDTO {
   id: string;
-  itemId: string;
-  author: string;
+  type: string;
+  actorName: string;
+  title: string;
   content: string;
   time: string;
-  likes: number;
+  read: boolean;
+  /** 跳转目标（target_type + item_id 都有才可跳） */
+  targetType?: "discovery" | "square";
+  itemId?: string;
 }

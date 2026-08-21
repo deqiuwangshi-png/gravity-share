@@ -1,71 +1,72 @@
 # 引力（yinli）架构规范 · 一页纸版
 
-> 前期项目 = 极简架构：**四个柜子、三条规则、一个色板**。
+> 前期项目 = 极简架构：**四个柜子、三条规则、一个色板 + Supabase 数据层**。
 > 目标是让任何接手的人（包括非技术的合作方）10 秒看懂。完整技术细节见根目录 `ARCHITECTURE.md`。
 
 ---
 
-## 一、四个柜子（目录就这四层）
+## 一、几个柜子（目录就这几层）
 
 ```
 app/          页面柜 —— 一页一个文件，文件名就是网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
-components/   组件柜 —— 用到两次才抽，平层放，不分子目录
-lib/          数据柜 —— 所有数据、类型、配置、图标集中在这
+components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
+lib/          数据柜 —— 查询层、类型、配置、图标、Supabase 客户端
+supabase/     迁移柜 —— 数据库唯一真相（001-004，幂等可重跑）
 ```
 
 ```
 app/
-├── (marketing)/page.tsx       官网落地页 /
-├── (auth)/login|register/     登录 / 注册
-├── (app)/home|discover|categories|square/
-│                              首页 / 发现 / 分类 / 广场
-│   ├── discover/[id]/         发现详情（社交动态页）
-│   └── square/[id]/           广场话题详情
-styles/                        全部 CSS（import 一律 @/styles/...）
-├── globals.css                色板 + 全局基础
-├── marketing/                 site / sections / legal
-├── auth/                      shell / card
-└── app/                       shell / discovery / list / modal / announcement /
-                               user-menu / settings / feed / square /
-                               detail / detail-comments
-components/                    访问区 + feature 双层
-├── common/                    logo / linkified-text（跨区共享）
-├── marketing/                 legal-layout
-└── app/                       shell/（7 个）· discovery/（3 个）· square/（3 个）
-lib/                           data / types / config / icons / text /
-                               discovery-store（发现内容池）/ square-store（广场话题池）
+├── (marketing)/  落地页 / + 法律页
+├── (auth)/       登录 / 注册 / 忘记密码
+└── (app)/        home / discover(+[id]) / categories(+[slug]) /
+                 square(+[id]) / profile(+[id] 他人主页)
+styles/
+├── globals.css   色板 + 全局基础
+├── marketing/ · auth/ · app/（13 文件，单文件 ≤400 行）
+components/
+├── common/       logo / linkified-text / author-link / avatar-box
+├── marketing/    legal-layout
+└── app/          shell/（10）· discovery/（4）· square/（4）
+lib/
+├── queries.ts    查询层：读 + 互动/通知操作（DTO 映射，注入双端 client）
+├── storage.ts    图片上传 / 公开 URL
+├── supabase/     client.ts（浏览器）/ server.ts（cookie 会话）
+├── data.ts       静态配置（分类 / 公告 / 热词）
+└── types / config / icons / text
+supabase/migrations/   001 users → 002 内容 → 003 互动通知 → 004 存储
 ```
 
-> 内容池：client 内存态（刷新还原），发布 → 事件 → 展示实时联动；接后端时整体换数据访问层。
+> 数据：**全部在 Supabase**（9 张表 + 3 存储桶 + RLS + 触发器）。页面不写死数据，读走 `lib/queries.ts`，写靠 RLS 保护。
 
 ## 二、三条规则（就这些，多了没人遵守）
 
-1. **数据只在 `lib/` 里** —— 页面不写死数据；接后端是独立阶段，届时再设计数据访问层
+1. **数据只在 `lib/` 里拿** —— 页面不写死数据；内容/评论/互动/通知全走查询层
 2. **重复第二次才抽组件** —— 第一次直接写页面里，用到两处了再抽
 3. **颜色只用变量** —— 不写色号，改品牌色只改 `styles/globals.css` 一处
 
-## 三、页面范围与访问关系
+## 三、页面范围与访问控制（真实守卫已生效）
 
 | 访问区 | 路由 | 访问控制 |
 |---|---|---|
-| 官网落地页 | `/` | 公开 |
-| 认证 | `/login` `/register` | 未登录（mock 阶段：仅页面展示，无真实校验） |
-| 应用主页 | `/home` 及模块路由 | 需登录（mock 阶段：守卫未实现，布局验收后再做） |
+| 官网落地页 | `/` 及法律页 | 公开 |
+| 认证 | `/login` `/register` `/forgot-password` | 已登录自动跳 `/home` |
+| 应用主页 | `/home` `/discover*` `/categories*` `/square*` `/profile*` | **需登录**（proxy.ts 守卫，未登录 → `/login?next=...`） |
 
-未登录访问应用路由 → 跳转 `/login`；登录成功 → 回 `/home`。**当前为前端模拟阶段，此守卫尚未实现**，属布局验收后的 P1 项，不提前开发。
+登录：邮箱密码 + 邮箱验证（Supabase Auth 托管）；会话：cookie（@supabase/ssr）。
 
-## 四、应用主页模块清单（侧边栏导航：首页 / 发现 / 分类 / 广场）
+## 四、已实现模块清单
 
-| 状态 | 模块（路由） |
+| 模块（路由） | 说明 |
 |---|---|
-| ✅ 已实现 | 首页 `/home`（聚合：公告 + 为你推荐）、发现 `/discover`（3 列社交卡 + 类型筛选）、发现详情 `/discover/[id]`（发帖头 + 正文 + 外链预览 + 互动 + 评论）、分类 `/categories`、广场 `/square`（领域胶囊 + 话题流）、话题详情 `/square/[id]` |
-| ⏳ 待补齐 | 搜索 `/search`、发布独立页 `/publish`（当前为弹窗）、收藏 `/favorites`、我的发布 `/my/publishes`、需求 `/needs`、领域频道 `/fields/[slug]`、个人中心 `/profile`、通知 `/notifications`、设置 `/settings` |
-
-> 原「推荐 /recommend」已并入首页「为你推荐」区块（2026-08-21 四结构调整），`/recommend` 永久重定向到 `/home`。
-> 模块之间只通过链接（URL）跳转，不互相引用代码。
-
-模块之间只通过链接（URL）跳转，不互相引用代码。
+| 首页 `/home` | 公告走马灯 + 为你推荐（读库） |
+| 发现 `/discover` | 3 列社交卡 + 类型筛选；详情 `/discover/[id]` 社交动态页（正文/外链/点赞/评论落库） |
+| 分类 `/categories` | 入口页动态计数 + 分类详情 `/categories/[slug]` |
+| 广场 `/square` | 领域胶囊 + 话题流；详情 `/square/[id]`（点赞/评论/配图） |
+| 个人 `/profile` | 我的主页（资料/发布/收藏）+ 他人主页 `/profile/[id]`（关注按钮/粉丝数） |
+| 发布 | 弹窗三入口：推荐 / 推广（合规标识）/ 话题（可配图），写库后列表实时刷新 |
+| 通知 | 顶栏铃铛 + 预览抽屉：互动（赞/评/关）自动触发，点条目已读跳转 |
+| 头像/封面 | 设置面板传头像、个人主页换封面、广场发帖配图（公开桶） |
 
 ## 五、色板（全站就这 15 个颜色变量，定义在 `styles/globals.css`）
 
@@ -96,16 +97,18 @@ lib/                           data / types / config / icons / text /
 
 ```
 1. app/ 建页面文件（先能打开）
-2. lib/ 加数据（先有内容）
+2. lib/queries.ts 加查询 / 或 supabase/migrations 加表（先有数据）
 3. 页面里直接写代码（先跑起来）
-4. 出现重复 → 抽组件 / 换变量
+4. 出现重复 → 抽组件 / 换变量 / 加触发器
 ```
 
 ## 七、什么时候才升级（不提前设计）
 
-- 某 feature 目录超过 10 个文件 → 再继续细分（当前：components/app 下已分 shell/discovery/square）
+- 某 feature 目录超过 10 个文件 → 再继续细分
 - 页面超过 8 个 → 再考虑模块化
-- 界面布局验收通过 + 业务方确认 → 才启动后端（接后端时再设计数据访问层，不提前铺路）
-- 前端治理红线：不新增第 3 套分类体系 / 第 3 种图标方案；不提交裸 `href="#"`
+- `lib/queries.ts` 超 500 行或新增领域 → 拆 `lib/db/`
+- 新增写操作 → 先定「RLS / 触发器 / Handler」归属
+- 上线前置：分页/缓存、服务端业务校验、测试 CI、安全头（见 ARCHITECTURE-REVIEW.md v3）
+- 前端治理红线：不新增第 3 套分类体系 / 第 3 种图标方案；不提交裸 `href="#"`；CSS 单文件 ≤ 400 行
 
 > 一句话：**架构是"涨"出来的，不是"设计"出来的。** 前期多花一分钟做规范，就少一分钟做功能。

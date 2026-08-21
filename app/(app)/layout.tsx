@@ -6,6 +6,7 @@ import "@/styles/app/list.css";
 import "@/styles/app/modal.css";
 import "@/styles/app/announcement.css";
 import "@/styles/app/user-menu.css";
+import "@/styles/app/notification.css";
 import "@/styles/app/settings.css";
 import "@/styles/app/feed.css";
 import "@/styles/app/square.css";

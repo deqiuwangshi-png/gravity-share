@@ -77,6 +77,23 @@ a {
   cursor: default;
 }
 
+/* 作者名可点（跳他人主页，AuthorLink）：避免误导性手型与选中 */
+.author-link {
+  cursor: pointer;
+  transition: color 180ms ease;
+}
+
+.author-link:hover {
+  color: var(--primary);
+}
+
+/* 头像图片（AvatarBox img 分支）：圆形裁剪 + 覆盖填充；尺寸由场景类控制 */
+.avatar-img {
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-hover);
+}
+
 /*
  * 跨区共享：品牌 Logo 标记（marketing .logo / app .app-logo / auth .auth-brand-logo 三处共用）。
  * 路由区专属样式见 (marketing)/marketing.css、(app)/app.css、(auth)/auth.css。

@@ -19,7 +19,15 @@
   aspect-ratio: 3 / 1;
   border-radius: 14px;
   background: var(--bg-hover);
+  background-size: cover;
+  background-position: center;
   z-index: 1;
+}
+
+.profile-cover-error {
+  margin: 8px 0 0;
+  color: var(--error);
+  font-size: 12px;
 }
 
 .profile-cover-actions {
@@ -45,7 +53,8 @@
 }
 
 /* ② 头像行：头像单独负边距下沉骑跨封面底边；【编辑个人资料】按钮
- * 不随头像上移，留在下方白色内容区的右上角（同一行、行最右） */
+ * 不随头像上移，留在下方白色内容区的右上角（同一行、行最右）
+ * 昵称 + 数据统计与头像同一行、同一水平高度 */
 .profile-head {
   display: flex;
   align-items: center;
@@ -71,6 +80,23 @@
   font-weight: 600;
 }
 
+/* 昵称 + 数据统计：同一行、同一水平高度（baseline 对齐） */
+.profile-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
 .profile-edit-btn {
   margin-left: auto;
   padding: 8px 16px;
@@ -88,20 +114,38 @@
   color: var(--primary);
 }
 
-/* ③ 用户信息：昵称 / 简介（浅灰底无边框块）/ 数据组 */
-.profile-info {
-  padding: 14px 18px 0;
+/* 他人主页关注按钮（2c） */
+.profile-follow-btn {
+  margin-left: auto;
+  padding: 8px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 180ms ease;
 }
 
-.profile-name {
-  margin: 0 0 12px;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
+.profile-follow-btn:hover {
+  background: var(--primary-dark);
+}
+
+.profile-follow-btn.following {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ③ 简介行：昵称+数据行下方，可空；为空保留占位留白（缩进对齐昵称） */
+.profile-bio-row {
+  padding: 0 18px 16px;
+  min-height: 0;
 }
 
 .profile-bio {
-  margin: 0 0 14px;
+  margin: 0;
   padding: 10px 14px;
   border-radius: 10px;
   background: var(--bg-hover);
@@ -112,10 +156,10 @@
 
 .profile-stats {
   display: flex;
-  gap: 22px;
-  margin-bottom: 18px;
+  gap: 18px;
   color: var(--text-muted);
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .profile-stats b {
@@ -267,22 +311,6 @@
 /* Tab 内容容器 */
 .profile-tab-panel {
   padding-top: 4px;
-}
-
-/* 设置 tab：分组小标题 + 复用 settings-row 行样式 */
-.profile-settings {
-  padding: 4px 18px 20px;
-}
-
-.profile-settings-title {
-  margin: 18px 0 8px;
-  color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.profile-settings-title:first-child {
-  margin-top: 10px;
 }
 
 .profile-empty {

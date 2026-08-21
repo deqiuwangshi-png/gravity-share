@@ -36,12 +36,14 @@ pnpm build      # 生产构建（如遇 NODE_OPTIONS 干扰：env -u NODE_OPTION
 | 访问区 | 路由 | 说明 |
 |---|---|---|
 | 落地页 | `/` `/about` `/help` `/terms` `/privacy` | 公开 |
-| 认证 | `/login` `/register` `/forgot-password` | mock 表单，无真实校验 |
-| 应用主页 | `/home` `/discover` `/discover/[id]` `/categories` `/square` `/square/[id]` | mock 阶段无访问守卫；`/recommend` 已并入首页（308 → `/home`） |
+| 认证 | `/login` `/register` `/forgot-password` | Supabase Auth（邮箱密码 + 邮箱验证） |
+| 应用主页 | `/home` `/discover(/[id])` `/categories(/[slug])` `/square(/[id])` `/profile(/[id])` | 需登录（proxy.ts 守卫）；`/recommend` 已并入首页（308 → `/home`） |
+
+> 数据：Supabase BaaS（Postgres + RLS + Storage），迁移见 `supabase/migrations/`（001-004）。配置需 `.env.local`（URL + publishable key）。
 
 ## 文档
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) —— 架构规范（v2.5：四个柜子、三条规则、阶段边界与冻结清单）
+- [ARCHITECTURE.md](ARCHITECTURE.md) —— 架构规范（v2.6：四个柜子、三条规则、数据层纪律）
 - [docs/SYSTEM-ARCHITECTURE.md](docs/SYSTEM-ARCHITECTURE.md) —— 一页纸版
-- [docs/ARCHITECTURE-GOVERNANCE.md](docs/ARCHITECTURE-GOVERNANCE.md) —— 前端治理与阶段 0 验收标准
-- [docs/ARCHITECTURE-REVIEW.md](docs/ARCHITECTURE-REVIEW.md) —— 2026-08 架构评审报告（v2）
+- [docs/ARCHITECTURE-GOVERNANCE.md](docs/ARCHITECTURE-GOVERNANCE.md) —— 前端治理与演进进度
+- [docs/ARCHITECTURE-REVIEW.md](docs/ARCHITECTURE-REVIEW.md) —— 2026-08 架构评审报告（v3）

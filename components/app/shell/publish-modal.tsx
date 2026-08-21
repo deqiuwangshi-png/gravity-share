@@ -1,25 +1,27 @@
 /**
- * 发布弹窗（client，三入口定稿）
+ * 发布弹窗（client，三入口定稿，2b 起写库）
  * Step 1 选择入口：
- *   A 推荐好东西 —— 沉浸式随手写 → 发现流
- *   B 推广外链 —— 随手写 + 推广类型 + 佣金条件（带分佣，官方标识）→ 发现流
- *   C 话题帖子 —— 沉浸式 + 可选链接 + #标签可选 → 广场
- * 提交后追加进对应内容池，发现流 / 广场立即可见
+ *   A 推荐好东西 —— 沉浸式随手写 → insert discoveries（发现流）
+ *   B 推广外链 —— 随手写 + 推广类型 + 佣金条件（带分佣，官方标识）→ insert discoveries
+ *   C 话题帖子 —— 沉浸式 + 可选链接 + #标签可选 → insert square_posts
+ * 提交成功后 dispatch 数据变更事件，发现流 / 广场重新拉取（刷新不丢）
  */
 "use client";
 
 import { useEffect, useState } from "react";
 import { ICONS } from "@/lib/icons";
 import { PROMO_TYPES } from "@/lib/config";
-import { DISCOVERY_UPDATED_EVENT, publishDiscoveryItem } from "@/lib/discovery-store";
-import { SQUARE_UPDATED_EVENT, publishSquarePost } from "@/lib/square-store";
+import { createClient } from "@/lib/supabase/client";
+import { DISCOVERY_UPDATED_EVENT, SQUARE_UPDATED_EVENT } from "@/lib/queries";
 import { extractTags, extractUrl, judgeKind } from "@/lib/text";
+import { uploadImage, validateImage } from "@/lib/storage";
 
 type Step = "choose" | "content" | "promo" | "topic";
 
 export default function PublishModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<Step>("choose");
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
 
   /* 入口 A：沉浸式正文 */
   const [content, setContent] = useState("");
@@ -33,6 +35,8 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
   /* 入口 C：话题字段 */
   const [topicContent, setTopicContent] = useState("");
   const [topicUrl, setTopicUrl] = useState("");
+  const [topicImage, setTopicImage] = useState<File | null>(null);
+  const [topicImagePreview, setTopicImagePreview] = useState("");
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -42,76 +46,123 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  function finish() {
-    setSubmitted(true);
+  /** 生成防重复短 id（同毫秒连发也唯一） */
+  function newId(prefix: string): string {
+    return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   }
 
-  function handleContentSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleContentSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = content.trim();
     if (!text) return;
     const url = extractUrl(text);
-    publishDiscoveryItem({
-      id: `u${Date.now()}`,
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("discoveries").insert({
+      id: newId("u"),
+      author_id: user.id,
       type: "内容",
       note: text,
-      author: "我的账户",
-      publishTime: "now",
-      views: 0,
-      likes: 0,
-      comments: 0,
-      source: "我的账户",
+      source: (user.user_metadata?.name as string) || "引力用户",
       tags: extractTags(text),
       url,
       kind: judgeKind(url),
     });
+    if (error) {
+      setSubmitError(true);
+      return;
+    }
     window.dispatchEvent(new Event(DISCOVERY_UPDATED_EVENT));
     finish();
   }
 
-  function handlePromoSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handlePromoSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = promoContent.trim();
     const url = promoUrl.trim();
     if (!text || !url || !commission.trim()) return;
-    publishDiscoveryItem({
-      id: `u${Date.now()}`,
-      type: "推广",
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("discoveries").insert({
+      id: newId("u"),
+      author_id: user.id,
+      type: "商业推广", /* 2b 修正：原 mock 写「推广」，与分类事实源收不拢 */
       note: text,
-      author: "我的账户",
-      publishTime: "now",
-      views: 0,
-      likes: 0,
-      comments: 0,
-      source: "我的账户",
+      source: (user.user_metadata?.name as string) || "引力用户",
       tags: extractTags(text),
       url,
       commercial: true,
-      promoType,
+      promo_type: promoType,
       commission: commission.trim(),
       kind: judgeKind(url),
     });
+    if (error) {
+      setSubmitError(true);
+      return;
+    }
     window.dispatchEvent(new Event(DISCOVERY_UPDATED_EVENT));
     finish();
   }
 
-  function handleTopicSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleTopicSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = topicContent.trim();
     if (!text) return;
-    publishSquarePost({
-      id: `u${Date.now()}`,
-      author: "我的账户",
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    setSubmitError(false);
+    const id = newId("s");
+    let imageUrl: string | undefined;
+    if (topicImage) {
+      try {
+        imageUrl = await uploadImage("post", topicImage, user.id, id);
+      } catch {
+        setSubmitError(true);
+        return;
+      }
+    }
+    const { error } = await supabase.from("square_posts").insert({
+      id,
+      author_id: user.id,
       content: text,
       tags: extractTags(text),
-      likes: 0,
-      comments: 0,
-      views: 0,
-      time: "刚刚",
       url: topicUrl.trim() || extractUrl(text),
+      image_url: imageUrl ?? null,
     });
+    if (error) {
+      setSubmitError(true);
+      return;
+    }
     window.dispatchEvent(new Event(SQUARE_UPDATED_EVENT));
     finish();
+  }
+
+  /** 话题配图选择（S-1）：前端校验 + 本地预览 */
+  function onTopicImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const invalid = validateImage(file);
+    if (invalid) {
+      setSubmitError(true);
+      return;
+    }
+    setSubmitError(false);
+    setTopicImage(file);
+    setTopicImagePreview(URL.createObjectURL(file));
+  }
+
+  function finish() {
+    setSubmitted(true);
   }
 
   const stepTitle = step === "choose"
@@ -132,7 +183,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
 
         {submitted ? (
           <div className="publish-success">
-            <p role="status">已发布（Mock）</p>
+            <p role="status">已发布</p>
             <button className="publish-submit" type="button" onClick={onClose}>完成</button>
           </div>
         ) : step === "choose" ? (
@@ -175,6 +226,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
               placeholder="说几句推荐语，或直接粘贴链接..."
               aria-label="发布内容"
             />
+            {submitError && <p className="publish-error">发布失败，请重试</p>}
             <button className="publish-immersive-submit" type="submit">发布</button>
           </form>
         ) : step === "promo" ? (
@@ -211,6 +263,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
             </label>
 
             <p className="publish-warning">走正规流程发布推广，平台将加官方标识（转化率更高）；交易风险请自行判断。</p>
+            {submitError && <p className="publish-error">发布失败，请重试</p>}
 
             <button className="publish-submit" type="submit">发布推广</button>
           </form>
@@ -232,6 +285,33 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
               placeholder="可选：贴一个链接"
               aria-label="可选外链"
             />
+            <div className="publish-topic-image">
+              {topicImagePreview && (
+                /* eslint-disable-next-line @next/next/no-img-element -- 本地预览 */
+                <img className="publish-topic-image-preview" src={topicImagePreview} alt="配图预览" />
+              )}
+              <input
+                id="topic-image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                hidden
+                onChange={onTopicImageChange}
+              />
+              <label className="publish-topic-image-btn" htmlFor="topic-image" role="button">
+                {topicImagePreview ? "更换图片" : "添加图片（可选）"}
+              </label>
+              {topicImagePreview && (
+                <button
+                  type="button"
+                  className="publish-topic-image-btn remove"
+                  onClick={() => {
+                    setTopicImage(null);
+                    setTopicImagePreview("");
+                  }}
+                >移除</button>
+              )}
+            </div>
+            {submitError && <p className="publish-error">发布失败，请重试</p>}
             <button className="publish-immersive-submit" type="submit">发布</button>
           </form>
         )}

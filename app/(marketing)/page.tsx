@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { Logo } from "@/components/common/logo";
 import { ICONS } from "@/lib/icons";
-import { MARKETING_CATEGORIES, MARKETING_SEARCH_HINTS, getFeaturedDiscoveries } from "@/lib/data";
+import { MARKETING_CATEGORIES, MARKETING_SEARCH_HINTS } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
+import { fetchDiscoveries } from "@/lib/queries";
+
+/** 2b：营销首页精选读库（RLS 公开读，未登录可读）；动态渲染不固化 build 时数据 */
+export const dynamic = "force-dynamic";
 
 const problems = [
   ["平台割裂", "内容分散在几十个平台，每个都要单独逛一遍"],
@@ -15,8 +20,9 @@ const steps = [
   ["分享", "把你发现的好东西发布出来，让更多人看见"],
 ];
 
-export default function Home() {
-  const discoveryItems = getFeaturedDiscoveries();
+export default async function Home() {
+  const supabase = await createClient();
+  const discoveryItems = (await fetchDiscoveries(supabase)).slice(0, 3);
 
   return (
     <div className="site-shell">

@@ -1,20 +1,62 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { ICONS } from "@/lib/icons";
 
 type AuthMode = "login" | "register";
 
+/** 登录 / 注册表单（Supabase Auth）——保留既有 UI，提交逻辑走 SDK */
 export default function AuthForm({ mode }: { mode: AuthMode }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
 
   const isLogin = mode === "login";
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitted(true);
+    setError("");
+    setInfo("");
+
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") ?? "").trim();
+    const password = String(form.get("password") ?? "");
+    const supabase = createClient();
+
+    if (isLogin) {
+      setSubmitting(true);
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      setSubmitting(false);
+      if (authError) {
+        setError(authError.message.includes("Invalid login credentials") ? "邮箱或密码不正确。" : authError.message);
+        return;
+      }
+      /* 回源：未登录访问 /home 时 proxy 会带 ?next=/home */
+      const next = new URLSearchParams(window.location.search).get("next");
+      router.push(next ?? "/home");
+      router.refresh();
+      return;
+    }
+
+    /* 注册：邮箱验证开启，提示查收邮件；昵称入 user_metadata（触发器建档用） */
+    const name = String(form.get("name") ?? "").trim();
+    setSubmitting(true);
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name: name || "引力用户" } },
+    });
+    setSubmitting(false);
+    if (authError) {
+      setError(authError.message.includes("already registered") ? "该邮箱已注册，请直接登录。" : authError.message);
+      return;
+    }
+    setInfo("验证邮件已发送，请查收邮箱完成激活后再登录。");
   }
 
   return (
@@ -31,16 +73,17 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
       </div>
 
       <form className="auth-form" onSubmit={handleSubmit}>
-        {!isLogin && <label><span>昵称</span><input name="name" type="text" autoComplete="nickname" placeholder="你希望大家怎么称呼你？" required /></label>}
+        {!isLogin && <label><span>昵称</span><input name="name" type="text" autoComplete="nickname" placeholder="你希望大家怎么称呼你？" /></label>}
         <label><span>邮箱</span><input name="email" type="email" autoComplete="email" placeholder="name@example.com" required /></label>
         <label><span>密码</span><span className="password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete={isLogin ? "current-password" : "new-password"} placeholder="至少 8 位字符" minLength={8} required /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "隐藏密码" : "显示密码"}>{showPassword ? "隐藏" : "显示"}</button></span></label>
         {isLogin && <div className="auth-form-options"><label className="checkbox-label"><input type="checkbox" name="remember" /> <span>记住我</span></label><Link href="/forgot-password">忘记密码？</Link></div>}
-        <button className="auth-submit" type="submit">{isLogin ? "登录" : "创建账号"}<span aria-hidden="true">→</span></button>
-        {submitted && <p className="auth-mock-note" role="status">Mock 提交成功，后续可接入真实认证服务。</p>}
+        {error && <p className="auth-mock-note auth-error" role="alert">{error}</p>}
+        {info && <p className="auth-mock-note auth-info" role="status">{info}</p>}
+        <button className="auth-submit" type="submit" disabled={submitting}>{isLogin ? (submitting ? "登录中…" : "登录") : (submitting ? "创建中…" : "创建账号")}<span aria-hidden="true">→</span></button>
       </form>
 
       <div className="auth-divider"><span>或者使用</span></div>
-      <button className="auth-social" type="button" onClick={() => setSubmitted(true)}><span className="social-mark" aria-hidden="true">{ICONS.tool}</span>使用 GitHub 继续</button>
+      <button className="auth-social" type="button" data-placeholder><span className="social-mark" aria-hidden="true">{ICONS.tool}</span>使用 GitHub 继续</button>
       <p className="auth-switch-copy">{isLogin ? "还没有账号？" : "已经有账号了？"} <Link href={isLogin ? "/register" : "/login"}>{isLogin ? "立即注册" : "返回登录"}</Link></p>
     </div>
   );

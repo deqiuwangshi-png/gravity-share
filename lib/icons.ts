@@ -22,6 +22,5 @@ export const ICONS = {
   save: "♡",
   help: "?",
   logout: "⏻",
-  message: "✉",
   close: "×",
 } as const;

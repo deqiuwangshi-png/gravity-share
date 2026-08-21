@@ -1,13 +1,22 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { AppAside } from "@/components/app/shell/app-aside";
-import { categoryDetails } from "@/lib/data";
+import { categories } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
+import { fetchDiscoveries } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "全部分类 | 引力",
   description: "按方向浏览所有内容分类。",
 };
 
-export default function CategoriesPage() {
+/** 2b：分类计数读库；动态渲染 */
+export const dynamic = "force-dynamic";
+
+export default async function CategoriesPage() {
+  const supabase = await createClient();
+  const items = await fetchDiscoveries(supabase);
+
   return <div className="app-content app-layout">
     <div className="app-feed">
       <header className="feed-head">
@@ -15,13 +24,20 @@ export default function CategoriesPage() {
         <p>按方向浏览所有内容分类</p>
       </header>
 
-      <div className="category-grid">{categoryDetails.map((cat) => <div className="category-card" data-placeholder key={cat.name}>
-        <span className="category-icon">{cat.icon}</span>
-        <div>
-          <strong>{cat.name}</strong>
-          <small>{cat.count} 个内容</small>
-        </div>
-      </div>)}</div>
+      <div className="category-grid">{categories.map((cat) => {
+        const count = items.filter((item) => item.type === cat.name).length;
+        return (
+          <Link className="category-card" href={`/categories/${cat.slug}`} key={cat.slug}>
+            <span className="category-icon">{cat.icon}</span>
+            <div>
+              <strong>{cat.name}</strong>
+              <small>{cat.description}</small>
+              <em>{count} 个内容</em>
+            </div>
+            <span className="category-arrow" aria-hidden="true">→</span>
+          </Link>
+        );
+      })}</div>
     </div>
 
     <AppAside />

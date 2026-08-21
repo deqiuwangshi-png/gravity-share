@@ -2,12 +2,30 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError("");
+
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") ?? "").trim();
+    const supabase = createClient();
+
+    setSubmitting(true);
+    const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+    setSubmitting(false);
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
     setSubmitted(true);
   }
 
@@ -33,7 +51,8 @@ export default function ForgotForm() {
       </div>
       <form className="auth-form" onSubmit={handleSubmit}>
         <label><span>邮箱</span><input name="email" type="email" autoComplete="email" placeholder="name@example.com" required /></label>
-        <button className="auth-submit" type="submit">发送重置链接<span aria-hidden="true">→</span></button>
+        {error && <p className="auth-mock-note auth-error" role="alert">{error}</p>}
+        <button className="auth-submit" type="submit" disabled={submitting}>{submitting ? "发送中…" : "发送重置链接"}<span aria-hidden="true">→</span></button>
       </form>
       <p className="auth-switch-copy">想起来了？<Link href="/login">返回登录</Link></p>
     </div>

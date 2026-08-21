@@ -173,6 +173,11 @@
   color: var(--primary);
 }
 
+/* 收藏态（2c 落库） */
+.save-button.active {
+  color: var(--primary);
+}
+
 .card-tags {
   display: flex;
   flex-wrap: wrap;

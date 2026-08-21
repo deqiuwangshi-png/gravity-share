@@ -8,8 +8,9 @@
 .settings-panel {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
-  width: min(960px, calc(100% - 64px));
-  max-height: calc(100vh - 96px);
+  /* 固定宽高外壳：切换左侧导航只更新右侧内容，弹窗尺寸恒定不随内容变化 */
+  width: 760px;
+  height: 480px;
   overflow: hidden;
   border-radius: 16px;
   background: var(--surface);
@@ -98,6 +99,7 @@
 .settings-content {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
 }
 
@@ -124,8 +126,22 @@
 }
 
 .settings-body {
+  flex: 1;
+  min-height: 0;
   padding: 8px 32px 32px;
   overflow-y: auto;
+}
+
+/* 设置分组小标题（用户设置面板） */
+.settings-group {
+  margin: 20px 0 6px;
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.settings-group:first-child {
+  margin-top: 8px;
 }
 
 .settings-row {
@@ -196,6 +212,73 @@
   cursor: pointer;
   font: inherit;
   font-size: 13px;
+}
+
+.settings-row-actions button:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+.settings-row-actions button.save {
+  font-weight: 600;
+}
+
+/* 行内编辑：昵称 / 简介（2a 起真实接库） */
+.settings-edit {
+  border-bottom: 1px solid var(--border);
+}
+
+/* 头像（S-1 起真实上传） */
+.settings-avatar-img {
+  width: 34px;
+  height: 34px;
+  margin-left: auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-hover);
+}
+
+.settings-avatar-fallback {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  margin-left: auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settings-edit .settings-row {
+  border-bottom: 0;
+}
+
+.settings-input {
+  min-width: 0;
+  flex: 1;
+  max-width: 220px;
+  margin-left: auto;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.settings-input:focus {
+  border-color: var(--border-primary);
+}
+
+.settings-edit-error {
+  margin: -4px 0 10px;
+  color: var(--error);
+  font-size: 12px;
 }
 
 .settings-toolbar {

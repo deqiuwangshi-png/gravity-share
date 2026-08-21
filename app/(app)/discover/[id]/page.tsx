@@ -2,70 +2,125 @@
  * 发现详情页（/discover/[id]，client）——最终规格（社交动态页）
  * 发帖头（头像+昵称+右侧时间）→ 正文（16px/1.7 白底黑字，URL 自动链接）→ 推广警示（合规）
  * → 外链预览卡（90×90 缩略图 + 标题 + 简介，整卡可点跳原平台）→ 互动栏（评论/点赞/浏览）
- * → 评论区（32 头像 + 楼主昵称品牌色高亮）→ 相关讨论 → 相关推荐
+ * → 评论区（32 头像 + 楼主昵称品牌色高亮，2b 起落库）→ 相关讨论 → 相关推荐
  * 无效 id → 404；单栏聚焦（V2 阅读页例外条款）
  */
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { DiscoveryCard } from "@/components/app/discovery/discovery-card";
 import { LinkifiedText } from "@/components/app/common/linkified-text";
-import { getDiscoveryItems } from "@/lib/discovery-store";
-import { getSquarePosts } from "@/lib/square-store";
-import { getDiscoveryComments } from "@/lib/data";
+import { AuthorLink } from "@/components/app/common/author-link";
+import { AvatarBox } from "@/components/app/common/avatar-box";
+import { createClient } from "@/lib/supabase/client";
+import { fetchComments, fetchDiscoveries, fetchDiscoveryById, fetchSquarePosts, isLiked, toggleLike } from "@/lib/queries";
+import type { CommentDTO, DiscoveryDTO, SquarePostDTO } from "@/lib/types";
+
+type LoadState = "loading" | "ready" | "missing";
 
 export default function DiscoverDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const items = getDiscoveryItems();
-  const item = items.find((entry) => entry.id === id);
+  const [state, setState] = useState<LoadState>("loading");
+  const [item, setItem] = useState<DiscoveryDTO | null>(null);
+  const [all, setAll] = useState<DiscoveryDTO[]>([]);
+  const [comments, setComments] = useState<CommentDTO[]>([]);
+  const [discussions, setDiscussions] = useState<SquarePostDTO[]>([]);
   const [imgFailed, setImgFailed] = useState(false);
-  const [comments, setComments] = useState(() => getDiscoveryComments(id as string));
   const [commentText, setCommentText] = useState("");
-  if (!item) notFound();
-  /* notFound 后 item 已收窄；current 供闭包引用（函数提升导致 TS 收窄失效） */
+  const [sending, setSending] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [likeBusy, setLikeBusy] = useState(false);
+
+  const load = useCallback(() => {
+    const supabase = createClient();
+    void fetchDiscoveryById(supabase, id as string).then((found) => {
+      if (!found) {
+        setState("missing");
+        return;
+      }
+      setItem(found);
+      setLikesCount(found.likes);
+      setState("ready");
+    });
+    void isLiked(createClient(), "discovery", id as string).then(setLiked);
+    void fetchDiscoveries(supabase).then(setAll);
+    void fetchComments(supabase, "discovery", id as string).then(setComments);
+    void fetchSquarePosts(supabase).then((posts) => {
+      setDiscussions(posts.slice(0, 8));
+    });
+  }, [id]);
+
+  async function onLike() {
+    if (likeBusy) return;
+    setLikeBusy(true);
+    const next = await toggleLike(createClient(), "discovery", id as string);
+    setLiked(next);
+    setLikesCount((c) => c + (next ? 1 : -1));
+    setLikeBusy(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function submitComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const content = commentText.trim();
+    if (!content || sending) return;
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    setSending(true);
+    const { error } = await supabase.from("comments").insert({
+      id: `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      author_id: user.id,
+      target_type: "discovery",
+      target_id: id,
+      content,
+    });
+    setSending(false);
+    if (error) return;
+    setCommentText("");
+    void fetchComments(createClient(), "discovery", id as string).then(setComments);
+  }
+
+  if (state === "loading") {
+    return <div className="app-content discovery-detail-wrap"><p className="feed-loading">加载中…</p></div>;
+  }
+  if (state === "missing" || !item) notFound();
   const current = item;
 
-  /* 相关推荐：同类型（排除当前），最多 4 条 */
-  const related = items.filter((entry) => entry.id !== current.id && entry.type === current.type).slice(0, 4);
-
   /* 相关讨论：广场帖子按标签交集关联，最多 3 条 */
-  const discussions = getSquarePosts()
+  const relatedDiscussions = discussions
     .filter((post) => post.tags.some((tag) => current.tags.includes(tag)))
     .slice(0, 3);
 
-  const avatar = current.author?.charAt(0) ?? "推";
+  /* 相关推荐：同类型（排除当前），最多 4 条 */
+  const related = all
+    .filter((entry) => entry.id !== current.id && entry.type === current.type)
+    .slice(0, 4);
+
   const body = current.note ?? current.description ?? "";
-  /* 外链预览卡：标题优先 title，否则正文前 40 字；简介仅在预置内容（与正文不同）时展示 */
   const linkTitle = current.title ?? body.slice(0, 40);
   const linkDesc = current.description && current.description !== current.note ? current.description : undefined;
-  const commentCount = comments.length || current.comments || 0;
-
-  /* 缩略图占位：按内容形态显示标记（无直链图时） */
+  const commentCount = current.comments || comments.length;
   const kindMark = current.kind === "video" ? "▶ 视频" : current.kind === "doc" ? "DOC" : "链接";
-
-  function submitComment(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const text = commentText.trim();
-    if (!text) return;
-    setComments((prev) => [
-      ...prev,
-      { id: `c${Date.now()}`, itemId: current.id, author: "我", content: text, time: "now", likes: 0 },
-    ]);
-    setCommentText("");
-  }
 
   return (
     <div className="app-content discovery-detail-wrap">
       <article className="discovery-detail">
         <Link className="discovery-back" href="/discover">← 返回发现</Link>
 
-        {/* ① 发帖头：彩色圆头像 + 昵称（加粗）+ 右侧时间 */}
+        {/* ① 发帖头：头像 + 昵称（加粗，可点跳主页）+ 右侧时间 */}
         <div className="detail-user">
-          <span className="detail-avatar">{avatar}</span>
-          <b className="detail-username">{current.author ?? "引力推荐"}</b>
-          <span className="detail-user-time">{current.publishTime ?? ""}</span>
+          <AvatarBox path={current.authorAvatar} name={current.authorName ?? "推"} className="detail-avatar" />
+          <b className="detail-username"><AuthorLink authorId={current.authorId} name={current.authorName ?? "引力推荐"} /></b>
+          <span className="detail-user-time">{current.time ?? ""}</span>
         </div>
 
         {/* ② 正文：纯文本 16px/1.7，白底黑字，URL 自动链接 */}
@@ -81,7 +136,7 @@ export default function DiscoverDetailPage() {
           <a className="link-preview" href={current.url} target="_blank" rel="noopener noreferrer">
             <span className="link-preview-thumb">
               {current.kind === "image" && current.mediaUrl && !imgFailed ? (
-                /* eslint-disable-next-line @next/next/no-img-element -- mock 直链图，接后端换 next/image */
+                /* eslint-disable-next-line @next/next/no-img-element -- seed 直链图，后续换 next/image */
                 <img src={current.mediaUrl} alt="" onError={() => setImgFailed(true)} />
               ) : (
                 <span className="link-preview-mark">{kindMark}</span>
@@ -94,10 +149,16 @@ export default function DiscoverDetailPage() {
           </a>
         )}
 
-        {/* ⑤ 互动栏：1px 细线分隔，评论 / 点赞 / 浏览 */}
+        {/* ⑤ 互动栏：1px 细线分隔，评论 / 点赞（可点，2c 落库）/ 浏览 */}
         <div className="detail-bar">
           <span>{commentCount} 评论</span>
-          <span>{current.likes ?? 0} 点赞</span>
+          <button
+            type="button"
+            className={`detail-like${liked ? " active" : ""}`}
+            onClick={() => void onLike()}
+            aria-pressed={liked}
+            disabled={likeBusy}
+          >{liked ? "已赞" : "赞"} {likesCount}</button>
           <span>{current.views ?? 0} 浏览</span>
         </div>
 
@@ -111,17 +172,17 @@ export default function DiscoverDetailPage() {
               placeholder="说点什么…"
               aria-label="发表评论"
             />
-            <button type="submit">评论</button>
+            <button type="submit" disabled={sending || !commentText.trim()}>{sending ? "发送中…" : "评论"}</button>
           </form>
           {comments.length === 0 && <p className="detail-comment-empty">还没有评论，来抢沙发。</p>}
           {comments.map((comment) => {
-            const isOwner = comment.author === current.author;
+            const isOwner = comment.authorName === current.authorName;
             return (
               <div className="detail-comment" key={comment.id}>
-                <span className="detail-avatar detail-comment-avatar">{comment.author.charAt(0)}</span>
+                <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="detail-avatar detail-comment-avatar" />
                 <div className="detail-comment-body">
                   <p className="detail-comment-head">
-                    <b className={isOwner ? "owner" : undefined}>{comment.author}</b>
+                    <b className={isOwner ? "owner" : undefined}><AuthorLink authorId={comment.authorId} name={comment.authorName} /></b>
                     <small>{comment.time}{comment.likes > 0 ? ` · ${comment.likes} 赞` : ""}</small>
                   </p>
                   <p className="detail-comment-content">{comment.content}</p>
@@ -132,13 +193,13 @@ export default function DiscoverDetailPage() {
         </section>
 
         {/* ⑦ 相关讨论：广场关联帖 */}
-        {discussions.length > 0 && (
+        {relatedDiscussions.length > 0 && (
           <section className="detail-section">
             <h2 className="detail-section-title">相关讨论 · 广场上的人怎么说</h2>
-            {discussions.map((post) => (
+            {relatedDiscussions.map((post) => (
               <Link className="detail-discuss" href={`/square/${post.id}`} key={post.id}>
                 <p>{post.content.length > 60 ? `${post.content.slice(0, 60)}…` : post.content}</p>
-                <small>{post.author} · {post.comments} 条回复</small>
+                <small>{post.authorName} · {post.comments} 条回复</small>
               </Link>
             ))}
           </section>

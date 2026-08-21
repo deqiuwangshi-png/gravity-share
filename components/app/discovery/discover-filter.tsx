@@ -1,25 +1,34 @@
 /**
  * 发现页筛选器：类型 chips + 卡片列表（client）
- * 数据来自发现内容池（lib/discovery-store）：初始为平台预置，发布后立即可见
+ * 2b 起数据读库（RLS 公开读）：挂载拉取；发布后监听 DISCOVERY_UPDATED_EVENT 重新拉取
  */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DiscoveryCard } from "./discovery-card";
-import { DISCOVERY_UPDATED_EVENT, getDiscoveryItems } from "@/lib/discovery-store";
+import { createClient } from "@/lib/supabase/client";
+import { DISCOVERY_UPDATED_EVENT, fetchDiscoveries } from "@/lib/queries";
+import type { DiscoveryDTO } from "@/lib/types";
 
 export function DiscoverFilter() {
   const [active, setActive] = useState<string | null>(null);
-  const [, forceRender] = useState(0);
+  const [items, setItems] = useState<DiscoveryDTO[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const onUpdate = () => forceRender((t) => t + 1);
-    window.addEventListener(DISCOVERY_UPDATED_EVENT, onUpdate);
-    return () => window.removeEventListener(DISCOVERY_UPDATED_EVENT, onUpdate);
+  const load = useCallback(() => {
+    void fetchDiscoveries(createClient()).then((list) => {
+      setItems(list);
+      setLoading(false);
+    });
   }, []);
 
-  /* 内容池变化后重渲染，读取最新数据 */
-  const items = getDiscoveryItems();
+  useEffect(() => {
+    load();
+    const onUpdate = () => load();
+    window.addEventListener(DISCOVERY_UPDATED_EVENT, onUpdate);
+    return () => window.removeEventListener(DISCOVERY_UPDATED_EVENT, onUpdate);
+  }, [load]);
+
   const types = [...new Set(items.map((item) => item.type))];
   const filtered = active === null ? items : items.filter((item) => item.type === active);
 
@@ -40,9 +49,13 @@ export function DiscoverFilter() {
           >{type}</button>
         ))}
       </div>
-      <div className="discovery-grid">
-        {filtered.map((item) => <DiscoveryCard item={item} key={item.id} />)}
-      </div>
+      {loading ? (
+        <p className="feed-loading">加载中…</p>
+      ) : (
+        <div className="discovery-grid">
+          {filtered.map((item) => <DiscoveryCard item={item} key={item.id} />)}
+        </div>
+      )}
     </>
   );
 }

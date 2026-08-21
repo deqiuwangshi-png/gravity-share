@@ -6,11 +6,11 @@
 "use client";
 
 import Link from "next/link";
-import type { DiscoveryItem } from "@/lib/types";
+import type { DiscoveryDTO } from "@/lib/types";
+import { AvatarBox } from "@/components/app/common/avatar-box";
 
-export function ProfilePost({ item }: { item: DiscoveryItem }) {
+export function ProfilePost({ item }: { item: DiscoveryDTO }) {
   const body = item.note ?? item.description ?? "";
-  const avatar = item.author?.charAt(0) ?? "推";
   const linkTitle = item.title ?? body.slice(0, 30);
   const linkDesc = item.description && item.description !== item.note ? item.description : undefined;
   const kindMark = item.kind === "video" ? "▶ 视频" : item.kind === "doc" ? "DOC" : "链接";
@@ -18,9 +18,9 @@ export function ProfilePost({ item }: { item: DiscoveryItem }) {
   return (
     <Link className="profile-post" href={`/discover/${item.id}`}>
       <div className="profile-post-head">
-        <span className="profile-post-avatar">{avatar}</span>
-        <b>{item.author ?? "引力推荐"}</b>
-        <small>{item.publishTime ?? ""}</small>
+        <AvatarBox path={item.authorAvatar} name={item.authorName ?? "推"} className="profile-post-avatar" />
+        <b>{item.authorName ?? "引力推荐"}</b>
+        <small>{item.time ?? ""}</small>
       </div>
 
       <p className="profile-post-body">{body}</p>

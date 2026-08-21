@@ -1,7 +1,7 @@
 # 引力（yinli）前端治理与架构方案
 
-> 版本：v1.0 · 日期：2026-08-21 · 状态：待评审
-> 上位文档：`ARCHITECTURE.md`（v2.1，已确立边界）· 承接：`docs/ARCHITECTURE-REVIEW.md`（评审报告）
+> 版本：v1.1 · 日期：2026-08-21 · 状态：阶段 0 验收完成，已进入 Supabase 数据层阶段
+> 上位文档：`ARCHITECTURE.md`（v2.6，已确立边界）· 承接：`docs/ARCHITECTURE-REVIEW.md`（评审报告 v3）
 > 一句话：**前端模拟优先，后端与数据库冻结，先把界面布局做好做规范，验收通过前不启动任何后端相关开发。**
 
 ---
@@ -146,6 +146,14 @@
 | 架构评估 v2 | ✅ 完成 | docs/ARCHITECTURE-REVIEW.md：61 文件 / 5,768 行 / 16 路由；P1 五项（文档同步/Client 化 54%/字段膨胀/两套评论/data.ts 膨胀） |
 | 文档同步（P1-①） | ✅ 完成 | ARCHITECTURE.md v2.5（目录树/lib 清单/内容池机制）；SYSTEM-ARCHITECTURE.md；README（路由/样式路径/版本） |
 | 布局验收走查（V1/V2） | ⬜ 待走查 | 需人工视觉确认三访问区一致性 |
+| Supabase 接入（1a 认证基座） | ✅ 完成 | Auth + cookie 会话 + proxy.ts 守卫 + public.users 触发器建档 + RLS；登录/注册/忘记密码接 SDK |
+| 用户资料完整化（2a） | ✅ 完成 | 设置面板昵称/简介接库（行内编辑）；user-menu 读 users 表权威 |
+| 内容上库（2b） | ✅ 完成 | 3 内容表（discoveries/square_posts/comments 归一）+ 8 演示账号 seed + queries 查询层 + DTO 收敛 + 发布/评论写库 + 双内容池退役 |
+| 互动与通知（2c） | ✅ 完成 | likes/favorites/follows/notifications 4 表 + 3 类触发器（计数 + 互动→通知）；通知抽屉接库（已读/全部已读/跳转）；他人主页 /profile/[id] + 关注 |
+| 图片存储（S） | ✅ 完成 | avatars/covers/posts 3 公开桶 + storage RLS；设置头像/个人主页封面/广场发帖配图；全站头像展示（AvatarBox 回退首字母） |
+| 架构评估 v3 | ✅ 完成 | ARCHITECTURE-REVIEW.md v3：73 文件 / 8,193 行 / 17 路由 / 4 迁移；v2 P1 五项解决 4.5/5 |
+| 文档同步（P1-2 收尾） | ✅ 完成 | ARCHITECTURE.md v2.6（目录树/数据层/演进状态）；SYSTEM-ARCHITECTURE.md；本进度表 |
+| 上线前置（安全头/写路径校验/分页缓存/测试） | 🔜 待办 | 触发条件与优先级见 ARCHITECTURE-REVIEW.md v3 §四 |
 
 > 验收标准 V1（无死链）/ V3（CSS ≤ 400）/ V4（组件闭环）/ V5（文档一致）/ V6（lint+build）均已达成代码级验证；V2（布局一致）与视觉走查待确认。
 

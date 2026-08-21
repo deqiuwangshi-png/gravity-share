@@ -164,6 +164,22 @@
   font-size: 13px;
 }
 
+/* 点赞（2c 可点 toggle） */
+.detail-like {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.detail-like:hover,
+.detail-like.active {
+  color: var(--primary);
+}
+
 /* ⑥ 评论区（样式在 detail-comments.css） */
 
 /* ⑦ 相关讨论 / ⑧ 相关推荐 */

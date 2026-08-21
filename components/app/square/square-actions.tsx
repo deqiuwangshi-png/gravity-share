@@ -1,21 +1,38 @@
 /**
- * 广场详情互动条（client）：点赞 toggle + 浏览量展示（mock）
+ * 广场详情互动条（client）：点赞 toggle（2c 落库，计数由数据库触发器维护）+ 浏览量展示
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { isLiked, toggleLike } from "@/lib/queries";
 
-export function SquareActions({ likes, views }: { likes: number; views: number }) {
+export function SquareActions({ postId, likes, views }: { postId: string; likes: number; views: number }) {
   const [liked, setLiked] = useState(false);
-  const count = likes + (liked ? 1 : 0);
+  const [count, setCount] = useState(likes);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    void isLiked(createClient(), "square", postId).then(setLiked);
+  }, [postId]);
+
+  async function onToggle() {
+    if (busy) return;
+    setBusy(true);
+    const next = await toggleLike(createClient(), "square", postId);
+    setLiked(next);
+    setCount((c) => c + (next ? 1 : -1));
+    setBusy(false);
+  }
 
   return (
     <div className="square-actions">
       <button
         type="button"
         className={`square-like${liked ? " active" : ""}`}
-        onClick={() => setLiked(!liked)}
+        onClick={() => void onToggle()}
         aria-pressed={liked}
+        disabled={busy}
       >{liked ? "已赞" : "赞"} {count}</button>
       <span className="square-views">浏览 {views}</span>
     </div>

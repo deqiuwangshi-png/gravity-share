@@ -2,6 +2,7 @@
 
 > 状态：待确认 · 范围：`app/(app)/home/page.tsx` + `components/app-shell.tsx`
 > 原则：极简克制；保留核心，砍重复与死链，加法少而精
+> 注：2026-08-21 通知模块（顶栏铃铛 + /notifications）已整体移除，顶栏现为 全局搜索 + 头像菜单
 
 ---
 

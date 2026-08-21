@@ -343,3 +343,49 @@
   width: 120px;
   margin: 0 auto;
 }
+
+/* 发布失败提示（2b 写库后） */
+.publish-error {
+  margin: -6px 0 10px;
+  color: var(--error);
+  font-size: 12px;
+}
+
+/* 话题配图（S-1 起，发布入口 C 可选） */
+.publish-topic-image {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.publish-topic-image-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--bg-hover);
+}
+
+.publish-topic-image-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.publish-topic-image-btn:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.publish-topic-image-btn.remove {
+  border-color: transparent;
+  color: var(--text-soft);
+}

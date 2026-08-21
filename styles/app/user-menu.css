@@ -8,7 +8,6 @@
 .user-menu-trigger {
   display: flex;
   align-items: center;
-  gap: 9px;
   padding: 0 0 0 14px;
   border: 0;
   border-left: 1px solid var(--border);
@@ -27,6 +26,15 @@
   color: var(--primary);
   font-size: 12px;
   font-weight: 700;
+}
+
+/* 顶栏头像图片（S-1 起） */
+.user-menu-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-hover);
 }
 
 .user-menu-trigger strong {
