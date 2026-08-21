@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/common/logo";
-import { SettingsPanel, type PanelId } from "./settings-panel";
+import { SettingsPanel } from "./settings-panel";
 import { UserMenu } from "./user-menu";
 import PublishModal from "./publish-modal";
 import { MAIN_NAV } from "@/lib/config";
@@ -14,7 +14,7 @@ type NavItem = readonly [string, string, string];
 
 export default function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const [publishOpen, setPublishOpen] = useState(false);
-  const [activePanel, setActivePanel] = useState<PanelId | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   return <div className="app-shell">
@@ -28,13 +28,13 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
         <form className="global-search" onSubmit={(event) => event.preventDefault()}><span className="app-search-icon">{ICONS.search}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索你需要的东西……" aria-label="全局搜索" /><kbd>/</kbd></form>
         <div className="topbar-actions">
           <button type="button" className="top-action" aria-label="消息">{ICONS.message}</button>
-          <UserMenu onOpenPanel={setActivePanel} />
+          <UserMenu onOpenHelp={() => setHelpOpen(true)} />
         </div>
       </header>
       {children}
     </main>
     {publishOpen && <PublishModal onClose={() => setPublishOpen(false)} />}
-    {activePanel && <SettingsPanel initialTab={activePanel} onClose={() => setActivePanel(null)} />}
+    {helpOpen && <SettingsPanel onClose={() => setHelpOpen(false)} />}
   </div>;
 }
 

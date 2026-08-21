@@ -1,0 +1,334 @@
+/* (app) 个人主页（/profile）：封面/头像重叠 + 用户信息 + 胶囊导航 + 帖子流 + 站点信息右栏
+ * 2026-08-21 新增（user-menu「个人主页」从面板升级为独立页面） */
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 22px;
+  align-items: start;
+}
+
+/* ---------- 主体：封面 + 头像重叠 ---------- */
+.profile {
+  min-width: 0;
+}
+
+/* ① 封面横幅：高宽比 3:1，按钮悬浮右上角 */
+.profile-cover {
+  position: relative;
+  aspect-ratio: 3 / 1;
+  border-radius: 14px;
+  background: var(--bg-hover);
+  z-index: 1;
+}
+
+.profile-cover-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.profile-cover-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.profile-cover-btn:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+/* ② 头像行：头像单独负边距下沉骑跨封面底边；【编辑个人资料】按钮
+ * 不随头像上移，留在下方白色内容区的右上角（同一行、行最右） */
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px;
+  position: relative;
+  z-index: 2;
+}
+
+.profile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  margin-top: -44px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.profile-edit-btn {
+  margin-left: auto;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.profile-edit-btn:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+/* ③ 用户信息：昵称 / 简介（浅灰底无边框块）/ 数据组 */
+.profile-info {
+  padding: 14px 18px 0;
+}
+
+.profile-name {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.profile-bio {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 22px;
+  margin-bottom: 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.profile-stats b {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* 胶囊导航：选中项绿色下划线 */
+.profile-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-tab {
+  padding: 11px 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 13px;
+  transition: color 180ms ease;
+}
+
+.profile-tab:hover {
+  color: var(--primary);
+}
+
+.profile-tab.active {
+  border-bottom-color: var(--primary);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* 帖子流：Twitter/X 风格卡 */
+.profile-post {
+  display: block;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background 180ms ease;
+}
+
+.profile-post:hover {
+  background: var(--bg-hover);
+}
+
+.profile-post-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.profile-post-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.profile-post-head b {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.profile-post-head small {
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.profile-post-body {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.profile-post-promo {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+/* 链接预览卡（左小图 + 右标题/摘要，整卡可点） */
+.profile-link-preview {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 180ms ease;
+}
+
+.profile-link-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  overflow: hidden;
+  background: var(--bg-hover);
+}
+
+.profile-link-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-link-mark {
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.profile-link-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 14px;
+}
+
+.profile-link-body b {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-link-body small {
+  overflow: hidden;
+  color: var(--text-soft);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tab 内容容器 */
+.profile-tab-panel {
+  padding-top: 4px;
+}
+
+/* 设置 tab：分组小标题 + 复用 settings-row 行样式 */
+.profile-settings {
+  padding: 4px 18px 20px;
+}
+
+.profile-settings-title {
+  margin: 18px 0 8px;
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.profile-settings-title:first-child {
+  margin-top: 10px;
+}
+
+.profile-empty {
+  padding: 40px 18px;
+  color: var(--text-soft);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---------- 右栏：站点信息占位 ---------- */
+.profile-aside {
+  position: sticky;
+  top: 16px;
+}
+
+.profile-aside-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-aside-links a {
+  color: var(--text-muted);
+  font-size: 12px;
+  transition: color 180ms ease;
+}
+
+.profile-aside-links a:hover {
+  color: var(--primary);
+}
+
+.profile-aside-meta {
+  margin: 12px 0 0;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.9;
+}
+
+@media (max-width: 900px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-aside {
+    display: none;
+  }
+}

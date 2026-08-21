@@ -2,20 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { PanelId } from "./settings-panel";
 import { ICONS } from "@/lib/icons";
 
-const MENU_ITEMS = [
-  [ICONS.design, "个人主页", "profile"],
-  [ICONS.dev, "发布管理", "publishes"],
-  [ICONS.service, "账户安全", "security"],
-  [ICONS.help, "帮助与反馈", "help"],
-] as const satisfies ReadonlyArray<readonly [string, string, PanelId]>;
-
-export { type PanelId };
-
-/** 用户下拉菜单：点击触发、外点/Esc/选择后关闭；菜单项通过回调打开对应弹窗 */
-export function UserMenu({ onOpenPanel }: { onOpenPanel: (panel: PanelId) => void }) {
+/**
+ * 用户下拉菜单：个人主页（跳转）/ 帮助与反馈（面板）/ 退出登录
+ * 2026-08-21 瘦身：发布管理、账户安全已迁入个人主页（发现/推广 tab + 设置 tab）
+ */
+export function UserMenu({ onOpenHelp }: { onOpenHelp: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -52,20 +45,20 @@ export function UserMenu({ onOpenPanel }: { onOpenPanel: (panel: PanelId) => voi
             <span>U</span>
             <div><strong>我的账户</strong><small>普通用户</small></div>
           </div>
-          {MENU_ITEMS.map(([icon, label, panel]) => (
-            <button
-              type="button"
-              className="user-menu-item"
-              key={label}
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                onOpenPanel(panel);
-              }}
-            >
-              <span>{icon}</span>{label}
-            </button>
-          ))}
+          <Link className="user-menu-item" href="/profile" role="menuitem" onClick={() => setOpen(false)}>
+            <span>{ICONS.design}</span>个人主页
+          </Link>
+          <button
+            type="button"
+            className="user-menu-item"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onOpenHelp();
+            }}
+          >
+            <span>{ICONS.help}</span>帮助与反馈
+          </button>
           <div className="user-menu-divider" />
           <Link className="user-menu-item danger" href="/login" role="menuitem" onClick={() => setOpen(false)}>
             <span>{ICONS.logout}</span>退出登录

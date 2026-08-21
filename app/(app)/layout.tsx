@@ -9,6 +9,7 @@ import "@/styles/app/user-menu.css";
 import "@/styles/app/settings.css";
 import "@/styles/app/feed.css";
 import "@/styles/app/square.css";
+import "@/styles/app/profile.css";
 import AppShell from "@/components/app/shell/app-shell";
 
 export default function AppLayout({
