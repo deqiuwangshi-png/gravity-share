@@ -17,18 +17,18 @@ export function ListColumn({
           <h2>{title}</h2>
           <p>{description}</p>
         </div>
-        <a href="#">更多 →</a>
+        <span className="section-action" data-placeholder>更多 →</span>
       </div>
       <div className="list-panel">
         {items.map((item, index) => (
-          <a className="list-item" href="#" key={item}>
+          <div className="list-item" data-placeholder key={item}>
             <span>{String(index + 1).padStart(2, "0")}</span>
             <div>
               <strong>{item}</strong>
               <small>{index === 0 ? "AI · 工具 · 2,381 次查看" : "开发 · 资源 · 1,927 次查看"}</small>
             </div>
             <b>→</b>
-          </a>
+          </div>
         ))}
       </div>
     </div>

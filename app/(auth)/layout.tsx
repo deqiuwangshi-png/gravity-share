@@ -1,4 +1,5 @@
-import "./auth.css";
+import "@/styles/auth/shell.css";
+import "@/styles/auth/card.css";
 import Link from "next/link";
 
 export default function AuthLayout({

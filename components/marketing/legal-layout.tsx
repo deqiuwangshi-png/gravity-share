@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/common/logo";
 
 /**
  * 法律文档页共享布局（用户协议 / 隐私政策）

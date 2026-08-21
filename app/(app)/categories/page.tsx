@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AppAside } from "@/components/app-aside";
+import { AppAside } from "@/components/app/shell/app-aside";
 import { categoryDetails } from "@/lib/data";
 
 export const metadata: Metadata = {
@@ -15,13 +15,13 @@ export default function CategoriesPage() {
         <p>按方向浏览所有内容分类</p>
       </header>
 
-      <div className="category-grid">{categoryDetails.map((cat) => <a className="category-card" href="#" key={cat.name}>
+      <div className="category-grid">{categoryDetails.map((cat) => <div className="category-card" data-placeholder key={cat.name}>
         <span className="category-icon">{cat.icon}</span>
         <div>
           <strong>{cat.name}</strong>
           <small>{cat.count} 个内容</small>
         </div>
-      </a>)}</div>
+      </div>)}</div>
     </div>
 
     <AppAside />

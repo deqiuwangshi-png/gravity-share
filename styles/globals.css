@@ -72,6 +72,11 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 占位元素（功能未实现，链接治理规则 R2）：不显示手型，避免误导可点击 */
+[data-placeholder] {
+  cursor: default;
+}
+
 /*
  * 跨区共享：品牌 Logo 标记（marketing .logo / app .app-logo / auth .auth-brand-logo 三处共用）。
  * 路由区专属样式见 (marketing)/marketing.css、(app)/app.css、(auth)/auth.css。

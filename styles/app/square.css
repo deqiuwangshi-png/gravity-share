@@ -1,0 +1,354 @@
+/* (app) 广场（/square）：领域胶囊 + 紧凑话题列表 + 详情页（/square/[id]）
+ * 2026-08-21 列表+详情两级结构改造；2026-08-21 三入口后移除发帖框，新增领域胶囊 */
+
+/* ---------- 领域胶囊（我的领域 + 探索领域） ---------- */
+
+.square-domains {
+  margin-bottom: 22px;
+}
+
+.square-domain-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.square-domain-row.explore {
+  margin-bottom: 0;
+}
+
+.square-domain-label {
+  flex-shrink: 0;
+  margin-right: 2px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.square-domain-chip {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
+}
+
+.square-domain-chip:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.square-domain-chip.active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* 探索领域：蓝色虚线 + 「新」标记 */
+.square-domain-chip.explore {
+  border-style: dashed;
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.square-domain-chip.explore em {
+  margin-left: 4px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.square-domain-chip.explore.active {
+  border-style: solid;
+  background: var(--primary-soft);
+}
+
+.square-mock-note {
+  color: var(--primary);
+  font-size: 12px;
+}
+
+/* ---------- 列表：紧凑话题卡（整卡可点 → 详情） ---------- */
+
+.square-list {
+  display: grid;
+  gap: 10px;
+}
+
+.square-card {
+  display: block;
+  padding: 13px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.square-card:hover {
+  border-color: var(--border-primary);
+  background: var(--primary-subtle);
+}
+
+.square-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.square-card-head strong {
+  font-size: 13px;
+}
+
+.square-card-head small {
+  margin-left: auto;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+/* 内容摘要：最多 2 行，超出省略 */
+.square-card-content {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 41px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.square-card-meta {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+/* 含外链标记（列表卡） */
+.square-card-link-mark {
+  color: var(--primary);
+}
+
+/* 帖子正文外链（详情页，URL 解析） */
+.linkified {
+  color: var(--primary);
+  word-break: break-all;
+  transition: color 180ms ease;
+}
+
+.linkified:hover {
+  color: var(--primary-dark);
+}
+
+/* ---------- 通用：头像 / 标签（列表与详情共用） ---------- */
+
+.square-avatar {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.square-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.square-tags span {
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* ---------- 详情页（/square/[id]，单栏聚焦，无右栏） ---------- */
+
+.square-detail {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 4px 40px;
+}
+
+.square-back {
+  display: inline-block;
+  margin-bottom: 22px;
+  color: var(--text-muted);
+  font-size: 13px;
+  transition: color 180ms ease;
+}
+
+.square-back:hover {
+  color: var(--primary);
+}
+
+.square-post-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.square-post-meta strong,
+.square-post-meta small {
+  display: block;
+}
+
+.square-post-meta strong {
+  font-size: 13px;
+}
+
+.square-post-meta small {
+  margin-top: 2px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.square-content {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+/* 互动条：点赞（可点）+ 浏览 */
+.square-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 20px;
+  padding: 13px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.square-like {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 180ms ease;
+}
+
+.square-like.active {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+}
+
+.square-views {
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+/* 评论区 */
+.square-comments {
+  margin-top: 22px;
+}
+
+.square-comments h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.square-comment-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.square-comment-box:focus-within {
+  border-color: var(--border-primary);
+}
+
+.square-comment-box input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+}
+
+.square-comment-box input::placeholder {
+  color: var(--text-soft);
+}
+
+.square-comment-submit {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.square-comment-list {
+  display: grid;
+}
+
+.square-comment {
+  display: flex;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.square-comment:last-child {
+  border-bottom: 0;
+}
+
+.square-comment-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.square-comment-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.square-comment-meta strong {
+  font-size: 12px;
+}
+
+.square-comment-meta small {
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.square-comment-body p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}

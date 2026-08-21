@@ -1,0 +1,100 @@
+/* (app) 发现详情页评论区（输入框 + 评论列表）
+ * 2026-08-21 从 detail.css 拆出（V3 ≤400 行治理）；最终规格：32px 头像 + 楼主昵称品牌色高亮 */
+
+/* ⑥ 评论区 */
+.detail-comments {
+  margin-bottom: 24px;
+}
+
+.detail-comment-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.detail-comment-form input {
+  flex: 1;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  transition: border-color 180ms ease;
+}
+
+.detail-comment-form input:focus {
+  border-color: var(--border-primary);
+}
+
+.detail-comment-form button {
+  height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 180ms ease;
+}
+
+.detail-comment-form button:hover {
+  background: var(--primary-dark);
+}
+
+.detail-comment {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-comment-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+
+.detail-comment-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-comment-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+/* 楼主昵称品牌色高亮（评论者与发帖人一致） */
+.detail-comment-head b {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.detail-comment-head b.owner {
+  color: var(--primary);
+}
+
+.detail-comment-head small {
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.detail-comment-content {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.detail-comment-empty {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
+}

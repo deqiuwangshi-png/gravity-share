@@ -20,7 +20,7 @@ export function AppSection({
           <h2>{title}</h2>
           <p>{description}</p>
         </div>
-        <a href="#">{action}</a>
+        <span className="section-action" data-placeholder>{action}</span>
       </div>
       {children}
     </section>

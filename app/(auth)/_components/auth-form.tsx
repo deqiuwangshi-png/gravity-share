@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ICONS } from "@/lib/icons";
 
 type AuthMode = "login" | "register";
 
@@ -39,7 +40,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
       </form>
 
       <div className="auth-divider"><span>或者使用</span></div>
-      <button className="auth-social" type="button" onClick={() => setSubmitted(true)}><span className="social-mark" aria-hidden="true">◎</span>使用 GitHub 继续</button>
+      <button className="auth-social" type="button" onClick={() => setSubmitted(true)}><span className="social-mark" aria-hidden="true">{ICONS.tool}</span>使用 GitHub 继续</button>
       <p className="auth-switch-copy">{isLogin ? "还没有账号？" : "已经有账号了？"} <Link href={isLogin ? "/register" : "/login"}>{isLogin ? "立即注册" : "返回登录"}</Link></p>
     </div>
   );

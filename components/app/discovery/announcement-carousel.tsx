@@ -54,7 +54,7 @@ export function AnnouncementCarousel() {
           <h3>{item.title}</h3>
           <p>{item.desc}</p>
         </div>
-        <a className="announce-link" href="#">查看详情 →</a>
+        <span className="announce-link" data-placeholder>查看详情 →</span>
       </article>
       <div className="announce-dots" role="tablist" aria-label="公告切换">
         {ANNOUNCEMENTS.map((_, i) => (

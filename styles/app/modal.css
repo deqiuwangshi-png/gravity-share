@@ -1,0 +1,345 @@
+/* (app) 弹窗（发布弹窗 / 设置面板共用遮罩）
+ * 自原 app.css 拆分（2026-08-21 治理：单文件 ≤ 400 行）
+ * 发布弹窗 2026-08-21 改造：双入口（内容 / 推广外链） */
+
+.app-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  background: rgba(15, 25, 22, 0.38);
+  backdrop-filter: blur(4px);
+}
+
+.modal-box {
+  width: min(560px, 100%);
+  padding: 28px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.modal-header button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 20px;
+}
+
+/* ---------- Step 1：双入口选择 ---------- */
+
+.publish-entry {
+  display: grid;
+  gap: 12px;
+}
+
+.publish-entry-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.publish-entry-card:hover {
+  border-color: var(--border-primary);
+  background: var(--primary-subtle);
+}
+
+.publish-entry-card.promo {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.publish-entry-card.promo:hover {
+  border-color: var(--accent);
+}
+
+.publish-entry-icon {
+  flex-shrink: 0;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 19px;
+}
+
+.publish-entry-card.promo .publish-entry-icon {
+  background: var(--surface);
+  color: var(--on-accent);
+}
+
+.publish-entry-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.publish-entry-text strong,
+.publish-entry-text small,
+.publish-entry-text em {
+  display: block;
+}
+
+.publish-entry-text strong {
+  font-size: 15px;
+}
+
+.publish-entry-text small {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.publish-entry-text em {
+  margin-top: 4px;
+  color: var(--text-soft);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.publish-entry-arrow {
+  color: var(--text-soft);
+  font-size: 16px;
+}
+
+/* 金色「推广」角标 */
+.publish-tag-promo {
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 600;
+  vertical-align: 2px;
+}
+
+/* ---------- Step 2a：入口 A 沉浸式（随手写） ---------- */
+
+.publish-immersive {
+  display: grid;
+  gap: 18px;
+}
+
+.publish-immersive textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 4px 2px;
+  border: 0;
+  outline: 0;
+  resize: vertical;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.publish-immersive textarea::placeholder {
+  color: var(--text-soft);
+}
+
+/* 话题帖子可选外链（入口 C） */
+.publish-topic-link {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: border-color 180ms ease;
+}
+
+.publish-topic-link:focus {
+  border-color: var(--border-primary);
+}
+
+.publish-topic-link::placeholder {
+  color: var(--text-soft);
+}
+
+.publish-immersive-submit {
+  height: 46px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: background 180ms ease;
+}
+
+.publish-immersive-submit:hover {
+  background: var(--primary-dark);
+}
+
+/* ---------- Step 2b：发布表单（推广） ---------- */
+
+.publish-form {
+  display: grid;
+  gap: 14px;
+}
+
+.publish-back {
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  transition: color 180ms ease;
+}
+
+.publish-back:hover {
+  color: var(--primary);
+}
+
+.publish-field {
+  display: grid;
+  gap: 6px;
+}
+
+.publish-field > span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.publish-field input,
+.publish-field textarea,
+.publish-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: border-color 180ms ease;
+}
+
+.publish-field textarea {
+  resize: vertical;
+}
+
+.publish-field input:focus,
+.publish-field textarea:focus,
+.publish-field select:focus {
+  border-color: var(--border-primary);
+}
+
+.publish-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.publish-chip {
+  padding: 6px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
+}
+
+.publish-chip:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.publish-chip.active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* 商业警示条 */
+.publish-warning {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--on-accent);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.publish-submit {
+  height: 44px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 180ms ease;
+}
+
+.publish-submit:hover {
+  background: var(--primary-dark);
+}
+
+/* 提交成功态 */
+.publish-success {
+  display: grid;
+  gap: 14px;
+  padding: 22px 0 6px;
+  text-align: center;
+}
+
+.publish-success p {
+  margin: 0;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.publish-success .publish-submit {
+  width: 120px;
+  margin: 0 auto;
+}

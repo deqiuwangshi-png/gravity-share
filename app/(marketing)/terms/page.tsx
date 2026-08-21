@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LegalLayout } from "@/components/legal-layout";
+import { LegalLayout } from "@/components/marketing/legal-layout";
 
 export const metadata: Metadata = {
   title: "用户协议 | 引力",

@@ -1,0 +1,60 @@
+/* (app) 排名列表面板（ListColumn：热门发现 / 最近新增）
+ * 自原 app.css 拆分（2026-08-21 治理：单文件 ≤ 400 行） */
+
+.list-panel {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background 150ms ease;
+}
+
+.list-item:last-child {
+  border-bottom: 0;
+}
+
+.list-item:hover {
+  background: var(--bg-hover);
+}
+
+.list-item > span {
+  width: 24px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.list-item div {
+  min-width: 0;
+  flex: 1;
+}
+
+.list-item strong,
+.list-item small {
+  display: block;
+}
+
+.list-item strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-item small {
+  margin-top: 4px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.list-item b {
+  color: var(--text-soft);
+  font-weight: 400;
+}

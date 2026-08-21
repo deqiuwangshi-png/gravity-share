@@ -1,0 +1,360 @@
+/* (marketing) 站点壳：导航 / Hero / 搜索 / 分类 / 页脚
+ * 自 (marketing)/marketing.css 拆分（2026-08-21 治理：styles/ 统一管理，单文件 ≤ 400 行） */
+
+.site-shell {
+  min-height: 100vh;
+  overflow-x: clip;
+}
+
+/* 吸顶导航：全宽底 + 分隔线，滚动时钉在顶部 */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+
+.container {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.nav {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.nav-links,
+.nav-actions {
+  display: flex;
+  align-items: center;
+}
+
+.nav-links {
+  gap: 30px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.nav-links a {
+  transition: color 180ms ease;
+}
+
+.nav-links a:hover {
+  color: var(--foreground);
+}
+
+.nav-actions {
+  gap: 12px;
+}
+
+.btn {
+  border: 0;
+  border-radius: var(--radius-control);
+  padding: 10px 17px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-light {
+  background: transparent;
+  color: var(--foreground);
+}
+
+.btn-primary,
+.search-button {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.btn-primary:hover,
+.search-button:hover {
+  background: var(--primary-dark);
+}
+
+.hero {
+  padding: 88px 0 70px;
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 25px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  background: var(--primary-subtle);
+  color: var(--primary-dark);
+  font-size: 13px;
+}
+
+.eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.hero h1 {
+  max-width: 850px;
+  margin: 0 auto;
+  font-size: clamp(46px, 6vw, 76px);
+  line-height: 1.05;
+  letter-spacing: -4px;
+  font-weight: 800;
+}
+
+.hero h1 span {
+  color: var(--primary);
+}
+
+.hero-desc {
+  max-width: 650px;
+  margin: 27px auto 35px;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.search-box {
+  width: min(720px, 100%);
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  margin: 0 auto;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.search-icon {
+  width: 52px;
+  color: var(--text-soft);
+  font-size: 25px;
+}
+
+.search-box input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 16px;
+}
+
+.search-box input::placeholder {
+  color: var(--text-soft);
+}
+
+.search-button {
+  border: 0;
+  border-radius: 11px;
+  padding: 14px 23px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 180ms ease;
+}
+
+.search-hints {
+  margin-top: 17px;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.search-hints a,
+.search-hints .search-hint {
+  margin-left: 14px;
+  transition: color 180ms ease;
+}
+
+.search-hints a:hover {
+  color: var(--primary);
+}
+
+.categories {
+  padding: 20px 0 75px;
+}
+
+.category-list {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.category {
+  padding: 10px 17px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 14px;
+  transition: border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.category:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.footer {
+  padding: 64px 0 30px;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1.6fr;
+  gap: 48px;
+  padding-bottom: 34px;
+  border-bottom: 1px solid var(--border);
+}
+
+.footer-brand p {
+  margin: 14px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.footer-col h3 {
+  margin: 0 0 14px;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.footer-col a {
+  display: block;
+  padding: 5px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  transition: color 180ms ease;
+}
+
+.footer-col a:hover {
+  color: var(--primary);
+}
+
+/* 免责声明强调块 */
+.footer-legal p {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-control);
+  background: var(--primary-soft);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 22px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+@media (max-width: 800px) {
+  .container {
+    width: min(100% - 30px, 1180px);
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .hero {
+    padding-top: 60px;
+  }
+
+  .hero h1 {
+    letter-spacing: -2px;
+  }
+
+  .hero-desc {
+    font-size: 16px;
+  }
+
+  .search-box {
+    align-items: stretch;
+  }
+
+  .search-icon {
+    width: 38px;
+  }
+
+  .search-button {
+    padding: 12px 15px;
+  }
+
+  .search-hints {
+    line-height: 2.3;
+  }
+
+  .search-hints a,
+  .search-hints .search-hint {
+    margin-left: 9px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 520px) {
+  .nav {
+    height: 68px;
+  }
+
+  .nav-actions {
+    gap: 4px;
+  }
+
+  .btn {
+    padding: 9px 12px;
+  }
+
+  .hero h1 {
+    font-size: clamp(38px, 12vw, 54px);
+  }
+
+  .search-box {
+    flex-wrap: wrap;
+    padding: 6px;
+  }
+
+  .search-box input {
+    min-height: 44px;
+  }
+
+  .search-button {
+    width: 100%;
+  }
+}

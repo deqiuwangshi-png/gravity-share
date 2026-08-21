@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { PanelId } from "./settings-panel";
+import { ICONS } from "@/lib/icons";
 
 const MENU_ITEMS = [
-  ["◇", "个人主页", "profile"],
-  ["⌘", "发布管理", "publishes"],
-  ["◈", "账户安全", "security"],
-  ["?", "帮助与反馈", "help"],
+  [ICONS.design, "个人主页", "profile"],
+  [ICONS.dev, "发布管理", "publishes"],
+  [ICONS.service, "账户安全", "security"],
+  [ICONS.help, "帮助与反馈", "help"],
 ] as const satisfies ReadonlyArray<readonly [string, string, PanelId]>;
 
 export { type PanelId };
@@ -67,7 +68,7 @@ export function UserMenu({ onOpenPanel }: { onOpenPanel: (panel: PanelId) => voi
           ))}
           <div className="user-menu-divider" />
           <Link className="user-menu-item danger" href="/login" role="menuitem" onClick={() => setOpen(false)}>
-            <span>⏻</span>退出登录
+            <span>{ICONS.logout}</span>退出登录
           </Link>
         </div>
       )}
