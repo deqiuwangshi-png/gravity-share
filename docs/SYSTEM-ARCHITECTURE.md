@@ -102,13 +102,24 @@ supabase/migrations/   001 users → 002 内容 → 003 互动通知 → 004 存
 4. 出现重复 → 抽组件 / 换变量 / 加触发器
 ```
 
-## 七、什么时候才升级（不提前设计）
+## 七、规模化前置清单（触发条件对照 · 2026-08-21 修订）
 
-- 某 feature 目录超过 10 个文件 → 再继续细分
-- 页面超过 8 个 → 再考虑模块化
-- `lib/queries.ts` 超 500 行或新增领域 → 拆 `lib/db/`
-- 新增写操作 → 先定「RLS / 触发器 / Handler」归属
-- 上线前置：分页/缓存、服务端业务校验、测试 CI、安全头（见 ARCHITECTURE-REVIEW.md v3）
-- 前端治理红线：不新增第 3 套分类体系 / 第 3 种图标方案；不提交裸 `href="#"`；CSS 单文件 ≤ 400 行
+> 使用方式：每项**触发条件满足时**按「方案」执行，不提前做。已完成项已从清单移除并记入 `ARCHITECTURE-REVIEW-v4.md`。
+
+| # | 待办项 | 触发条件 | 方案 |
+|---|---|---|---|
+| S1 | **CSP 安全头** | 上线前（部署域名定稿后） | 四项基础头已上线（C4）；CSP 需 nonce/hash 方案处理 inline style 与 next/font，单独专项 |
+| S2 | **分页 / 缓存** | `discoveries` > 200 条 **或** 任一列表接口响应 > 300ms | queries 层加 `limit/offset` + 游标（created_at 倒序）；**顺带解决**列表卡片收藏/点赞态 N+1（`isFavorited`/`isLiked` 每卡一查 → 批量取） |
+| S3 | **queries.ts 拆分** | `lib/queries.ts` > 500 行 **或** 新增第三个领域操作 | 拆 `lib/db/{discoveries,square,interactions,notifications}.ts`，queries.ts 变 re-export |
+| S4 | **测试 / CI** | 页面 > 20 **或** 组件 > 30 | vitest + 冒烟测试（至少覆盖：RLS 读/写、触发器计数、404 兜底三条链路）；GitHub Actions 跑 lint+build |
+| S5 | **迁移 CLI 化** | 上线前（脱离手工 Dashboard 执行） | `supabase init` + `supabase db push`，迁移纳入 git 版本管理（配合移除 .gitignore 排除项） |
+| S6 | **通知中心完整页** | 通知 > 20 条（抽屉预览放不下） | 新建 `/notifications` 完整页（分页 + 全部已读 + 筛选），抽屉只留预览 |
+| S7 | **写路径服务端校验** | 上线前（业务规则出现第二个需要强制的场景） | 推广合规等规则收敛：DB CHECK 约束（如 commission 必填）或 Route Handler 统一收口 |
+| S8 | **分类上库** | 出现「后台要配分类」的需求 | `categories` 从 `lib/data.ts` 迁 `public.categories` 表 + 管理页（当前静态配置够用，迁移 006 已归一） |
+| S9 | **Storage 孤儿文件巡检** | 上线前一次 | 一次性脚本：`storage.objects` 全列对比 users 的 avatar_url/cover_url 与 square_posts.image_url 引用，删除无引用对象 |
+
+**硬红线（任何时候）**：新增第 3 套分类体系 / 第 3 种图标方案前必须先归一；不提交裸 `href="#"`；CSS 单文件 ≤ 400 行；新增写操作先定「RLS / 触发器 / Handler」归属（见 ARCHITECTURE.md §4）。
+
+**演进节奏**：某 feature 目录 > 10 文件再细分；页面 > 8 再模块化；其余按上表触发，不提前设计。
 
 > 一句话：**架构是"涨"出来的，不是"设计"出来的。** 前期多花一分钟做规范，就少一分钟做功能。

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ICONS } from "@/lib/icons";
+import { OAUTH_PROVIDERS } from "@/lib/config";
 
 type AuthMode = "login" | "register";
 
@@ -17,6 +17,25 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
   const router = useRouter();
 
   const isLogin = mode === "login";
+
+  /** 回源地址白名单（防开放重定向，登录 / OAuth 共用） */
+  function safeNext(): string {
+    const nextParam = new URLSearchParams(window.location.search).get("next") ?? "";
+    return nextParam.startsWith("/") && !nextParam.startsWith("//") && !nextParam.includes("\\")
+      ? nextParam
+      : "/home";
+  }
+
+  /** 第三方登录（GitHub 启用；Google 预留——OAUTH_PROVIDERS.enabled 放开即可） */
+  async function handleOAuth(provider: string) {
+    setError("");
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signInWithOAuth({
+      provider: provider as "github",
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext())}` },
+    });
+    if (authError) setError("第三方登录暂不可用，请稍后重试");
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,9 +55,8 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
         setError(authError.message.includes("Invalid login credentials") ? "邮箱或密码不正确。" : authError.message);
         return;
       }
-      /* 回源：未登录访问 /home 时 proxy 会带 ?next=/home */
-      const next = new URLSearchParams(window.location.search).get("next");
-      router.push(next ?? "/home");
+      /* 回源：未登录访问 /home 时 proxy 会带 ?next=/home；白名单校验防开放重定向（BUG-7） */
+      router.push(safeNext());
       router.refresh();
       return;
     }
@@ -83,7 +101,18 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
       </form>
 
       <div className="auth-divider"><span>或者使用</span></div>
-      <button className="auth-social" type="button" data-placeholder><span className="social-mark" aria-hidden="true">{ICONS.tool}</span>使用 GitHub 继续</button>
+      <div className="auth-social-row">
+        {OAUTH_PROVIDERS.filter((p) => p.enabled).map((provider) => (
+          <button
+            key={provider.id}
+            className="auth-social"
+            type="button"
+            onClick={() => void handleOAuth(provider.id)}
+          >
+            <span className="social-mark" aria-hidden="true">{provider.mark}</span>使用 {provider.label} 继续
+          </button>
+        ))}
+      </div>
       <p className="auth-switch-copy">{isLogin ? "还没有账号？" : "已经有账号了？"} <Link href={isLogin ? "/register" : "/login"}>{isLogin ? "立即注册" : "返回登录"}</Link></p>
     </div>
   );

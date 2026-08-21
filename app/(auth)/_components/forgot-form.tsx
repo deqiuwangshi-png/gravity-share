@@ -19,7 +19,8 @@ export default function ForgotForm() {
 
     setSubmitting(true);
     const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+      /* 复用 /auth/callback（批次 C）：exchangeCodeForSession 建立 recovery session → /reset-password 设置新密码 */
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
     });
     setSubmitting(false);
     if (authError) {

@@ -25,7 +25,9 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
   /* 未读红点：查库（2c）；抽屉内已读后监听事件刷新 */
   useEffect(() => {
     const refresh = () => {
-      void fetchNotifications(createClient()).then((list) => setHasUnread(list.some((n) => !n.read)));
+      void fetchNotifications(createClient())
+        .then((list) => setHasUnread(list.some((n) => !n.read)))
+        .catch(() => { /* 拉取失败静默：红点不显示，下次事件/挂载再试 */ });
     };
     refresh();
     window.addEventListener(NOTIFICATION_UPDATED_EVENT, refresh);

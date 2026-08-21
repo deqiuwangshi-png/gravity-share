@@ -7,7 +7,7 @@ import { LinkifiedText } from "@/components/app/common/linkified-text";
 import { AuthorLink } from "@/components/app/common/author-link";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { createClient } from "@/lib/supabase/server";
-import { fetchComments, fetchSquarePostById } from "@/lib/queries";
+import { bumpViews, fetchComments, fetchSquarePostById } from "@/lib/queries";
 import { publicImageUrl } from "@/lib/storage";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -25,6 +25,8 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
   const supabase = await createClient();
   const post = await fetchSquarePostById(supabase, id);
   if (!post) notFound();
+  /* BUG-4：进入详情 +1 浏览（RPC security definer，失败静默） */
+  await bumpViews(supabase, "square", id).catch(() => {});
   const comments = await fetchComments(supabase, "square", id);
 
   return (

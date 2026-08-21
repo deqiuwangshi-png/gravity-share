@@ -1,8 +1,12 @@
 /**
  * 文本工具：外链提取 / #标签提取（发布随手写模式用）
  */
-/** URL 匹配（排除中文与常见标点） */
-export const URL_PATTERN = /(https?:\/\/[^\s，。！？；、）】"'”]+)/g;
+/**
+ * URL 匹配（排除中文与常见标点）
+ * 注意：不带 g 标志——`.test()` 在全局正则上有 lastIndex 状态，会污染循环调用（P1-1 修复）；
+ * `extractUrl` 用 match、`LinkifiedText` 用 split，均不受影响。
+ */
+export const URL_PATTERN = /(https?:\/\/[^\s，。！？；、）】"'”]+)/;
 
 /** 从文本中提取第一个外链 URL */
 export function extractUrl(text: string): string | undefined {

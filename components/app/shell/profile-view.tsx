@@ -11,7 +11,8 @@ import { ProfilePost } from "@/components/app/discovery/profile-post";
 import { ProfileTabs, type ProfileTab } from "@/components/app/shell/profile-tabs";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { createClient } from "@/lib/supabase/client";
-import { publicImageUrl, uploadImage, validateImage } from "@/lib/storage";
+import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
+import { SITE_INFO } from "@/lib/config";
 import {
   DISCOVERY_UPDATED_EVENT,
   fetchDiscoveriesByAuthor,
@@ -20,8 +21,6 @@ import {
   toggleFollow,
 } from "@/lib/queries";
 import type { DiscoveryDTO } from "@/lib/types";
-
-const LIKED = 186;
 
 export default function ProfileView({
   name,
@@ -54,8 +53,8 @@ export default function ProfileView({
   const [coverError, setCoverError] = useState("");
 
   const load = useCallback(() => {
-    void fetchDiscoveriesByAuthor(createClient(), userId).then(setMyPosts);
-    if (isSelf) void fetchFavorites(createClient()).then(setFavorites);
+    void fetchDiscoveriesByAuthor(createClient(), userId).then(setMyPosts).catch(() => { /* 失败保持空态，事件触发再试 */ });
+    if (isSelf) void fetchFavorites(createClient()).then(setFavorites).catch(() => {});
   }, [userId, isSelf]);
 
   useEffect(() => {
@@ -72,7 +71,11 @@ export default function ProfileView({
   async function onFollow() {
     if (followBusy) return;
     setFollowBusy(true);
-    setFollowing(await toggleFollow(createClient(), userId));
+    try {
+      setFollowing(await toggleFollow(createClient(), userId));
+    } catch {
+      /* 写失败保持原状态（P1-3 回滚） */
+    }
     setFollowBusy(false);
   }
 
@@ -92,9 +95,13 @@ export default function ProfileView({
       const path = await uploadImage("cover", file, userId);
       const { error: saveError } = await createClient().from("users").update({ cover_url: path }).eq("id", userId);
       if (saveError) {
+        /* BUG-14：更新失败回滚新图 */
+        void removeImage("cover", path);
         setCoverError("保存失败，请重试");
         return;
       }
+      /* BUG-14：换图成功清理旧图（与旧 path 不同才删） */
+      if (cover && cover !== path) void removeImage("cover", cover);
       setCover(path);
     } catch {
       setCoverError("上传失败，请重试");
@@ -138,8 +145,7 @@ export default function ProfileView({
             <h1 className="profile-name">{name}</h1>
             <div className="profile-stats">
               <span><b>{myPosts.length}</b>发布</span>
-              {isSelf && <span><b>{LIKED}</b>点赞</span>}
-              <span><b>{points}</b>积分</span>
+              {isSelf && <span><b>{points}</b>积分</span>} {/* BUG-8：积分仅自己可见 */}
               {isSelf
                 ? <span><b>{followingCount}</b>关注</span>
                 : <span><b>{followerCount}</b>粉丝</span>}
@@ -187,9 +193,9 @@ export default function ProfileView({
           <Link href="/terms">用户协议</Link>
         </div>
         <p className="profile-aside-meta">
-          浙ICP备2024107375号-4<br />
-          浙公网安备33019202002666号<br />
-          © 2026 Watcha. All rights reserved.
+          {SITE_INFO.icp}<br />
+          {SITE_INFO.police}<br />
+          {SITE_INFO.copyright}. All rights reserved.
         </p>
       </aside>
     </div>

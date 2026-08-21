@@ -284,7 +284,10 @@ export async function isLiked(
   return !!data;
 }
 
-/** 点赞 toggle，返回新状态；计数由数据库触发器维护 */
+/**
+ * 点赞 toggle，返回新状态；计数由数据库触发器维护
+ * 失败抛错（P1-3）：调用方 try/catch 保持原状态，避免 UI 与库漂移
+ */
 export async function toggleLike(
   supabase: SupabaseClient,
   targetType: "discovery" | "square",
@@ -294,10 +297,12 @@ export async function toggleLike(
   if (!uid) return false;
   const liked = await isLiked(supabase, targetType, targetId);
   if (liked) {
-    await supabase.from(LIKES).delete().eq("user_id", uid).eq("target_type", targetType).eq("target_id", targetId);
+    const { error } = await supabase.from(LIKES).delete().eq("user_id", uid).eq("target_type", targetType).eq("target_id", targetId);
+    if (error) throw new Error("操作失败，请重试");
     return false;
   }
-  await supabase.from(LIKES).insert({ user_id: uid, target_type: targetType, target_id: targetId });
+  const { error } = await supabase.from(LIKES).insert({ user_id: uid, target_type: targetType, target_id: targetId });
+  if (error) throw new Error("操作失败，请重试");
   return true;
 }
 
@@ -314,16 +319,18 @@ export async function isFavorited(supabase: SupabaseClient, discoveryId: string)
   return !!data;
 }
 
-/** 收藏 toggle，返回新状态 */
+/** 收藏 toggle，返回新状态；失败抛错（P1-3） */
 export async function toggleFavorite(supabase: SupabaseClient, discoveryId: string): Promise<boolean> {
   const uid = await currentUserId(supabase);
   if (!uid) return false;
   const favorited = await isFavorited(supabase, discoveryId);
   if (favorited) {
-    await supabase.from(FAVORITES).delete().eq("user_id", uid).eq("discovery_id", discoveryId);
+    const { error } = await supabase.from(FAVORITES).delete().eq("user_id", uid).eq("discovery_id", discoveryId);
+    if (error) throw new Error("操作失败，请重试");
     return false;
   }
-  await supabase.from(FAVORITES).insert({ user_id: uid, discovery_id: discoveryId });
+  const { error } = await supabase.from(FAVORITES).insert({ user_id: uid, discovery_id: discoveryId });
+  if (error) throw new Error("操作失败，请重试");
   return true;
 }
 
@@ -358,16 +365,18 @@ export async function isFollowing(supabase: SupabaseClient, userId: string): Pro
   return !!data;
 }
 
-/** 关注 toggle，返回新状态 */
+/** 关注 toggle，返回新状态；失败抛错（P1-3） */
 export async function toggleFollow(supabase: SupabaseClient, userId: string): Promise<boolean> {
   const uid = await currentUserId(supabase);
   if (!uid || uid === userId) return false;
   const following = await isFollowing(supabase, userId);
   if (following) {
-    await supabase.from(FOLLOWS).delete().eq("follower_id", uid).eq("following_id", userId);
+    const { error } = await supabase.from(FOLLOWS).delete().eq("follower_id", uid).eq("following_id", userId);
+    if (error) throw new Error("操作失败，请重试");
     return false;
   }
-  await supabase.from(FOLLOWS).insert({ follower_id: uid, following_id: userId });
+  const { error } = await supabase.from(FOLLOWS).insert({ follower_id: uid, following_id: userId });
+  if (error) throw new Error("操作失败，请重试");
   return true;
 }
 
@@ -387,4 +396,15 @@ export async function fetchFollowingCount(supabase: SupabaseClient, userId: stri
     .select("following_id", { count: "exact", head: true })
     .eq("follower_id", userId);
   return count ?? 0;
+}
+
+/* ---------- BUG-4 浏览计数（RPC：security definer 只 +views，不放开表 update） ---------- */
+
+/** 浏览 +1（详情页进入调用；失败静默不影响展示） */
+export async function bumpViews(
+  supabase: SupabaseClient,
+  targetType: "discovery" | "square",
+  targetId: string,
+): Promise<void> {
+  await supabase.rpc("bump_views", { target_type: targetType, target_id: targetId });
 }

@@ -19,9 +19,13 @@ export function SquareActions({ postId, likes, views }: { postId: string; likes:
   async function onToggle() {
     if (busy) return;
     setBusy(true);
-    const next = await toggleLike(createClient(), "square", postId);
-    setLiked(next);
-    setCount((c) => c + (next ? 1 : -1));
+    try {
+      const next = await toggleLike(createClient(), "square", postId);
+      setLiked(next);
+      setCount((c) => c + (next ? 1 : -1));
+    } catch {
+      /* 写失败保持原状态（P1-3 回滚，不再乐观更新计数） */
+    }
     setBusy(false);
   }
 

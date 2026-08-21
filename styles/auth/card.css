@@ -180,12 +180,20 @@
   background: var(--border);
 }
 
+/* 社交登录按钮行（GitHub / Google 一行两列，各占 50%）
+ * 用 flex 而非 grid：兼容性最广；按钮 flex:1 均分，nowrap 防文字换行 */
+.auth-social-row {
+  display: flex;
+  gap: 10px;
+}
+
 .auth-social {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 6px;
   height: 48px;
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
@@ -193,6 +201,7 @@
   color: var(--foreground);
   cursor: pointer;
   font-size: 13px;
+  white-space: nowrap;
   transition: border-color 180ms ease, background 180ms ease;
 }
 

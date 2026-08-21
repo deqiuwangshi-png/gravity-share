@@ -27,7 +27,9 @@ export function DiscoveryCard({
   const body = item.note ?? item.description ?? "";
 
   useEffect(() => {
-    void isFavorited(createClient(), item.id).then(setFavorited);
+    void isFavorited(createClient(), item.id)
+      .then(setFavorited)
+      .catch(() => { /* 状态查询失败默认未收藏，用户可点按钮重试 */ });
   }, [item.id]);
 
   async function onSave(event: React.MouseEvent) {
@@ -35,7 +37,11 @@ export function DiscoveryCard({
     event.stopPropagation();
     if (busy) return;
     setBusy(true);
-    setFavorited(await toggleFavorite(createClient(), item.id));
+    try {
+      setFavorited(await toggleFavorite(createClient(), item.id));
+    } catch {
+      /* 写失败保持原状态（P1-3 回滚，不再乐观更新） */
+    }
     setBusy(false);
   }
 

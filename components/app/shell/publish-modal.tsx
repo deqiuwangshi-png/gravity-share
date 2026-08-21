@@ -10,11 +10,11 @@
 
 import { useEffect, useState } from "react";
 import { ICONS } from "@/lib/icons";
-import { PROMO_TYPES } from "@/lib/config";
+import { PROMO_TYPES, PUBLISH_TYPES } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { DISCOVERY_UPDATED_EVENT, SQUARE_UPDATED_EVENT } from "@/lib/queries";
 import { extractTags, extractUrl, judgeKind } from "@/lib/text";
-import { uploadImage, validateImage } from "@/lib/storage";
+import { removeImage, uploadImage, validateImage } from "@/lib/storage";
 
 type Step = "choose" | "content" | "promo" | "topic";
 
@@ -25,6 +25,8 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
 
   /* 入口 A：沉浸式正文 */
   const [content, setContent] = useState("");
+  /* 入口 A：分类（BUG-5 归一，默认「内容」不强制，落库为 categories.name） */
+  const [contentType, setContentType] = useState<string>("内容");
 
   /* 入口 B：推广字段 */
   const [promoContent, setPromoContent] = useState("");
@@ -64,7 +66,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     const { error } = await supabase.from("discoveries").insert({
       id: newId("u"),
       author_id: user.id,
-      type: "内容",
+      type: contentType, /* BUG-5：分类归一，落库 categories.name（默认「内容」） */
       note: text,
       source: (user.user_metadata?.name as string) || "引力用户",
       tags: extractTags(text),
@@ -139,6 +141,8 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       image_url: imageUrl ?? null,
     });
     if (error) {
+      /* BUG-14：insert 失败回滚已上传的配图，避免孤儿文件 */
+      if (imageUrl) void removeImage("post", imageUrl);
       setSubmitError(true);
       return;
     }
@@ -220,12 +224,25 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
           <form className="publish-immersive" onSubmit={handleContentSubmit}>
             <textarea
               autoFocus
-              rows={9}
+              rows={7}
               value={content}
               onChange={(event) => setContent(event.target.value)}
               placeholder="说几句推荐语，或直接粘贴链接..."
               aria-label="发布内容"
             />
+            <div className="publish-field publish-type-field">
+              <span>分类</span>
+              <div className="publish-chips">
+                {PUBLISH_TYPES.map(({ name }) => (
+                  <button
+                    type="button"
+                    key={name}
+                    className={`publish-chip${contentType === name ? " active" : ""}`}
+                    onClick={() => setContentType(name)}
+                  >{name}</button>
+                ))}
+              </div>
+            </div>
             {submitError && <p className="publish-error">发布失败，请重试</p>}
             <button className="publish-immersive-submit" type="submit">发布</button>
           </form>

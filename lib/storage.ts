@@ -48,8 +48,16 @@ export async function uploadImage(
   return path;
 }
 
-/** 存储 path → 公开 URL */
+/** 存储 path → 公开 URL（BUG-6 纯函数化：不再依赖浏览器 client，server/client 通用） */
 export function publicImageUrl(target: UploadTarget, path: string): string {
+  /* 第三方登录头像为外部 URL（OAuth provider 写入 users.avatar_url），原样返回 */
+  if (path.startsWith("http")) return path;
+  /* path 格式受控：{uid}/{stamp}.{ext}（posts 为 {uid}/{postId}/{stamp}.{ext}），无特殊字符 */
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketOf(target)}/${path}`;
+}
+
+/** 删除存储对象（BUG-14：孤儿文件回滚 / 换图后旧图清理） */
+export async function removeImage(target: UploadTarget, path: string): Promise<void> {
   const supabase = createClient();
-  return supabase.storage.from(bucketOf(target)).getPublicUrl(path).data.publicUrl;
+  await supabase.storage.from(bucketOf(target)).remove([path]);
 }

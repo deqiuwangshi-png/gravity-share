@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { publicImageUrl, uploadImage, validateImage } from "@/lib/storage";
+import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
 
 export type PanelId = "settings" | "help";
 
@@ -62,6 +63,13 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
   const [error, setError] = useState("");
   const [avatarError, setAvatarError] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
+
+  /* 注销账号（输入「删除」确认，防误触） */
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const supabase = createClient();
@@ -136,14 +144,36 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
       const path = await uploadImage("avatar", file, userId);
       const { error: saveError } = await createClient().from("users").update({ avatar_url: path }).eq("id", userId);
       if (saveError) {
+        /* BUG-14：更新失败回滚新图 */
+        void removeImage("avatar", path);
         setAvatarError("保存失败，请重试");
         return;
       }
+      /* BUG-14：换图成功清理旧图（与旧 path 不同才删） */
+      if (avatarUrl && avatarUrl !== path) void removeImage("avatar", avatarUrl);
       setAvatarUrl(path);
     } catch {
       setAvatarError("上传失败，请重试");
     } finally {
       setAvatarUploading(false);
+    }
+  }
+
+  /** 注销账号（服务端删 auth.users + storage，级联清互动/通知；内容保留但作者置空） */
+  async function handleDeleteAccount() {
+    if (deleteText !== "删除" || deleting) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST" });
+      if (!res.ok) throw new Error();
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/");
+      router.refresh();
+    } catch {
+      setDeleteError("删除失败，请稍后重试");
+      setDeleting(false);
     }
   }
 
@@ -161,7 +191,7 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
               {label}
             </button>
           ))}
-          <div className="settings-side">
+          <div className="settings-side" data-placeholder>
             <strong>创作者计划</strong>
             <small>Lv.1 · 距离 Lv.2 还差 2 篇发布</small>
             <div className="settings-progress"><i style={{ width: "60%" }} /></div>
@@ -257,7 +287,27 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
                 <SettingRow label="两步验证" value="未开启" action="开启" />
                 <div className="settings-row danger">
                   <span className="settings-row-label">永久删除账号</span>
+                  {deleteConfirm ? (
+                    <span className="settings-delete-confirm">
+                      <input
+                        className="settings-input"
+                        value={deleteText}
+                        onChange={(event) => setDeleteText(event.target.value)}
+                        placeholder="输入「删除」"
+                        maxLength={2}
+                        aria-label="输入删除确认"
+                      />
+                      <button type="button" onClick={() => { setDeleteConfirm(false); setDeleteText(""); }} disabled={deleting}>取消</button>
+                      <button type="button" className="save" onClick={() => void handleDeleteAccount()} disabled={deleting || deleteText !== "删除"}>
+                        {deleting ? "删除中…" : "确认删除"}
+                      </button>
+                    </span>
+                  ) : (
+                    <button type="button" className="settings-row-action danger-action" onClick={() => setDeleteConfirm(true)}>删除</button>
+                  )}
                 </div>
+                {deleteConfirm && !deleting && <p className="settings-edit-error">此操作不可恢复：账号、互动与通知将被删除，发布内容保留但不再归属你。</p>}
+                {deleteError && <p className="settings-edit-error" role="alert">{deleteError}</p>}
               </>
             )}
             {tab === "help" && (

@@ -14,10 +14,10 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  /* 读 public.users 资料（RLS：auth.uid() = id，仅自己） */
+  /* 读 public.users 资料（RLS：auth.uid() = id，仅自己；points 列已列级收口，走 RPC） */
   const { data: profile } = await supabase
     .from("users")
-    .select("name, bio, avatar_url, cover_url, points")
+    .select("name, bio, avatar_url, cover_url")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -27,7 +27,9 @@ export default async function ProfilePage() {
     user.email?.split("@")[0] ||
     "引力用户";
   const bio = (profile?.bio as string) ?? "";
-  const points = (profile?.points as number) ?? 0;
+  /* BUG-8：积分改走 RPC（get_my_points 只返回本人） */
+  const { data: myPoints } = await supabase.rpc("get_my_points");
+  const points = (myPoints as number) ?? 0;
   const avatarUrl = (profile?.avatar_url as string) ?? "";
   const coverUrl = (profile?.cover_url as string) ?? "";
   const followerCount = await fetchFollowerCount(supabase, user.id);

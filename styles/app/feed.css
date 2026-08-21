@@ -169,3 +169,21 @@
   font-size: 13px;
   text-align: center;
 }
+
+/* 加载失败重试（P1-2 兜底，LoadError 组件） */
+.load-retry {
+  margin-left: 10px;
+  padding: 3px 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.load-retry:hover {
+  background: var(--primary-subtle);
+  border-color: var(--primary);
+}

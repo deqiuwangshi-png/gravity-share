@@ -12,13 +12,14 @@ import { useCallback, useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { DiscoveryCard } from "@/components/app/discovery/discovery-card";
 import { LinkifiedText } from "@/components/app/common/linkified-text";
+import { LoadError } from "@/components/app/common/load-error";
 import { AuthorLink } from "@/components/app/common/author-link";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { createClient } from "@/lib/supabase/client";
-import { fetchComments, fetchDiscoveries, fetchDiscoveryById, fetchSquarePosts, isLiked, toggleLike } from "@/lib/queries";
+import { bumpViews, fetchComments, fetchDiscoveries, fetchDiscoveryById, fetchSquarePosts, isLiked, toggleLike } from "@/lib/queries";
 import type { CommentDTO, DiscoveryDTO, SquarePostDTO } from "@/lib/types";
 
-type LoadState = "loading" | "ready" | "missing";
+type LoadState = "loading" | "ready" | "missing" | "error";
 
 export default function DiscoverDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -36,29 +37,47 @@ export default function DiscoverDetailPage() {
 
   const load = useCallback(() => {
     const supabase = createClient();
-    void fetchDiscoveryById(supabase, id as string).then((found) => {
-      if (!found) {
-        setState("missing");
-        return;
-      }
-      setItem(found);
-      setLikesCount(found.likes);
-      setState("ready");
-    });
-    void isLiked(createClient(), "discovery", id as string).then(setLiked);
-    void fetchDiscoveries(supabase).then(setAll);
-    void fetchComments(supabase, "discovery", id as string).then(setComments);
-    void fetchSquarePosts(supabase).then((posts) => {
-      setDiscussions(posts.slice(0, 8));
-    });
+    /* BUG-4：进入详情 +1 浏览（失败静默，不影响展示） */
+    void bumpViews(supabase, "discovery", id as string).catch(() => {});
+    void Promise.all([
+      fetchDiscoveryById(supabase, id as string),
+      isLiked(createClient(), "discovery", id as string),
+      fetchDiscoveries(supabase),
+      fetchComments(supabase, "discovery", id as string),
+      fetchSquarePosts(supabase),
+    ])
+      .then(([found, likedNow, allItems, commentList, postList]) => {
+        if (!found) {
+          setState("missing");
+          return;
+        }
+        setItem(found);
+        setLikesCount(found.likes);
+        setLiked(likedNow);
+        setAll(allItems);
+        setComments(commentList);
+        setDiscussions(postList.slice(0, 8));
+        setState("ready");
+      })
+      .catch(() => setState("error"));
   }, [id]);
+
+  /* 重试（事件处理器内重置状态，避免 effect 内同步 setState） */
+  function retry() {
+    setState("loading");
+    load();
+  }
 
   async function onLike() {
     if (likeBusy) return;
     setLikeBusy(true);
-    const next = await toggleLike(createClient(), "discovery", id as string);
-    setLiked(next);
-    setLikesCount((c) => c + (next ? 1 : -1));
+    try {
+      const next = await toggleLike(createClient(), "discovery", id as string);
+      setLiked(next);
+      setLikesCount((c) => c + (next ? 1 : -1));
+    } catch {
+      /* 写失败保持原状态（P1-3 回滚，不再乐观更新） */
+    }
     setLikeBusy(false);
   }
 
@@ -92,6 +111,9 @@ export default function DiscoverDetailPage() {
   if (state === "loading") {
     return <div className="app-content discovery-detail-wrap"><p className="feed-loading">加载中…</p></div>;
   }
+  if (state === "error") {
+    return <div className="app-content discovery-detail-wrap"><LoadError onRetry={retry} /></div>;
+  }
   if (state === "missing" || !item) notFound();
   const current = item;
 
@@ -108,7 +130,8 @@ export default function DiscoverDetailPage() {
   const body = current.note ?? current.description ?? "";
   const linkTitle = current.title ?? body.slice(0, 40);
   const linkDesc = current.description && current.description !== current.note ? current.description : undefined;
-  const commentCount = current.comments || comments.length;
+  /* 取两者较大值（BUG-15）：发评论后 comments.length 已含新评论，current.comments 为进入页时的库计数 */
+  const commentCount = Math.max(current.comments, comments.length);
   const kindMark = current.kind === "video" ? "▶ 视频" : current.kind === "doc" ? "DOC" : "链接";
 
   return (

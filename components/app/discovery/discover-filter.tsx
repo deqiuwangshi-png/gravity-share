@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { DiscoveryCard } from "./discovery-card";
+import { LoadError } from "@/components/app/common/load-error";
 import { createClient } from "@/lib/supabase/client";
 import { DISCOVERY_UPDATED_EVENT, fetchDiscoveries } from "@/lib/queries";
 import type { DiscoveryDTO } from "@/lib/types";
@@ -14,13 +15,26 @@ export function DiscoverFilter() {
   const [active, setActive] = useState<string | null>(null);
   const [items, setItems] = useState<DiscoveryDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   const load = useCallback(() => {
-    void fetchDiscoveries(createClient()).then((list) => {
-      setItems(list);
-      setLoading(false);
-    });
+    void fetchDiscoveries(createClient())
+      .then((list) => {
+        setItems(list);
+        setLoading(false);
+      })
+      .catch(() => {
+        setFailed(true);
+        setLoading(false);
+      });
   }, []);
+
+  /* 重试（事件处理器内重置状态，避免 effect 内同步 setState） */
+  function retry() {
+    setLoading(true);
+    setFailed(false);
+    load();
+  }
 
   useEffect(() => {
     load();
@@ -49,7 +63,9 @@ export function DiscoverFilter() {
           >{type}</button>
         ))}
       </div>
-      {loading ? (
+      {failed ? (
+        <LoadError onRetry={retry} />
+      ) : loading ? (
         <p className="feed-loading">加载中…</p>
       ) : (
         <div className="discovery-grid">

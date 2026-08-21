@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { AppAside } from "@/components/app/shell/app-aside";
 import { DiscoveryCard } from "@/components/app/discovery/discovery-card";
+import { LoadError } from "@/components/app/common/load-error";
 import { categories } from "@/lib/data";
 import { createClient } from "@/lib/supabase/client";
 import { DISCOVERY_UPDATED_EVENT, fetchDiscoveries } from "@/lib/queries";
@@ -19,10 +20,19 @@ export default function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const cat = categories.find((c) => c.slug === slug);
   const [items, setItems] = useState<DiscoveryDTO[]>([]);
+  const [failed, setFailed] = useState(false);
 
   const load = useCallback(() => {
-    void fetchDiscoveries(createClient()).then(setItems);
+    void fetchDiscoveries(createClient())
+      .then(setItems)
+      .catch(() => setFailed(true));
   }, []);
+
+  /* 重试（事件处理器内重置状态，避免 effect 内同步 setState） */
+  function retry() {
+    setFailed(false);
+    load();
+  }
 
   useEffect(() => {
     load();
@@ -47,7 +57,9 @@ export default function CategoryPage() {
         <span className="category-detail-count">{list.length} 个内容</span>
       </header>
 
-      {list.length > 0 ? (
+      {failed ? (
+        <LoadError onRetry={retry} />
+      ) : list.length > 0 ? (
         <div className="discovery-grid">{list.map((item) => <DiscoveryCard item={item} key={item.id} />)}</div>
       ) : (
         <p className="category-empty">该分类暂无内容，去「+ 发布」分享第一份好东西。</p>

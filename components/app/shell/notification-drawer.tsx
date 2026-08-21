@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LoadError } from "@/components/app/common/load-error";
 import { createClient } from "@/lib/supabase/client";
 import {
   fetchNotifications,
@@ -62,11 +63,20 @@ export function NotificationDrawer({
   onClose: () => void;
 }) {
   const [items, setItems] = useState<NotificationDTO[]>([]);
+  const [failed, setFailed] = useState(false);
   const router = useRouter();
 
   const load = useCallback(() => {
-    void fetchNotifications(createClient()).then(setItems);
+    void fetchNotifications(createClient())
+      .then(setItems)
+      .catch(() => setFailed(true));
   }, []);
+
+  /* 重试（事件处理器内重置状态，避免 effect 内同步 setState） */
+  function retry() {
+    setFailed(false);
+    load();
+  }
 
   useEffect(() => {
     if (open) load();
@@ -120,7 +130,9 @@ export function NotificationDrawer({
           </div>
         </header>
         <div className="notify-list">
-          {items.length === 0 ? (
+          {failed ? (
+            <LoadError onRetry={retry} />
+          ) : items.length === 0 ? (
             <p className="notify-empty">暂无通知</p>
           ) : (
             items.map((item) => (

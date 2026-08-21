@@ -25,7 +25,7 @@ export function ListColumn({
             <span>{String(index + 1).padStart(2, "0")}</span>
             <div>
               <strong>{item}</strong>
-              <small>{index === 0 ? "AI · 工具 · 2,381 次查看" : "开发 · 资源 · 1,927 次查看"}</small>
+              <small>{index === 0 ? "AI · 工具" : "开发 · 资源"}</small>
             </div>
             <b>→</b>
           </div>

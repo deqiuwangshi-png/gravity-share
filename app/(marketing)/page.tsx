@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/common/logo";
 import { ICONS } from "@/lib/icons";
+import { SITE_INFO } from "@/lib/config";
 import { MARKETING_CATEGORIES, MARKETING_SEARCH_HINTS } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { fetchDiscoveries } from "@/lib/queries";
@@ -138,8 +139,8 @@ export default async function Home() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© 2026 引力</span>
-          <span>京ICP备XXXXXXXX号</span>
+          <span>{SITE_INFO.copyright}</span>
+          <span>{SITE_INFO.icp}</span>
         </div>
       </footer>
     </div>

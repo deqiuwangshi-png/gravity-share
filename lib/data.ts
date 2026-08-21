@@ -60,4 +60,5 @@ export const categories: Category[] = [
   { slug: "events", name: "活动与机会", description: "大会、比赛、招募与值得参与的事", icon: ICONS.opportunity },
   { slug: "promotions", name: "商业推广", description: "明码标价的推广与合作（含佣金说明）", icon: ICONS.service },
   { slug: "content", name: "内容", description: "引力社区用户发布的内容", icon: ICONS.tool },
+  { slug: "services", name: "服务", description: "软件、订阅与工具服务，长期值得使用的服务", icon: ICONS.service },
 ];

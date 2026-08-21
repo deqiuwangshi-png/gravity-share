@@ -20,14 +20,14 @@ export default async function OtherProfilePage({ params }: { params: Promise<{ i
 
   const { data: profile } = await supabase
     .from("users")
-    .select("name, bio, avatar_url, cover_url, points")
+    .select("name, bio, avatar_url, cover_url")
     .eq("id", id)
     .maybeSingle();
   if (!profile) notFound();
 
   const name = (profile.name as string) || "引力用户";
   const bio = (profile.bio as string) ?? "";
-  const points = (profile.points as number) ?? 0;
+  const points = 0; /* BUG-8：积分列已收口，他人主页不展示 */
   const avatarUrl = (profile.avatar_url as string) ?? "";
   const coverUrl = (profile.cover_url as string) ?? "";
   const followerCount = await fetchFollowerCount(supabase, id);

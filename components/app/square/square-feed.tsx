@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { EXPLORE_DOMAINS, MY_DOMAINS } from "@/lib/config";
+import { LoadError } from "@/components/app/common/load-error";
 import { createClient } from "@/lib/supabase/client";
 import { fetchSquarePosts, SQUARE_UPDATED_EVENT } from "@/lib/queries";
 import { hasUrl } from "@/components/app/common/linkified-text";
@@ -18,13 +19,26 @@ export function SquareFeed() {
   const [domain, setDomain] = useState<string>("全部");
   const [posts, setPosts] = useState<SquarePostDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   const load = useCallback(() => {
-    void fetchSquarePosts(createClient()).then((list) => {
-      setPosts(list);
-      setLoading(false);
-    });
+    void fetchSquarePosts(createClient())
+      .then((list) => {
+        setPosts(list);
+        setLoading(false);
+      })
+      .catch(() => {
+        setFailed(true);
+        setLoading(false);
+      });
   }, []);
+
+  /* 重试（事件处理器内重置状态，避免 effect 内同步 setState） */
+  function retry() {
+    setLoading(true);
+    setFailed(false);
+    load();
+  }
 
   useEffect(() => {
     load();
@@ -62,7 +76,9 @@ export function SquareFeed() {
         </div>
       </div>
 
-      {loading ? (
+      {failed ? (
+        <LoadError onRetry={retry} />
+      ) : loading ? (
         <p className="feed-loading">加载中…</p>
       ) : (
         <div className="square-list">

@@ -126,3 +126,40 @@ a {
   height: 5px;
   background: var(--on-primary);
 }
+
+/* 全局错误兜底页（C5，app/error.tsx） */
+.error-fallback {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  text-align: center;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.error-fallback h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.error-fallback p {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.error-fallback button {
+  padding: 9px 22px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.error-fallback button:hover {
+  background: var(--primary-dark);
+}

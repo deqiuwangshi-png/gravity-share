@@ -142,7 +142,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 内容上库（2b） | ✅ | 3 内容表 + seed + 查询层 + 发布/评论写库；双内容池退役 |
 | 互动与通知（2c） | ✅ | likes/favorites/follows/notifications + 触发器；通知抽屉接库；他人主页 /profile/[id] |
 | 图片存储（S） | ✅ | avatars/covers/posts 公开桶 + 上传/展示 + 全站头像 |
-| 规模化前置（分页/缓存/测试/安全头） | 🔜 待办 | 触发条件见 ARCHITECTURE-REVIEW.md v3 §四 |
+| 规模化前置（CSP / 分页缓存 / 测试 / 迁移 CLI 等 9 项） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七「规模化前置清单」 |
 
 **防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；`lib/queries.ts` 超过 500 行或新增领域时拆 `lib/db/`；新增写操作必须先定「RLS / 触发器 / Handler」归属。
 
