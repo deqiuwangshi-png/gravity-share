@@ -12,32 +12,35 @@ app/          页面柜 —— 一页一个文件，文件名就是网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 查询层、类型、配置、图标、Supabase 客户端
-supabase/     迁移柜 —— 数据库唯一真相（001-004，幂等可重跑）
+supabase/     迁移柜 —— 数据库唯一真相（001-011，幂等可重跑）
 ```
 
 ```
 app/
 ├── (marketing)/  落地页 / + 法律页
-├── (auth)/       登录 / 注册 / 忘记密码
-└── (app)/        home / discover(+[id]) / categories(+[slug]) /
-                 square(+[id]) / profile(+[id] 他人主页)
+├── (auth)/       登录 / 注册 / 忘记密码 / 重置密码
+├── (app)/        home / discover(+[id]) / categories(+[slug]) /
+│                 square(+[id]) / profile(+[id] 他人主页)
+├── auth/callback/  第三方登录 / 密码重置统一回调
+└── api/account/delete/  自助注销（service_role，server-only）
 styles/
 ├── globals.css   色板 + 全局基础
-├── marketing/ · auth/ · app/（13 文件，单文件 ≤400 行）
+├── marketing/ · auth/ · app/（14 文件，单文件 ≤400 行）
 components/
-├── common/       logo / linkified-text / author-link / avatar-box
+├── common/       logo / linkified-text / author-link / avatar-box / load-error
 ├── marketing/    legal-layout
 └── app/          shell/（10）· discovery/（4）· square/（4）
 lib/
-├── queries.ts    查询层：读 + 互动/通知操作（DTO 映射，注入双端 client）
-├── storage.ts    图片上传 / 公开 URL
-├── supabase/     client.ts（浏览器）/ server.ts（cookie 会话）
+├── queries.ts    查询层：读 + 互动/通知操作 + bumpViews（DTO 映射，注入双端 client）
+├── storage.ts    图片上传 / 删除 / 公开 URL（纯函数，双端通用）
+├── supabase/     client.ts（浏览器）/ server.ts（cookie 会话）/ admin.ts（service_role，仅 server）
 ├── data.ts       静态配置（分类 / 公告 / 热词）
-└── types / config / icons / text
-supabase/migrations/   001 users → 002 内容 → 003 互动通知 → 004 存储
+└── types / config（含 OAUTH_PROVIDERS / SITE_INFO）/ icons / text
+supabase/migrations/   001-011（users → 内容 → 互动 → 存储 → 公开读 → 分类 → views →
+                       points 收口 → 通知清理 → 加固 → OAuth 建档，全幂等）
 ```
 
-> 数据：**全部在 Supabase**（9 张表 + 3 存储桶 + RLS + 触发器）。页面不写死数据，读走 `lib/queries.ts`，写靠 RLS 保护。
+> 数据：**全部在 Supabase**（9 张表 + 3 存储桶 + RLS + 列级权限 + 触发器）。页面不写死数据，读走 `lib/queries.ts`，写靠 RLS + 触发器保护，管理操作走 service_role 服务端路由。
 
 ## 二、三条规则（就这些，多了没人遵守）
 
@@ -50,10 +53,10 @@ supabase/migrations/   001 users → 002 内容 → 003 互动通知 → 004 存
 | 访问区 | 路由 | 访问控制 |
 |---|---|---|
 | 官网落地页 | `/` 及法律页 | 公开 |
-| 认证 | `/login` `/register` `/forgot-password` | 已登录自动跳 `/home` |
+| 认证 | `/login` `/register` `/forgot-password` `/reset-password` | 已登录自动跳 `/home` |
 | 应用主页 | `/home` `/discover*` `/categories*` `/square*` `/profile*` | **需登录**（proxy.ts 守卫，未登录 → `/login?next=...`） |
 
-登录：邮箱密码 + 邮箱验证（Supabase Auth 托管）；会话：cookie（@supabase/ssr）。
+登录：邮箱密码（邮箱验证）+ GitHub / Google（OAuth PKCE，统一 `/auth/callback` 回调）+ 忘记密码（recovery session → `/reset-password`）+ 自助注销（`/api/account/delete`）；会话：cookie（@supabase/ssr）。
 
 ## 四、已实现模块清单
 
@@ -66,7 +69,9 @@ supabase/migrations/   001 users → 002 内容 → 003 互动通知 → 004 存
 | 个人 `/profile` | 我的主页（资料/发布/收藏）+ 他人主页 `/profile/[id]`（关注按钮/粉丝数） |
 | 发布 | 弹窗三入口：推荐 / 推广（合规标识）/ 话题（可配图），写库后列表实时刷新 |
 | 通知 | 顶栏铃铛 + 预览抽屉：互动（赞/评/关）自动触发，点条目已读跳转 |
-| 头像/封面 | 设置面板传头像、个人主页换封面、广场发帖配图（公开桶） |
+| 头像/封面 | 设置面板传头像、个人主页换封面、广场发帖配图（公开桶；换图自动清旧图） |
+| 认证闭环 | 邮箱 + GitHub/Google 登录、密码重置（/reset-password）、自助注销（含 storage 即时清理） |
+| 安全加固 | 列级权限（points/计数列只读）、浏览计数 RPC、通知清理触发器、安全头 4 项 |
 
 ## 五、色板（全站就这 15 个颜色变量，定义在 `styles/globals.css`）
 

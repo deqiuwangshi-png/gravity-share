@@ -1,6 +1,6 @@
 # 引力（yinli）架构规范
 
-> 版本：v2.6（极简）· 适用范围：本项目全部新增 / 重构代码
+> 版本：v2.7（极简）· 适用范围：本项目全部新增 / 重构代码
 > 总纲一页纸见 [`docs/SYSTEM-ARCHITECTURE.md`](docs/SYSTEM-ARCHITECTURE.md)
 > 核心主张：**四个柜子、三条规则、一个色板。架构是"涨"出来的，不是"设计"出来的。**
 
@@ -12,38 +12,42 @@
 |---|---|---|
 | 框架 | Next.js 16（App Router） | 页面优先用 Server Component，需要交互才加 `"use client"`；查库页面用 `export const dynamic = "force-dynamic"` 避免 build 固化数据 |
 | 语言 | TypeScript 5 `strict` | 禁止 `any`、`@ts-ignore`；新代码必须通过 `pnpm lint` + `pnpm build` |
-| 样式 | Tailwind CSS 4 + 全局 CSS | 颜色只用 `styles/globals.css` 里的变量，不写色号；CSS 统一放 `styles/` |
+| 样式 | Tailwind CSS 4 + 全局 CSS | 颜色只用 `styles/globals.css` 里的变量，不写色号；CSS 统一放 `styles/`，单文件 ≤ 400 行 |
 | 包管理 | pnpm 11 | 禁止混用 npm/yarn，锁定提交 `pnpm-lock.yaml` |
 | 路径别名 | `@/*` → 项目根 | 所有 import 用 `@/` 开头，禁止相对路径跨目录引用 |
-| 数据边界 | **Supabase BaaS（Auth + Postgres + RLS + Storage）** | 读走 `lib/queries.ts`（双端 client 注入）；写靠 RLS（身份层强制）；业务规则在数据库触发器；**不引入自建后端** |
+| 数据边界 | **Supabase BaaS（Auth + Postgres RLS + Storage）** | 读走 `lib/queries.ts`（双端 client 注入）；写靠 RLS + 列级权限；一致性靠触发器；服务端操作走 `lib/supabase/admin.ts`（service_role，**仅 route handler，严禁客户端 import**）；**不引入自建后端** |
+| 第三方登录 | GitHub + Google（Supabase OAuth，PKCE） | 回调统一走 `/auth/callback`（code → session）；provider 清单在 `lib/config.ts` 的 `OAUTH_PROVIDERS` |
 
 ## 2. 四个柜子（目录就这四层）
 
 ```
 app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
-components/   组件柜 —— 用到两次才抽，平层放
-lib/          数据柜 —— 数据访问、类型、配置、图标集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-004，幂等可重跑）
+components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
+lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
+supabase/     迁移柜 —— 数据库唯一真相（001-011，幂等可重跑）
 ```
 
 ```
 yinli/
 ├── app/                        页面柜：只做 URL → 页面组装
 │   ├── (marketing)/            落地页 / + 法律页
-│   ├── (auth)/                 认证 /login /register /forgot-password
+│   ├── (auth)/                 认证 /login /register /forgot-password /reset-password
 │   ├── (app)/                  应用区：/home /discover(+[id]) /categories(+[slug])
 │   │                           /square(+[id]) /profile(+[id])
+│   ├── auth/callback/          第三方登录 / 密码重置统一回调（code → session）
+│   ├── api/account/delete/     自助注销（service_role，server-only）
+│   ├── error.tsx               根错误边界（含重试）
 │   └── layout.tsx              根布局
 ├── styles/                     样式柜：全部 CSS 统一管理（import 一律 @/styles/...）
-│   ├── globals.css             色板 + 全局基础（avatar-img / author-link）+ .logo-mark
+│   ├── globals.css             色板 + 全局基础（avatar-img / author-link / logo-mark / error-fallback）
 │   ├── marketing/              落地页区：site / sections / legal
 │   ├── auth/                   认证区：shell / card
-│   └── app/                    应用区 13 文件：shell / discovery / list / modal /
-│                               announcement / user-menu / settings / feed / square /
-│                               detail / detail-comments / profile / notification
+│   └── app/                    应用区 14 文件：shell / discovery / list / modal /
+│                               announcement / user-menu / settings / settings-delete / feed /
+│                               square / detail / detail-comments / profile / notification
 ├── components/                 组件柜：访问区 + feature 双层
-│   ├── common/                 跨区共享：logo / linkified-text / author-link / avatar-box
+│   ├── common/                 跨区共享：logo / linkified-text / author-link / avatar-box / load-error
 │   ├── marketing/              落地页区：legal-layout
 │   └── app/                    应用区（feature 分层）
 │       ├── shell/              应用壳：app-shell / app-aside / app-section / list-column /
@@ -53,17 +57,19 @@ yinli/
 │       │                       announcement-carousel / profile-post
 │       └── square/             广场：square-feed / square-actions / square-comment-box
 ├── lib/                        数据柜：纯 TS，禁止 import 组件
-│   ├── queries.ts              查询层：读（DTO 映射）+ 互动/通知操作（注入双端 client）
-│   ├── storage.ts              图片上传 / 公开 URL 工具
-│   ├── supabase/               client.ts（浏览器）/ server.ts（cookie 会话）
+│   ├── queries.ts              查询层：读（DTO 映射）+ 互动/通知操作 + bumpViews（注入双端 client）
+│   ├── storage.ts              图片上传 / 删除（removeImage）/ 公开 URL（纯函数，server/client 通用）
+│   ├── supabase/               client.ts（浏览器）/ server.ts（cookie 会话）/ admin.ts（service_role，仅 server）
 │   ├── types.ts                全局类型 + DTO（DiscoveryDTO / SquarePostDTO / CommentDTO / NotificationDTO）
-│   ├── data.ts                 静态配置（分类 / 公告 / 热词——内容数据已上库）
-│   ├── config.ts               导航 / 发布类型等配置
+│   ├── data.ts                 静态配置（分类 / 公告 / 热词）
+│   ├── config.ts               导航 / 发布类型（categories 派生）/ SITE_INFO / OAUTH_PROVIDERS
 │   ├── icons.ts                图标单一来源
 │   └── text.ts                 文本工具（URL / #标签提取 / 形态识别 / 相对时间）
-├── supabase/migrations/        数据库迁移（001 users → 002 内容 → 003 互动通知 → 004 存储）
+├── supabase/migrations/        数据库唯一真相（001 users → 002 内容 → 003 互动 → 004 存储 →
+│                               005 公开读 → 006 分类对齐 → 007 views RPC → 008 points 收口 →
+│                               009 通知清理 → 010 加固 → 011 OAuth 建档，全幂等）
 ├── public/                     静态资源
-├── docs/design/                设计原型归档
+├── docs/                       架构规范 / 评审 / 方案 / 配置文档
 └── 配置文件
 ```
 
@@ -89,7 +95,13 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 
 禁止：`lib/` import 组件、组件之间互相 import（共享一律走 `components/`）、页面互相 import、跨 route group 引用。
 
-**数据访问三层纪律**：RLS 管身份（谁能读写）→ 触发器管数据一致性（计数/通知）→ 业务校验（如推广合规）如需要走 Route Handler。写路径（发布/评论/点赞/收藏/关注/已读）由 client 组件直接 `insert/update`，安全依赖 RLS——**新增写操作必须先问「这条规则该在哪一层」**。
+**数据安全四层**（v2.7 起）：
+1. **RLS 管身份** —— 内容公开读 + 作者写，互动/通知仅本人（34+ 策略）；
+2. **列级权限管敏感字段** —— `points` 与计数列（`likes_count/views/comments_count`）对 API 直读直写被拒，本人取值走 RPC（`get_my_points`）；
+3. **触发器管一致性** —— 计数、互动→通知、内容删除→通知清理、OAuth 建档（6+ 函数）；
+4. **service_role 管服务端操作** —— 注销等管理操作走 Route Handler（`lib/supabase/admin.ts`，密钥仅 server 环境，严禁客户端 import）。
+
+写路径：发布/评论/点赞/收藏/关注/已读由 client 直接 `insert/update`（RLS 校验）；敏感读取与浏览计数走 RPC；管理操作走 Route Handler——**新增写操作必须先问「这条规则该在哪一层」**。
 
 ## 5. 命名与文件规范
 
@@ -131,7 +143,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 
 ## 8. 阶段边界与演进状态
 
-**演进决策（2026-08-21）**：前端模拟优先 → 已接 Supabase BaaS，数据层上库完成。
+**演进决策（2026-08-21）**：前端模拟优先 → 已接 Supabase BaaS，数据层上库完成 → 2026-08-22 认证与安全闭环。
 
 | 范围 | 状态 | 说明 |
 |---|---|---|
@@ -140,12 +152,18 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 认证基座（1a） | ✅ | Auth + cookie 会话 + proxy.ts 守卫 + public.users 触发器建档 + RLS |
 | 用户资料完整化（2a） | ✅ | 设置面板昵称/简介接库；user-menu 读 users 表 |
 | 内容上库（2b） | ✅ | 3 内容表 + seed + 查询层 + 发布/评论写库；双内容池退役 |
-| 互动与通知（2c） | ✅ | likes/favorites/follows/notifications + 触发器；通知抽屉接库；他人主页 /profile/[id] |
-| 图片存储（S） | ✅ | avatars/covers/posts 公开桶 + 上传/展示 + 全站头像 |
+| 互动与通知（2c） | ✅ | likes/favorites/follows/notifications + 触发器；通知抽屉接库；他人主页 |
+| 图片存储（S） | ✅ | avatars/covers/posts 公开桶 + 上传/展示/删除 + 全站头像 |
+| 批次 A（P1 修复） | ✅ | hasUrl 正则状态 / 列表加载兜底 + 重试 / 写操作错误回滚 |
+| 批次 B（一致性） | ✅ | 分类归一（categories 派生）/ views 计数 RPC / storage 纯函数化 + 孤儿清理 / next 白名单 + points 收口 |
+| 批次 C（加固 + 合规） | ✅ | 通知清理触发器 / 列级 revoke + 自关注约束 / 假数据清理 / 备案占位统一 / 安全头 4 项 / 根错误边界 |
+| 第三方登录 | ✅ | GitHub + Google（OAuth PKCE，`OAUTH_PROVIDERS` 驱动，`/auth/callback` 统一回调） |
+| 认证闭环 | ✅ | 忘记密码（recovery session + `/reset-password`）/ 自助注销（service_role + storage 即时清理） |
+| 架构评审 v4 / v5 | ✅ | 问题清零基线（v4）→ 9.0/10（v5，2026-08-22） |
 | 规模化前置（CSP / 分页缓存 / 测试 / 迁移 CLI 等 9 项） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七「规模化前置清单」 |
 
-**防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；`lib/queries.ts` 超过 500 行或新增领域时拆 `lib/db/`；新增写操作必须先定「RLS / 触发器 / Handler」归属。
+**防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；`lib/queries.ts` 超过 500 行或新增领域时拆 `lib/db/`；新增写操作必须先定「RLS / 列级权限 / 触发器 / Handler」归属。
 
 ---
 
-*本规范 v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进：lib 增 queries/storage/supabase，删双内容池；components 增 author-link/avatar-box/notification-drawer/profile-view 等；styles/app 增 profile/notification；新增 supabase/migrations 迁移柜；数据边界从 mock 改为 Supabase BaaS；§8 演进状态更新）。v2.5 同步 square 详情与 linkified-text；v2.4 按 feature 分 shell/discovery/square；v2.3 组件按访问区分目录；v2.2 样式统一归入 `styles/`；v2.1 确立「前端模拟优先」边界。争议裁决原则：简单优先。*
+*本规范 v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*

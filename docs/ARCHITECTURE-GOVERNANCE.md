@@ -1,7 +1,7 @@
 # 引力（yinli）前端治理与架构方案
 
-> 版本：v1.1 · 日期：2026-08-21 · 状态：阶段 0 验收完成，已进入 Supabase 数据层阶段
-> 上位文档：`ARCHITECTURE.md`（v2.6，已确立边界）· 承接：`docs/ARCHITECTURE-REVIEW.md`（评审报告 v3）
+> 版本：v1.1 · 日期：2026-08-21 · 状态：阶段 0 验收完成，已进入 Supabase 数据层阶段（最新评审见 `ARCHITECTURE-REVIEW-v5.md`）
+> 上位文档：`ARCHITECTURE.md`（v2.7，已确立边界）· 承接：`docs/ARCHITECTURE-REVIEW-v5.md`（评审报告 v5，2026-08-22）
 > 一句话：**前端模拟优先，后端与数据库冻结，先把界面布局做好做规范，验收通过前不启动任何后端相关开发。**
 
 ---
@@ -153,7 +153,10 @@
 | 图片存储（S） | ✅ 完成 | avatars/covers/posts 3 公开桶 + storage RLS；设置头像/个人主页封面/广场发帖配图；全站头像展示（AvatarBox 回退首字母） |
 | 架构评估 v3 | ✅ 完成 | ARCHITECTURE-REVIEW.md v3：73 文件 / 8,193 行 / 17 路由 / 4 迁移；v2 P1 五项解决 4.5/5 |
 | 文档同步（P1-2 收尾） | ✅ 完成 | ARCHITECTURE.md v2.6（目录树/数据层/演进状态）；SYSTEM-ARCHITECTURE.md；本进度表 |
-| 上线前置（安全头/写路径校验/分页缓存/测试） | 🔜 待办 | 触发条件与优先级见 ARCHITECTURE-REVIEW.md v3 §四 |
+| 批次 A（P1 修复）/ 批次 B（一致性）/ 批次 C（加固合规） | ✅ 完成 | hasUrl/加载兜底/写操作回滚；分类归一/views RPC/storage 回滚/白名单；通知清理/列级 revoke/安全头/兜底页（详见 REVIEW-v4/v5） |
+| 第三方登录 + 认证闭环 | ✅ 完成 | GitHub/Google OAuth、密码重置（/reset-password）、自助注销（service_role + storage 清理） |
+| 架构评审 v5 | ✅ 完成 | REVIEW-v5：9.0/10，问题清零，规模化前置 S1-S9 待触发 |
+| 上线前置（安全头/写路径校验/分页缓存/测试） | 🔜 待办 | 触发条件与优先级见 SYSTEM-ARCHITECTURE.md §七 + REVIEW-v5 |
 
 > 验收标准 V1（无死链）/ V3（CSS ≤ 400）/ V4（组件闭环）/ V5（文档一致）/ V6（lint+build）均已达成代码级验证；V2（布局一致）与视觉走查待确认。
 

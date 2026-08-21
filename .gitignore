@@ -42,6 +42,7 @@ next-env.d.ts
 
 .workbuddy
 .html*
-docs/
-ARCHITECTURE.md
-supabase/
+# 锚定根目录（前导 /）：排除根迁移柜/文档，避免误伤 lib/supabase/ 等任意层级同名目录
+/docs/
+/ARCHITECTURE.md
+/supabase/
