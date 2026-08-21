@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { OAUTH_PROVIDERS } from "@/lib/config";
+import type { Provider } from "@supabase/supabase-js";
 
 type AuthMode = "login" | "register";
 
@@ -18,6 +19,15 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
 
   const isLogin = mode === "login";
 
+  /* N3：OAuth 回调失败时 /login?error=auth 显示提示
+   * 微任务调度 setState：避免 effect 内同步 setState（react-hooks/set-state-in-effect）且无 hydration 冲突 */
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("error") === "auth") {
+      const timer = setTimeout(() => setError("第三方登录失败，请重试或使用邮箱登录"), 0);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   /** 回源地址白名单（防开放重定向，登录 / OAuth 共用） */
   function safeNext(): string {
     const nextParam = new URLSearchParams(window.location.search).get("next") ?? "";
@@ -26,12 +36,12 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
       : "/home";
   }
 
-  /** 第三方登录（GitHub 启用；Google 预留——OAUTH_PROVIDERS.enabled 放开即可） */
-  async function handleOAuth(provider: string) {
+  /** 第三方登录（GitHub / Google；由 OAUTH_PROVIDERS 驱动） */
+  async function handleOAuth(provider: Provider) {
     setError("");
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: provider as "github",
+      provider,
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext())}` },
     });
     if (authError) setError("第三方登录暂不可用，请稍后重试");

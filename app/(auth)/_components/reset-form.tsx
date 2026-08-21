@@ -38,12 +38,15 @@ export default function ResetForm() {
     }
     setSaving(true);
     setError("");
-    const { error: updateError } = await createClient().auth.updateUser({ password });
-    setSaving(false);
+    const supabase = createClient();
+    const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) {
+      setSaving(false);
       setError("设置失败，请重试");
       return;
     }
+    /* N1 修复：清掉 recovery session 再跳登录，否则 proxy 守卫会把登录页弹回 /home */
+    await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
   }

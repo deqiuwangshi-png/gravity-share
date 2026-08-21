@@ -223,48 +223,6 @@
   font-weight: 600;
 }
 
-/* 注销账号确认区（输入「删除」） */
-.settings-delete-confirm {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 8px;
-}
-
-.settings-delete-confirm input {
-  width: 110px;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  background: var(--surface);
-  font: inherit;
-  font-size: 13px;
-}
-
-.settings-delete-confirm input:focus {
-  outline: 0;
-  border-color: var(--border-primary);
-}
-
-.settings-delete-confirm button {
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-}
-
-.settings-delete-confirm button.save {
-  color: var(--error);
-  font-weight: 500;
-}
-
-.settings-delete-confirm button:disabled {
-  color: var(--text-disabled);
-  cursor: default;
-}
-
 /* 行内编辑：昵称 / 简介（2a 起真实接库） */
 .settings-edit {
   border-bottom: 1px solid var(--border);
