@@ -25,6 +25,7 @@
   font-size: 14px;
 }
 
+/* 账号通道切换（邮箱 / 手机号，登录即注册单一入口） */
 .auth-mode-switch {
   display: flex;
   gap: 26px;
@@ -32,19 +33,23 @@
   border-bottom: 1px solid var(--border);
 }
 
-.auth-mode-switch a {
+.auth-mode-switch button {
   position: relative;
   padding: 0 2px 13px;
+  border: 0;
+  background: transparent;
   color: var(--text-soft);
+  font: inherit;
   font-size: 14px;
+  cursor: pointer;
 }
 
-.auth-mode-switch a.active {
+.auth-mode-switch button.active {
   color: var(--foreground);
   font-weight: 700;
 }
 
-.auth-mode-switch a.active::after {
+.auth-mode-switch button.active::after {
   content: "";
   position: absolute;
   right: 0;
@@ -52,6 +57,43 @@
   left: 0;
   height: 2px;
   background: var(--primary);
+}
+
+/* 验证码输入行（手机号通道）：输入框 + 获取验证码按钮 */
+.otp-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.otp-field input {
+  flex: 1;
+  min-width: 0;
+}
+
+.otp-send {
+  flex-shrink: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-control);
+  background: var(--primary-subtle);
+  color: var(--primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.otp-send:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.otp-send:disabled {
+  color: var(--text-disabled);
+  border-color: var(--border);
+  background: var(--bg-hover);
+  cursor: default;
 }
 
 .auth-form {

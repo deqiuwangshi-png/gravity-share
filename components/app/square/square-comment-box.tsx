@@ -14,7 +14,7 @@ export function SquareCommentBox({ postId }: { postId: string }) {
   const [error, setError] = useState(false);
   const router = useRouter();
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const content = text.trim();
     if (!content || sending) return;

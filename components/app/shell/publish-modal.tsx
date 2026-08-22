@@ -53,7 +53,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   }
 
-  async function handleContentSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleContentSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = content.trim();
     if (!text) return;
@@ -81,7 +81,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     finish();
   }
 
-  async function handlePromoSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handlePromoSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = promoContent.trim();
     const url = promoUrl.trim();
@@ -112,7 +112,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     finish();
   }
 
-  async function handleTopicSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleTopicSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = topicContent.trim();
     if (!text) return;

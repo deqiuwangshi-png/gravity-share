@@ -85,7 +85,7 @@ export default function DiscoverDetailPage() {
     load();
   }, [load]);
 
-  async function submitComment(event: React.FormEvent<HTMLFormElement>) {
+  async function submitComment(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const content = commentText.trim();
     if (!content || sending) return;

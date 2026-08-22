@@ -12,7 +12,7 @@ app/          页面柜 —— 一页一个文件，文件名就是网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 查询层、类型、配置、图标、Supabase 客户端
-supabase/     迁移柜 —— 数据库唯一真相（001-011，幂等可重跑）
+supabase/     迁移柜 —— 数据库唯一真相（001-012，幂等可重跑）
 ```
 
 ```
@@ -36,8 +36,8 @@ lib/
 ├── supabase/     client.ts（浏览器）/ server.ts（cookie 会话）/ admin.ts（service_role，仅 server）
 ├── data.ts       静态配置（分类 / 公告 / 热词）
 └── types / config（含 OAUTH_PROVIDERS / SITE_INFO）/ icons / text
-supabase/migrations/   001-011（users → 内容 → 互动 → 存储 → 公开读 → 分类 → views →
-                       points 收口 → 通知清理 → 加固 → OAuth 建档，全幂等）
+supabase/migrations/   001-012（users → 内容 → 互动 → 存储 → 公开读 → 分类 → views →
+                       points 收口 → 通知清理 → 加固 → OAuth 建档 → storage RLS 修复，全幂等）
 ```
 
 > 数据：**全部在 Supabase**（9 张表 + 3 存储桶 + RLS + 列级权限 + 触发器）。页面不写死数据，读走 `lib/queries.ts`，写靠 RLS + 触发器保护，管理操作走 service_role 服务端路由。

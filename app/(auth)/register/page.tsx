@@ -1,11 +1,9 @@
-import type { Metadata } from "next";
-import AuthForm from "../_components/auth-form";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "注册 | 引力",
-  description: "加入引力，开始分享和发现互联网中的好东西。",
-};
-
+/**
+ * 统一入口（登录即注册）：/register 重定向到 /login
+ * 旧链接 / 书签兼容，不再有独立注册页
+ */
 export default function RegisterPage() {
-  return <AuthForm mode="register" />;
+  redirect("/login");
 }

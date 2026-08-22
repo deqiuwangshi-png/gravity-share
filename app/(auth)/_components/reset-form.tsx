@@ -26,7 +26,7 @@ export default function ResetForm() {
     });
   }, []);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     if (password.length < 8) {
       setError("密码至少 8 位");

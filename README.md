@@ -76,7 +76,7 @@ supabase/     迁移柜 —— 数据库唯一真相（001-011，幂等可重跑
 | 访问区 | 路由 | 说明 |
 |---|---|---|
 | 落地页 | `/` `/about` `/help` `/terms` `/privacy` | 公开 |
-| 认证 | `/login` `/register` `/forgot-password` `/reset-password` | 邮箱密码 + GitHub / Google + 密码重置 |
+| 认证 | `/login`（登录即注册：邮箱 / 手机号 OTP）`/forgot-password` `/reset-password`（`/register` → 重定向 `/login`） | 邮箱密码（保留验证）+ 手机号 OTP + GitHub / Google + 密码重置 |
 | 应用 | `/home` `/discover(/[id])` `/categories(/[slug])` `/square(/[id])` `/profile(/[id])` | 需登录（proxy.ts 守卫） |
 
 ---
@@ -94,7 +94,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=你的publishable key
 SUPABASE_SERVICE_ROLE_KEY=你的service_role key   # 仅注销账号功能需要，server-only
 ```
 
-3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-011`（建表、RLS、触发器、种子数据，幂等可重跑）；
+3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-012`（建表、RLS、触发器、种子数据，幂等可重跑）；
 4. 可选：Authentication → Providers 开启 GitHub / Google（回调地址见 `docs/THIRD-PARTY-LOGIN.md`）。
 
 ### 运行

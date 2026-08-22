@@ -25,14 +25,15 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-011，幂等可重跑）
+supabase/     迁移柜 —— 数据库唯一真相（001-012，幂等可重跑）
 ```
 
 ```
 yinli/
 ├── app/                        页面柜：只做 URL → 页面组装
 │   ├── (marketing)/            落地页 / + 法律页
-│   ├── (auth)/                 认证 /login /register /forgot-password /reset-password
+│   ├── (auth)/                 认证 /login（登录即注册：邮箱/手机号 OTP，/register → /login）
+│   │                           /forgot-password /reset-password
 │   ├── (app)/                  应用区：/home /discover(+[id]) /categories(+[slug])
 │   │                           /square(+[id]) /profile(+[id])
 │   ├── auth/callback/          第三方登录 / 密码重置统一回调（code → session）
@@ -67,7 +68,7 @@ yinli/
 │   └── text.ts                 文本工具（URL / #标签提取 / 形态识别 / 相对时间）
 ├── supabase/migrations/        数据库唯一真相（001 users → 002 内容 → 003 互动 → 004 存储 →
 │                               005 公开读 → 006 分类对齐 → 007 views RPC → 008 points 收口 →
-│                               009 通知清理 → 010 加固 → 011 OAuth 建档，全幂等）
+│                               009 通知清理 → 010 加固 → 011 OAuth 建档 → 012 storage RLS 修复，全幂等）
 ├── public/                     静态资源
 ├── docs/                       架构规范 / 评审 / 方案 / 配置文档
 └── 配置文件
