@@ -1,7 +1,7 @@
 /**
- * 个人主页帖子卡（Twitter/X 风格，client）
+ * 个人主页帖子卡（Twitter/X 风格，client）——推荐/推广内容统一展示
  * 头像 + 昵称 + 时间 → 正文（可内联编辑）→ 圆角链接预览卡 → 数据统计行（赞/评论/浏览，带图标）
- * 本人视角（isSelf）右上角水平三点菜单：删除 / 修改（内联编辑正文）/ 复制 / 分享
+ * 右上角统一三点菜单（PostMenu）：本人 删除/修改/复制/分享；他人 举报/复制/分享
  * 整卡可点 → /discover/[id]；菜单与编辑交互 stopPropagation 防误跳
  */
 "use client";
@@ -10,7 +10,10 @@ import Link from "next/link";
 import { useState } from "react";
 import type { DiscoveryDTO } from "@/lib/types";
 import { AvatarBox } from "@/components/app/common/avatar-box";
-import { CommentIcon, LikeIcon, MoreIcon, ViewIcon } from "@/components/app/common/action-icons";
+import { PostMenu } from "@/components/app/common/post-menu";
+import { useToast } from "@/components/app/common/toast";
+import { publicImageUrl } from "@/lib/storage";
+import { CommentIcon, LikeIcon, ViewIcon } from "@/components/app/common/action-icons";
 import { createClient } from "@/lib/supabase/client";
 import { DISCOVERY_UPDATED_EVENT } from "@/lib/queries";
 
@@ -28,50 +31,13 @@ export function ProfilePost({
   const linkDesc = item.description && item.description !== item.note ? item.description : undefined;
   const kindMark = item.kind === "video" ? "▶ 视频" : item.kind === "doc" ? "DOC" : "链接";
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [notice, setNotice] = useState("");
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(body);
   const [busy, setBusy] = useState(false);
+  const { show } = useToast();
 
-  function flash(message: string, ms = 1600) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), ms);
-  }
-
-  async function copyText(text: string, okMessage: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      flash(okMessage);
-    } catch {
-      flash("复制失败");
-    }
-  }
-
-  async function onShare() {
-    setMenuOpen(false);
-    const url = `${window.location.origin}/discover/${item.id}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: item.note ?? item.title ?? "", url });
-        return;
-      } catch {
-        /* 用户取消：静默 */
-      }
-    }
-    await copyText(url, "链接已复制");
-  }
-
-  async function onDelete() {
-    setMenuOpen(false);
-    if (!window.confirm("确定删除这条内容吗？删除后不可恢复。")) return;
-    setBusy(true);
-    const { error } = await createClient().from("discoveries").delete().eq("id", item.id);
-    setBusy(false);
-    if (error) {
-      flash("删除失败，请重试");
-      return;
-    }
+  /** 删除成功：通知首页内容流刷新 + 父组件重拉 */
+  function handleDeleted() {
     window.dispatchEvent(new Event(DISCOVERY_UPDATED_EVENT));
     onChanged?.();
   }
@@ -84,7 +50,7 @@ export function ProfilePost({
     const { error } = await createClient().from("discoveries").update({ note: text }).eq("id", item.id);
     setBusy(false);
     if (error) {
-      flash("保存失败，请重试");
+      show("保存失败，请重试", "danger");
       return;
     }
     setEditing(false);
@@ -105,30 +71,16 @@ export function ProfilePost({
         <AvatarBox path={item.authorAvatar} name={item.authorName ?? "推"} className="profile-post-avatar" authorId={item.authorId} />
         <b>{item.authorName ?? "引力推荐"}</b>
         <small>{item.time ?? ""}</small>
-        {isSelf && (
-          <span className="profile-post-menu">
-            <button
-              type="button"
-              className="comment-menu-btn"
-              aria-label="内容操作"
-              aria-expanded={menuOpen}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setMenuOpen(!menuOpen);
-              }}
-            ><MoreIcon /></button>
-            {menuOpen && (
-              <span className="comment-menu-pop" role="menu" onClick={(event) => event.stopPropagation()}>
-                <button type="button" role="menuitem" disabled={busy} onClick={(event) => { event.preventDefault(); event.stopPropagation(); void onDelete(); }}>删除</button>
-                <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setMenuOpen(false); setEditing(true); }}>修改</button>
-                <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setMenuOpen(false); void copyText(body, "已复制"); }}>复制</button>
-                <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void onShare(); }}>分享</button>
-              </span>
-            )}
-            {notice && <span className="comment-menu-notice" role="status">{notice}</span>}
-          </span>
-        )}
+        <PostMenu
+          targetType="discovery"
+          targetId={item.id}
+          isOwner={isSelf}
+          content={body}
+          shareUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/discover/${item.id}`}
+          imagePath={item.mediaUrl}
+          onEdit={() => setEditing(true)}
+          onDeleted={handleDeleted}
+        />
       </div>
 
       {editing ? (
@@ -144,15 +96,15 @@ export function ProfilePost({
       )}
 
       {item.commercial && (
-        <p className="promo-note profile-post-promo"><b>⚠ 推广</b> · {item.promoType ?? "推广"} · 风险自判</p>
+        <p className="promo-note profile-post-promo"><b>⚠ 推广</b> · {item.promoType ?? "推广"}</p>
       )}
 
       {item.url && (
         <span className="profile-link-preview">
           <span className="profile-link-thumb">
             {item.kind === "image" && item.mediaUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element -- mock 直链图 */
-              <img src={item.mediaUrl} alt="" />
+              /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL，seed 直链图原样 */
+              <img src={publicImageUrl("post", item.mediaUrl)} alt="" />
             ) : (
               <span className="profile-link-mark">{kindMark}</span>
             )}

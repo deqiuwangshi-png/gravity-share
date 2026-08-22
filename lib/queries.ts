@@ -129,14 +129,28 @@ function toCommentDTO(row: CommentRow): CommentDTO {
   };
 }
 
-/** 发现流（时间倒序；limit 供详情页相关区控制拉取量，避免全表拖慢首屏） */
-export async function fetchDiscoveries(supabase: SupabaseClient, limit?: number): Promise<DiscoveryDTO[]> {
-  const { data } = await supabase
+/** 发现流分页查询参数：type 按分类过滤；from/to 为 range 闭区间（每批条数 = to - from + 1） */
+export type DiscoverQuery = { type?: string; from?: number; to?: number };
+
+/**
+ * 发现流（时间倒序；支持类型过滤 + 服务端分页，供首页无限滚动懒加载）
+ * 不传 opts 时保持全量拉取（分类页等旧调用兼容）
+ */
+export async function fetchDiscoveries(supabase: SupabaseClient, opts?: DiscoverQuery): Promise<DiscoveryDTO[]> {
+  let query = supabase
     .from(KIND)
     .select("*, users!discoveries_author_id_fkey(id, name, avatar_url)")
-    .order("created_at", { ascending: false })
-    .limit(limit ?? 100);
+    .order("created_at", { ascending: false });
+  if (opts?.type) query = query.eq("type", opts.type);
+  if (opts?.from !== undefined && opts?.to !== undefined) query = query.range(opts.from, opts.to);
+  const { data } = await query;
   return (data as DiscoveryRow[] | null)?.map(toDiscoveryDTO) ?? [];
+}
+
+/** 发现流类型列表（筛选 chips 数据源；只取 type 列，轻量） */
+export async function fetchDiscoveryTypes(supabase: SupabaseClient): Promise<string[]> {
+  const { data } = await supabase.from(KIND).select("type");
+  return [...new Set((data as Array<{ type: string }> | null)?.map((row) => row.type) ?? [])];
 }
 
 /** 发现详情（按 id） */
@@ -149,7 +163,7 @@ export async function fetchDiscoveryById(supabase: SupabaseClient, id: string): 
   return data ? toDiscoveryDTO(data as DiscoveryRow) : null;
 }
 
-/** /home 推荐位（reason 非空，最多 6 条） */
+/** 推荐位（reason 非空，最多 6 条）——首页内容流化后已不再使用，保留供后续"编辑精选"复用 */
 export async function fetchRecommended(supabase: SupabaseClient): Promise<DiscoveryDTO[]> {
   const { data } = await supabase
     .from(KIND)
@@ -190,6 +204,16 @@ export async function fetchSquarePostById(supabase: SupabaseClient, id: string):
   return data ? toSquarePostDTO(data as SquarePostRow) : null;
 }
 
+/** 某用户发布的广场帖（个人主页「广场」tab，时间倒序） */
+export async function fetchSquarePostsByAuthor(supabase: SupabaseClient, userId: string): Promise<SquarePostDTO[]> {
+  const { data } = await supabase
+    .from(SQUARE)
+    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url)")
+    .eq("author_id", userId)
+    .order("created_at", { ascending: false });
+  return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
+}
+
 /** 评论列表（discovery / square 归一，时间正序） */
 export async function fetchComments(
   supabase: SupabaseClient,
@@ -202,6 +226,16 @@ export async function fetchComments(
     .eq("target_type", targetType)
     .eq("target_id", targetId)
     .order("created_at", { ascending: true });
+  return (data as CommentRow[] | null)?.map(toCommentDTO) ?? [];
+}
+
+/** 某用户发表过的评论（个人主页「评论」tab，时间倒序） */
+export async function fetchCommentsByAuthor(supabase: SupabaseClient, userId: string): Promise<CommentDTO[]> {
+  const { data } = await supabase
+    .from(COMMENTS)
+    .select("*, users!comments_author_id_fkey(id, name, avatar_url)")
+    .eq("author_id", userId)
+    .order("created_at", { ascending: false });
   return (data as CommentRow[] | null)?.map(toCommentDTO) ?? [];
 }
 

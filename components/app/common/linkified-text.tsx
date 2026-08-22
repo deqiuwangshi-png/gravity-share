@@ -1,8 +1,10 @@
 /**
- * 把文本中的 URL 渲染为可点击外链（广场帖子详情用）
- * 安全：仅 URL 片段转为 <a>，其余文本由 React 自动转义
+ * 把文本中的 URL 渲染为可点击外链（广场帖子详情 / 首页卡片 / 详情正文共用）
+ * 安全：仅 URL 片段转为 <a>，其余文本由 React 自动转义；
+ * 2026-08-23：外链统一走 /go 安全跳转页（风险分级：白名单直接跳 / 未知确认页 / 黑名单禁止）
  */
 import { URL_PATTERN } from "@/lib/text";
+import { safeHref } from "@/lib/links";
 
 export function LinkifiedText({ text }: { text: string }) {
   const parts = text.split(URL_PATTERN);
@@ -14,7 +16,7 @@ export function LinkifiedText({ text }: { text: string }) {
           <a
             key={index}
             className="linkified"
-            href={part}
+            href={safeHref(part) ?? part}
             target="_blank"
             rel="noopener noreferrer"
           >{part}</a>

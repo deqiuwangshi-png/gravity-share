@@ -1,13 +1,15 @@
 /**
  * 个人主页视图（client）——资料由 server 端读 Supabase 传入
- * 封面/头像 → 昵称/简介/数据 → 胶囊导航 → 帖子流（2b 起按 author_id 读库）
- * 2c：支持他人主页（isSelf=false 显示关注按钮 + 粉丝数），收藏 tab 读库
+ * 封面/头像 → 昵称/简介/数据 → 胶囊导航（推荐 / 评论）→ 内容流
+ * 2026-08-23 重构：Tab 统一为「推荐」（我发布的推荐+推广）与「评论」（我发表过的评论）
+ * 2c：支持他人主页（isSelf=false 显示关注按钮 + 粉丝数）
  */
 "use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ProfilePost } from "@/components/app/discovery/profile-post";
+import { ProfileComment } from "@/components/app/shell/profile-comment";
 import { ProfileTabs, type ProfileTab } from "@/components/app/shell/profile-tabs";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { createClient } from "@/lib/supabase/client";
@@ -15,12 +17,12 @@ import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/s
 import { SITE_INFO } from "@/lib/config";
 import {
   DISCOVERY_UPDATED_EVENT,
+  fetchCommentsByAuthor,
   fetchDiscoveriesByAuthor,
-  fetchFavorites,
   isFollowing,
   toggleFollow,
 } from "@/lib/queries";
-import type { DiscoveryDTO } from "@/lib/types";
+import type { CommentDTO, DiscoveryDTO } from "@/lib/types";
 
 export default function ProfileView({
   name,
@@ -41,9 +43,9 @@ export default function ProfileView({
   avatarUrl?: string;
   coverUrl?: string;
 }) {
-  const [tab, setTab] = useState<ProfileTab>("发现");
+  const [tab, setTab] = useState<ProfileTab>("推荐");
   const [myPosts, setMyPosts] = useState<DiscoveryDTO[]>([]);
-  const [favorites, setFavorites] = useState<DiscoveryDTO[]>([]);
+  const [myComments, setMyComments] = useState<CommentDTO[]>([]);
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
   const [cover, setCover] = useState(coverUrl);
@@ -52,8 +54,8 @@ export default function ProfileView({
 
   const load = useCallback(() => {
     void fetchDiscoveriesByAuthor(createClient(), userId).then(setMyPosts).catch(() => { /* 失败保持空态，事件触发再试 */ });
-    if (isSelf) void fetchFavorites(createClient()).then(setFavorites).catch(() => {});
-  }, [userId, isSelf]);
+    void fetchCommentsByAuthor(createClient(), userId).then(setMyComments).catch(() => {});
+  }, [userId]);
 
   useEffect(() => {
     load();
@@ -108,7 +110,7 @@ export default function ProfileView({
     }
   }
 
-  const list = tab === "发现" ? myPosts : tab === "推广" ? myPosts.filter((item) => item.commercial) : [];
+  /* 2026-08-23：Tab 统一为 推荐/评论，无多数据源筛选逻辑 */
 
   return (
     <div className="profile-layout">
@@ -168,19 +170,13 @@ export default function ProfileView({
         <ProfileTabs active={tab} onChange={setTab} />
 
         <div className="profile-tab-panel">
-          {tab === "发现" && (list.length > 0
-            ? list.map((item) => <ProfilePost item={item} key={item.id} isSelf={isSelf} onChanged={load} />)
+          {tab === "推荐" && (myPosts.length > 0
+            ? myPosts.map((item) => <ProfilePost item={item} key={item.id} isSelf={isSelf} onChanged={load} />)
             : <p className="profile-empty">还没有发布内容，点右上角「+ 发布」分享好东西。</p>)}
 
-          {tab === "推广" && (list.length > 0
-            ? list.map((item) => <ProfilePost item={item} key={item.id} isSelf={isSelf} onChanged={load} />)
-            : <p className="profile-empty">还没有推广内容，走「推广外链」入口发布的会显示在这里。</p>)}
-
-          {tab === "收藏" && (isSelf
-            ? (favorites.length > 0
-              ? favorites.map((item) => <ProfilePost item={item} key={item.id} />)
-              : <p className="profile-empty">还没有收藏，看到好东西点卡片上的 ♡ 收藏。</p>)
-            : <p className="profile-empty">TA 的收藏仅自己可见。</p>)}
+          {tab === "评论" && (myComments.length > 0
+            ? myComments.map((comment) => <ProfileComment comment={comment} key={comment.id} onChanged={load} />)
+            : <p className="profile-empty">还没有发表过评论。</p>)}
         </div>
       </div>
 

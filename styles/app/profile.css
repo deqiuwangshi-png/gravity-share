@@ -218,15 +218,15 @@
 }
 
 .profile-post-head {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
 }
 
-/* 帖子卡右上角三点菜单（本人可见）：删除 / 修改 / 复制 / 分享 */
-.profile-post-menu {
-  position: relative;
+/* 帖子卡右上角统一三点菜单（PostMenu）：推到头部右端 */
+.profile-post-head .comment-menu {
   margin-left: auto;
 }
 
@@ -404,11 +404,138 @@
   padding-top: 4px;
 }
 
+/* 个人主页「广场」tab：广场帖卡（2026-08-23，与发现帖卡同构） */
+.square-profile-post {
+  display: block;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background 180ms ease;
+}
+
+.square-profile-post:hover {
+  background: var(--bg-hover);
+}
+
+.square-profile-post-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.square-profile-post-head .comment-menu {
+  margin-left: auto;
+}
+
+.square-profile-post-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.square-profile-post-head b {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.square-profile-post-head small {
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.square-profile-post-body {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.square-profile-post-image {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  margin: 0 0 12px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--bg-hover);
+}
+
+.square-profile-post-stats {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.square-profile-post-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .profile-empty {
   padding: 40px 18px;
   color: var(--text-soft);
   font-size: 13px;
   text-align: center;
+}
+
+/* 个人主页「评论」tab：评论卡（2026-08-23，仅展示评论内容） */
+.profile-comment {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.profile-comment-head .comment-menu {
+  margin-left: auto;
+}
+
+.profile-comment-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.profile-comment-head b {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.profile-comment-head small {
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.profile-comment-content {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  word-break: break-word;
 }
 
 /* ---------- 右栏：站点信息占位 ---------- */

@@ -1,6 +1,6 @@
 /**
- * 区块容器：标题 + 描述 + 右侧动作链接
- * 使用于 /home 等业务页面的内容分区
+ * 区块容器：标题 + 描述 + 可选右侧动作链接
+ * 使用于 /home 等业务页面的内容分区；action 不传则不渲染
  */
 export function AppSection({
   title,
@@ -10,7 +10,7 @@ export function AppSection({
 }: {
   title: string;
   description: string;
-  action: string;
+  action?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -20,7 +20,7 @@ export function AppSection({
           <h2>{title}</h2>
           <p>{description}</p>
         </div>
-        <span className="section-action" data-placeholder>{action}</span>
+        {action && <span className="section-action" data-placeholder>{action}</span>}
       </div>
       {children}
     </section>

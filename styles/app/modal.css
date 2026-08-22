@@ -351,7 +351,23 @@
   font-size: 12px;
 }
 
-/* 话题配图（S-1 起，发布入口 C 可选） */
+/* 推广表单改版（2026-08-22）：必填/选填标记（副文案与字数计数已按 UI 精简移除） */
+.publish-required,
+.publish-optional {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.publish-required {
+  color: var(--error);
+}
+
+.publish-optional {
+  color: var(--text-soft);
+}
+
+/* 话题配图（S-1 起，发布入口 C 可选；入口 B 推广图片复用） */
 .publish-topic-image {
   display: flex;
   align-items: center;

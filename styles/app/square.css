@@ -213,6 +213,120 @@
   margin-bottom: 14px;
 }
 
+/* 帖子三点菜单：推到发帖头右端（2026-08-23 新增） */
+.square-post-head .comment-menu {
+  margin-left: auto;
+}
+
+/* ---------- 广场帖内联编辑（详情页 / 个人主页共用，2026-08-23） ---------- */
+
+.square-post-edit {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.square-post-edit textarea,
+.square-post-edit input[type="url"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.square-post-edit textarea {
+  resize: vertical;
+  min-height: 88px;
+}
+
+.square-post-edit-image {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.square-post-edit-image-preview {
+  width: 140px;
+  max-height: 88px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--bg-hover);
+}
+
+.square-post-edit-image-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.square-post-edit-image-btn:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.square-post-edit-image-btn.remove:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.square-post-edit-error {
+  margin: 0;
+  color: var(--error);
+  font-size: 12px;
+}
+
+.square-post-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.square-post-edit-actions button {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.square-post-edit-actions button:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.square-post-edit-actions button[type="submit"] {
+  border: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+.square-post-edit-actions button[type="submit"]:hover {
+  background: var(--primary-dark);
+  color: var(--on-primary);
+}
+
+.square-post-edit-actions button:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
 .square-post-meta strong,
 .square-post-meta small {
   display: block;

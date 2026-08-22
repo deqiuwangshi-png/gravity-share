@@ -59,6 +59,73 @@
   font-size: 12px;
 }
 
+/* 发帖头统一三点菜单（PostMenu）：推到右端（2026-08-23） */
+.detail-user .comment-menu {
+  margin-left: auto;
+}
+
+/* 正文内联编辑（PostMenu「修改」，2026-08-23，仅改 note） */
+.detail-post-edit {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.detail-post-edit textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  resize: vertical;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.7;
+  box-sizing: border-box;
+}
+
+.detail-post-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.detail-post-edit-actions button {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.detail-post-edit-actions button:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.detail-post-edit-actions button[type="submit"] {
+  border: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+.detail-post-edit-actions button[type="submit"]:hover {
+  background: var(--primary-dark);
+  color: var(--on-primary);
+}
+
+.detail-post-edit-actions button:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
 /* ② 正文：纯文本 16px/1.7，白底黑字，URL 自动链接 */
 .detail-body-text {
   margin: 0 0 16px;
@@ -67,6 +134,34 @@
   line-height: 1.7;
   word-break: break-word;
   white-space: pre-wrap;
+}
+
+/* 推广内容文章结构（2026-08-22 纠正）：图片第一 —— 上传图展示给用户了解推广对象，
+ * 不引用为外链缩略图、不可点跳转；失败时隐藏不占位 */
+.detail-promo-image {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  margin: 0 0 16px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--bg-hover);
+}
+
+/* 推广内容文章结构：网址第三 —— URL 原样展示（什么网址就是什么网址），可点击新窗口打开 */
+.detail-promo-url {
+  margin: 0 0 16px;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.detail-promo-url a {
+  color: var(--primary);
+  transition: color 180ms ease;
+}
+
+.detail-promo-url a:hover {
+  color: var(--primary-dark);
 }
 
 /* ③ 推广警示（合规：佣金 + 风险提示，commercial 必展示） */

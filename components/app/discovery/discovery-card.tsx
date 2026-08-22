@@ -63,7 +63,7 @@ export function DiscoveryCard({
       </div>
       <p className="card-body">{body}</p>
       {item.commercial && (
-        <p className="promo-note"><b>⚠ 推广</b> · {item.promoType ?? "推广"} · 风险自判</p>
+        <p className="promo-note"><b>⚠ 推广</b> · {item.promoType ?? "推广"}</p>
       )}
       {reason && <p className="recommend-reason">因为{reason}</p>}
     </Link>

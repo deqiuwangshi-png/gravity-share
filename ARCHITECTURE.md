@@ -34,7 +34,8 @@ yinli/
 │   ├── (marketing)/            落地页 / + 法律页
 │   ├── (auth)/                 认证 /login（登录即注册：邮箱/手机号 OTP，/register → /login）
 │   │                           /forgot-password /reset-password
-│   ├── (app)/                  应用区：/home /discover(+[id]) /categories(+[slug])
+│   ├── (app)/                  应用区：/home（发现流已并入首页，2026-08-22）
+│   │                           /discover/[id]（详情） /categories(+[slug])
 │   │                           /square(+[id]) /profile(+[id])
 │   ├── auth/callback/          第三方登录 / 密码重置统一回调（code → session）
 │   ├── api/account/delete/     自助注销（service_role，server-only）
@@ -54,7 +55,7 @@ yinli/
 │       ├── shell/              应用壳：app-shell / app-aside / app-section / list-column /
 │       │                       settings-panel / user-menu / publish-modal / notification-drawer /
 │       │                       profile-view / profile-tabs
-│       ├── discovery/          发现流：discovery-card / discover-filter /
+│       ├── discovery/          发现流（首页内容区）：discovery-card / discover-filter（无限滚动）/
 │       │                       announcement-carousel / profile-post
 │       └── square/             广场：square-feed / square-actions / square-comment-box
 ├── lib/                        数据柜：纯 TS，禁止 import 组件
@@ -68,7 +69,8 @@ yinli/
 │   └── text.ts                 文本工具（URL / #标签提取 / 形态识别 / 相对时间）
 ├── supabase/migrations/        数据库唯一真相（001 users → 002 内容 → 003 互动 → 004 存储 →
 │                               005 公开读 → 006 分类对齐 → 007 views RPC → 008 points 收口 →
-│                               009 通知清理 → 010 加固 → 011 OAuth 建档 → 012 storage RLS 修复，全幂等）
+│                               009 通知清理 → 010 加固 → 011 OAuth 建档 → 012 storage RLS 修复 →
+│                               013 views 防刷 + 评论计数回落，全幂等）
 ├── public/                     静态资源
 ├── docs/                       架构规范 / 评审 / 方案 / 配置文档
 └── 配置文件

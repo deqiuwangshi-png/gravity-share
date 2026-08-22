@@ -171,20 +171,21 @@
   cursor: default;
 }
 
-/* 操作反馈浮层（已复制 / 已举报 / 删除失败） */
-.comment-menu-notice {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 31;
-  max-width: 200px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--foreground);
-  color: var(--surface);
+/* 删除内联确认（菜单原位，2026-08-23；无弹窗二次确认，结果走全局 toast） */
+.comment-menu-confirm {
+  padding: 8px 12px 2px;
+  color: var(--text-muted);
   font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
+}
+
+.comment-menu-pop button.comment-menu-danger {
+  color: var(--error);
+  font-weight: 600;
+}
+
+.comment-menu-pop button.comment-menu-danger:hover {
+  background: var(--error);
+  color: #ffffff;
 }
 
 /* ---------- 详情页骨架屏（替代纯文字「加载中…」，提升加载观感） ---------- */

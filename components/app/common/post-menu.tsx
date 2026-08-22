@@ -1,27 +1,44 @@
 /**
- * 评论操作菜单（水平三点，client）
- * - 自己的评论：删除（菜单内联确认，无弹窗二次确认）/ 复制 / 分享
- * - 他人的评论：举报 / 复制 / 分享
+ * 内容三点菜单（统一复用，2026-08-23）——覆盖【+发布】三入口：
+ * 推荐好东西 / 商业推广 → discoveries；话题帖子 → square_posts
+ * - 本人：删除（菜单内联确认，无弹窗二次确认）/ 修改 / 复制 / 分享
+ * - 他人：举报（MVP 反馈）/ 复制 / 分享
  * 操作反馈统一走全局 toast（底部居中，淡入淡出自动消失）
- * 复制：剪贴板写评论内容；分享：优先 Web Share API，降级复制当前页链接
- * 删除成功后：优先调用 onDeleted（调用方本地刷列表）；否则 router.refresh()（服务端页面重拉）
+ * 删除：按 targetType 删对应表（RLS 作者校验），成功后可联动清理配图（imagePath），
+ * 再回调 onDeleted（页面跳转 / 列表刷新）；否则 router.refresh()
  */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { removeImage } from "@/lib/storage";
 import { MoreIcon } from "./action-icons";
 import { useToast } from "./toast";
-import type { CommentDTO } from "@/lib/types";
 
-export function CommentMenu({
-  comment,
+export function PostMenu({
+  targetType,
+  targetId,
   isOwner,
+  content,
+  shareUrl,
+  imagePath,
+  onEdit,
   onDeleted,
 }: {
-  comment: CommentDTO;
+  /** 内容归属：discoveries（推荐/推广）或 square_posts（话题） */
+  targetType: "discovery" | "square";
+  targetId: string;
   isOwner: boolean;
+  /** 复制用的正文文本 */
+  content: string;
+  /** 分享用的完整链接 */
+  shareUrl: string;
+  /** 关联配图存储 path（post 桶），删除时联动清理 */
+  imagePath?: string;
+  /** 点「修改」触发（仅本人分支可见） */
+  onEdit?: () => void;
+  /** 删除成功后回调（跳转 / 刷新） */
   onDeleted?: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -64,7 +81,8 @@ export function CommentMenu({
   async function onDelete() {
     if (busy) return;
     setBusy(true);
-    const { error } = await createClient().from("comments").delete().eq("id", comment.id);
+    const table = targetType === "discovery" ? "discoveries" : "square_posts";
+    const { error } = await createClient().from(table).delete().eq("id", targetId);
     setBusy(false);
     setOpen(false);
     setConfirming(false);
@@ -72,6 +90,8 @@ export function CommentMenu({
       show("删除失败，请重试", "danger");
       return;
     }
+    /* 内容已删：配图联动清理（删图失败静默，避免孤儿文件） */
+    if (imagePath) void removeImage("post", imagePath);
     show("已删除");
     if (onDeleted) onDeleted();
     else router.refresh();
@@ -85,7 +105,7 @@ export function CommentMenu({
   async function copy() {
     setOpen(false);
     try {
-      await navigator.clipboard.writeText(comment.content);
+      await navigator.clipboard.writeText(content);
       show("已复制");
     } catch {
       show("复制失败", "danger");
@@ -94,17 +114,16 @@ export function CommentMenu({
 
   async function onShare() {
     setOpen(false);
-    const url = window.location.href;
     if (navigator.share) {
       try {
-        await navigator.share({ title: document.title, url });
+        await navigator.share({ title: content.slice(0, 30), url: shareUrl });
         return;
       } catch {
         /* 用户取消分享：静默 */
       }
     }
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       show("链接已复制");
     } catch {
       show("复制失败", "danger");
@@ -116,7 +135,7 @@ export function CommentMenu({
       <button
         type="button"
         className="comment-menu-btn"
-        aria-label="评论操作"
+        aria-label="内容操作"
         aria-expanded={open}
         onClick={(event) => {
           event.preventDefault();
@@ -131,7 +150,7 @@ export function CommentMenu({
         <div className="comment-menu-pop" role="menu">
           {confirming ? (
             <>
-              <div className="comment-menu-confirm">确定删除这条评论？</div>
+              <div className="comment-menu-confirm">确定删除这条内容？</div>
               <button
                 type="button"
                 role="menuitem"
@@ -144,9 +163,14 @@ export function CommentMenu({
               </button>
             </>
           ) : isOwner ? (
-            <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setConfirming(true); }}>
-              删除
-            </button>
+            <>
+              <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setConfirming(true); }}>
+                删除
+              </button>
+              <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpen(false); onEdit?.(); }}>
+                修改
+              </button>
+            </>
           ) : (
             <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onReport(); }}>
               举报

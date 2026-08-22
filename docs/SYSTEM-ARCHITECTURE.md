@@ -54,7 +54,7 @@ supabase/migrations/   001-012（users → 内容 → 互动 → 存储 → 公�
 |---|---|---|
 | 官网落地页 | `/` 及法律页 | 公开 |
 | 认证 | `/login` `/register` `/forgot-password` `/reset-password` | 已登录自动跳 `/home` |
-| 应用主页 | `/home` `/discover*` `/categories*` `/square*` `/profile*` | **需登录**（proxy.ts 守卫，未登录 → `/login?next=...`） |
+| 应用主页 | `/home` `/discover/[id]` `/categories*` `/square*` `/profile*` | **需登录**（proxy.ts 守卫，未登录 → `/login?next=...`） |
 
 登录：邮箱密码（邮箱验证）+ GitHub / Google（OAuth PKCE，统一 `/auth/callback` 回调）+ 忘记密码（recovery session → `/reset-password`）+ 自助注销（`/api/account/delete`）；会话：cookie（@supabase/ssr）。
 
@@ -62,8 +62,8 @@ supabase/migrations/   001-012（users → 内容 → 互动 → 存储 → 公�
 
 | 模块（路由） | 说明 |
 |---|---|
-| 首页 `/home` | 公告走马灯 + 为你推荐（读库） |
-| 发现 `/discover` | 3 列社交卡 + 类型筛选；详情 `/discover/[id]` 社交动态页（正文/外链/点赞/评论落库） |
+| 首页 `/home` | 公告走马灯 + 发现流（类型筛选 + 无限滚动懒加载，12 条/批）；原推荐位下线 |
+| 发现详情 `/discover/[id]` | 社交动态页（正文/外链/点赞/评论落库、评论操作菜单）；发现列表页已并入首页（2026-08-22） |
 | 分类 `/categories` | 入口页动态计数 + 分类详情 `/categories/[slug]` |
 | 广场 `/square` | 领域胶囊 + 话题流；详情 `/square/[id]`（点赞/评论/配图） |
 | 个人 `/profile` | 我的主页（资料/发布/收藏）+ 他人主页 `/profile/[id]`（关注按钮/粉丝数） |

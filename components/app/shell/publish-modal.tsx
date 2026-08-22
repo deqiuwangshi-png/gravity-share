@@ -1,16 +1,17 @@
 /**
  * 发布弹窗（client，三入口定稿，2b 起写库）
  * Step 1 选择入口：
- *   A 推荐好东西 —— 沉浸式随手写 → insert discoveries（发现流）
- *   B 推广外链 —— 随手写 + 推广类型 + 佣金条件（带分佣，官方标识）→ insert discoveries
+ *   A 推荐好东西 —— 沉浸式随手写 → insert discoveries（首页内容流）
+ *   B 推广外链 —— 推广图片（必填）+ 推广内容（≥100 字）+ 推广网址 + 推广类型
+ *                + 商业说明（选填，佣金等利益关系）→ insert discoveries（commercial，官方标识）
  *   C 话题帖子 —— 沉浸式 + 可选链接 + #标签可选 → insert square_posts
- * 提交成功后 dispatch 数据变更事件，发现流 / 广场重新拉取（刷新不丢）
+ * 提交成功后 dispatch 数据变更事件，内容流 / 广场重新拉取（刷新不丢）
  */
 "use client";
 
 import { useEffect, useState } from "react";
 import { ICONS } from "@/lib/icons";
-import { PROMO_TYPES, PUBLISH_TYPES } from "@/lib/config";
+import { PROMO_TARGETS, PUBLISH_TYPES } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { DISCOVERY_UPDATED_EVENT, SQUARE_UPDATED_EVENT } from "@/lib/queries";
 import { extractTags, extractUrl, judgeKind } from "@/lib/text";
@@ -18,21 +19,27 @@ import { removeImage, uploadImage, validateImage } from "@/lib/storage";
 
 type Step = "choose" | "content" | "promo" | "topic";
 
+/** 推广内容最少字数（2026-08-22 定稿：100 字以上） */
+const PROMO_MIN_LENGTH = 100;
+
 export default function PublishModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<Step>("choose");
   const [submitted, setSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState(false);
+  /* 提交错误文案（空 = 无错误；2026-08-22 从 boolean 改 string，支持字段级具体提示） */
+  const [submitError, setSubmitError] = useState("");
 
   /* 入口 A：沉浸式正文 */
   const [content, setContent] = useState("");
   /* 入口 A：分类（BUG-5 归一，默认「内容」不强制，落库为 categories.name） */
   const [contentType, setContentType] = useState<string>("内容");
 
-  /* 入口 B：推广字段 */
+  /* 入口 B：推广字段（2026-08-22 改版：图片必填 / 内容 ≥100 字 / 网址必填 / 类型必填 / 商业说明选填） */
   const [promoContent, setPromoContent] = useState("");
   const [promoUrl, setPromoUrl] = useState("");
-  const [promoType, setPromoType] = useState<string>(PROMO_TYPES[0]);
-  const [commission, setCommission] = useState("");
+  const [promoType, setPromoType] = useState<string>(PROMO_TARGETS[0]);
+  const [promoBiz, setPromoBiz] = useState(""); /* 商业说明（选填，替代原「佣金条件」） */
+  const [promoImage, setPromoImage] = useState<File | null>(null);
+  const [promoImagePreview, setPromoImagePreview] = useState("");
 
   /* 入口 C：话题字段 */
   const [topicContent, setTopicContent] = useState("");
@@ -74,7 +81,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       kind: judgeKind(url),
     });
     if (error) {
-      setSubmitError(true);
+      setSubmitError("发布失败，请重试");
       return;
     }
     window.dispatchEvent(new Event(DISCOVERY_UPDATED_EVENT));
@@ -85,14 +92,36 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     event.preventDefault();
     const text = promoContent.trim();
     const url = promoUrl.trim();
-    if (!text || !url || !commission.trim()) return;
+    /* 2026-08-22 改版校验：网址必填 / 内容 ≥100 字 / 图片必填 / 类型必填（默认第一项）；商业说明选填 */
+    if (!url) {
+      setSubmitError("请填写推广网址");
+      return;
+    }
+    if (text.length < PROMO_MIN_LENGTH) {
+      setSubmitError(`推广内容不少于 ${PROMO_MIN_LENGTH} 字（当前 ${text.length} 字）`);
+      return;
+    }
+    if (!promoImage) {
+      setSubmitError("请上传推广图片");
+      return;
+    }
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
+    setSubmitError("");
+    const id = newId("u");
+    /* 先传图（posts 桶），失败不落库 */
+    let imageUrl: string | undefined;
+    try {
+      imageUrl = await uploadImage("post", promoImage, user.id, id);
+    } catch {
+      setSubmitError("图片上传失败，请重试");
+      return;
+    }
     const { error } = await supabase.from("discoveries").insert({
-      id: newId("u"),
+      id,
       author_id: user.id,
       type: "商业推广", /* 2b 修正：原 mock 写「推广」，与分类事实源收不拢 */
       note: text,
@@ -101,15 +130,33 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       url,
       commercial: true,
       promo_type: promoType,
-      commission: commission.trim(),
+      commission: promoBiz.trim() || null, /* 商业说明选填，空则存 null */
+      media_url: imageUrl, /* 推广图片：详情页外链预览卡展示 */
       kind: judgeKind(url),
     });
     if (error) {
-      setSubmitError(true);
+      /* BUG-14：insert 失败回滚已上传图片，避免孤儿文件 */
+      if (imageUrl) void removeImage("post", imageUrl);
+      setSubmitError("发布失败，请重试");
       return;
     }
     window.dispatchEvent(new Event(DISCOVERY_UPDATED_EVENT));
     finish();
+  }
+
+  /** 推广图片选择：前端校验 + 本地预览（必填） */
+  function onPromoImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const invalid = validateImage(file);
+    if (invalid) {
+      setSubmitError(invalid);
+      return;
+    }
+    setSubmitError("");
+    setPromoImage(file);
+    setPromoImagePreview(URL.createObjectURL(file));
   }
 
   async function handleTopicSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
@@ -121,14 +168,14 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
-    setSubmitError(false);
+    setSubmitError("");
     const id = newId("s");
     let imageUrl: string | undefined;
     if (topicImage) {
       try {
         imageUrl = await uploadImage("post", topicImage, user.id, id);
       } catch {
-        setSubmitError(true);
+        setSubmitError("图片上传失败，请重试");
         return;
       }
     }
@@ -143,7 +190,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     if (error) {
       /* BUG-14：insert 失败回滚已上传的配图，避免孤儿文件 */
       if (imageUrl) void removeImage("post", imageUrl);
-      setSubmitError(true);
+      setSubmitError("发布失败，请重试");
       return;
     }
     window.dispatchEvent(new Event(SQUARE_UPDATED_EVENT));
@@ -157,10 +204,10 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     if (!file) return;
     const invalid = validateImage(file);
     if (invalid) {
-      setSubmitError(true);
+      setSubmitError(invalid);
       return;
     }
-    setSubmitError(false);
+    setSubmitError("");
     setTopicImage(file);
     setTopicImagePreview(URL.createObjectURL(file));
   }
@@ -197,7 +244,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
               <span className="publish-entry-text">
                 <strong>推荐好东西</strong>
                 <small>随手写，三秒发布</small>
-                <em>发布到发现流 · 无门槛</em>
+                <em>发布到首页内容流 · 无门槛</em>
               </span>
               <span className="publish-entry-arrow">→</span>
             </button>
@@ -243,27 +290,61 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
                 ))}
               </div>
             </div>
-            {submitError && <p className="publish-error">发布失败，请重试</p>}
+            {submitError && <p className="publish-error" role="alert">{submitError}</p>}
             <button className="publish-immersive-submit" type="submit">发布</button>
           </form>
         ) : step === "promo" ? (
           <form className="publish-form" onSubmit={handlePromoSubmit}>
             <button className="publish-back" type="button" onClick={() => setStep("choose")}>← 返回</button>
 
-            <label className="publish-field">
-              <span>推广文案</span>
-              <textarea rows={3} value={promoContent} onChange={(event) => setPromoContent(event.target.value)} placeholder="说几句推广语…" required />
-            </label>
-
-            <label className="publish-field">
-              <span>推广链接 *</span>
-              <input type="url" value={promoUrl} onChange={(event) => setPromoUrl(event.target.value)} placeholder="https://…" required />
-            </label>
-
+            {/* 推广图片（必填）：上传真实反映推广内容的图片 */}
             <div className="publish-field">
-              <span>推广类型</span>
+              <span>推广图片 <i className="publish-required">必填</i></span>
+              <div className="publish-topic-image">
+                {promoImagePreview && (
+                  /* eslint-disable-next-line @next/next/no-img-element -- 本地预览 */
+                  <img className="publish-topic-image-preview" src={promoImagePreview} alt="推广图片预览" />
+                )}
+                <input
+                  id="promo-image"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  hidden
+                  onChange={onPromoImageChange}
+                />
+                <label className="publish-topic-image-btn" htmlFor="promo-image" role="button">
+                  {promoImagePreview ? "更换图片" : "上传图片"}
+                </label>
+                {promoImagePreview && (
+                  <button
+                    type="button"
+                    className="publish-topic-image-btn remove"
+                    onClick={() => {
+                      setPromoImage(null);
+                      setPromoImagePreview("");
+                    }}
+                  >移除</button>
+                )}
+              </div>
+            </div>
+
+            {/* 推广内容（必填，100 字以上；副文案作占位符，字数不足提交时提示） */}
+            <label className="publish-field">
+              <span>推广内容 <i className="publish-required">必填</i> · 不少于 {PROMO_MIN_LENGTH} 字</span>
+              <textarea rows={5} value={promoContent} onChange={(event) => setPromoContent(event.target.value)} placeholder="介绍你希望用户了解的产品、服务、网站或项目。请确保内容真实、准确，不得进行虚假或误导性描述。" aria-label="推广内容" />
+            </label>
+
+            {/* 推广网址（必填） */}
+            <label className="publish-field">
+              <span>推广网址 <i className="publish-required">必填</i></span>
+              <input type="url" value={promoUrl} onChange={(event) => setPromoUrl(event.target.value)} placeholder="用户点击后访问的实际网址，https://…" aria-label="推广网址" />
+            </label>
+
+            {/* 推广类型（必填，默认第一项） */}
+            <div className="publish-field">
+              <span>推广类型 <i className="publish-required">必填</i></span>
               <div className="publish-chips">
-                {PROMO_TYPES.map((name) => (
+                {PROMO_TARGETS.map((name) => (
                   <button
                     type="button"
                     key={name}
@@ -274,13 +355,14 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
+            {/* 商业说明（选填） */}
             <label className="publish-field">
-              <span>佣金条件 *</span>
-              <input type="text" value={commission} onChange={(event) => setCommission(event.target.value)} placeholder="如：分享得 30% 分佣" required />
+              <span>商业说明 <i className="publish-optional">选填</i></span>
+              <input type="text" value={promoBiz} onChange={(event) => setPromoBiz(event.target.value)} placeholder="如：存在佣金、推广收益或其他商业利益关系" aria-label="商业说明" />
             </label>
 
-            <p className="publish-warning">走正规流程发布推广，平台将加官方标识（转化率更高）；交易风险请自行判断。</p>
-            {submitError && <p className="publish-error">发布失败，请重试</p>}
+            <p className="publish-warning">通过平台审核的推广内容将获得官方标识，帮助用户识别经过平台审核的公开信息。</p>
+            {submitError && <p className="publish-error" role="alert">{submitError}</p>}
 
             <button className="publish-submit" type="submit">发布推广</button>
           </form>
@@ -328,7 +410,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
                 >移除</button>
               )}
             </div>
-            {submitError && <p className="publish-error">发布失败，请重试</p>}
+            {submitError && <p className="publish-error" role="alert">{submitError}</p>}
             <button className="publish-immersive-submit" type="submit">发布</button>
           </form>
         )}

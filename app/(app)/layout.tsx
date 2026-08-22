@@ -12,10 +12,16 @@ import "@/styles/app/settings-delete.css";
 import "@/styles/app/feed.css";
 import "@/styles/app/square.css";
 import "@/styles/app/profile.css";
+import "@/styles/app/toast.css";
 import AppShell from "@/components/app/shell/app-shell";
+import { ToastProvider } from "@/components/app/common/toast";
 
 export default function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <ToastProvider>
+      <AppShell>{children}</AppShell>
+    </ToastProvider>
+  );
 }
