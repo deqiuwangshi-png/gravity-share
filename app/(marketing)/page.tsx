@@ -133,10 +133,12 @@ export default async function Home() {
             <Link href="/terms">用户协议</Link>
             <Link href="/privacy">隐私政策</Link>
           </nav>
-          <div className="footer-col footer-legal">
-            <h3>免责声明</h3>
-            <p>引力仅做展示与连接，不参与交易担保。内容在哪里发布、交易与交付，仍由原平台负责。</p>
-          </div>
+          <nav className="footer-col" aria-label="站点链接">
+            <h3>社区</h3>
+            <Link href="https://github.com/deqiuwangshi-png/gravity-share">引力开源（国际版）</Link>
+            <Link href="https://gitee.com/earth-players/GSWL">引力开源（国内版）</Link>
+            <Link href="/terms">关注社群</Link>
+          </nav>
         </div>
         <div className="footer-bottom">
           <span>{SITE_INFO.copyright}</span>

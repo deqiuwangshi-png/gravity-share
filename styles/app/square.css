@@ -133,6 +133,13 @@
   font-size: 12px;
 }
 
+/* 列表卡统计：图标 + 数字对齐（2026-08-22 图标化） */
+.square-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* 含外链标记（列表卡） */
 .square-card-link-mark {
   color: var(--primary);
@@ -228,7 +235,7 @@
   line-height: 1.85;
 }
 
-/* 互动条：点赞（可点）+ 浏览 */
+/* 互动条：点赞（可点）+ 浏览，带图标（2026-08-22 图标化） */
 .square-actions {
   display: flex;
   align-items: center;
@@ -240,6 +247,9 @@
 }
 
 .square-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border: 0;
   background: transparent;
   color: var(--primary);
@@ -257,6 +267,9 @@
 }
 
 .square-views {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: var(--text-soft);
   font-size: 13px;
 }
@@ -267,18 +280,24 @@
 }
 
 .square-comments h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0 0 12px;
   font-size: 15px;
 }
 
+.square-comment-wrap {
+  margin-bottom: 16px;
+}
+
 .square-comment-box {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  margin-bottom: 16px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface);
 }
 
@@ -286,22 +305,28 @@
   border-color: var(--border-primary);
 }
 
-.square-comment-box input {
+.square-comment-box textarea {
   min-width: 0;
+  min-height: 40px;
+  max-height: 132px;
   flex: 1;
+  padding: 4px 2px;
+  resize: vertical;
   border: 0;
   outline: 0;
   background: transparent;
   color: var(--foreground);
   font: inherit;
   font-size: 13px;
+  line-height: 1.6;
 }
 
-.square-comment-box input::placeholder {
+.square-comment-box textarea::placeholder {
   color: var(--text-soft);
 }
 
 .square-comment-submit {
+  flex-shrink: 0;
   border: 0;
   background: transparent;
   color: var(--primary);
@@ -309,6 +334,12 @@
   font: inherit;
   font-size: 13px;
   font-weight: 500;
+}
+
+.square-comment-error {
+  margin: 6px 2px 0;
+  color: var(--error);
+  font-size: 12px;
 }
 
 .square-comment-list {
@@ -333,8 +364,12 @@
 
 .square-comment-meta {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
+}
+
+.square-comment-meta .comment-menu {
+  margin-left: auto;
 }
 
 .square-comment-meta strong {

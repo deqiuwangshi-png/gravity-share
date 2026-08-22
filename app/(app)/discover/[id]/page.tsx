@@ -1,8 +1,9 @@
 /**
  * 发现详情页（/discover/[id]，client）——最终规格（社交动态页）
  * 发帖头（头像+昵称+右侧时间）→ 正文（16px/1.7 白底黑字，URL 自动链接）→ 推广警示（合规）
- * → 外链预览卡（90×90 缩略图 + 标题 + 简介，整卡可点跳原平台）→ 互动栏（评论/点赞/浏览）
- * → 评论区（32 头像 + 楼主昵称品牌色高亮，2b 起落库）→ 相关讨论 → 相关推荐
+ * → 外链预览卡（90×90 缩略图 + 标题 + 简介，整卡可点跳原平台）→ 互动栏（评论/点赞/浏览，带图标）
+ * → 评论区（32 头像 + 楼主昵称品牌色高亮，2b 起落库，水平三点操作菜单）→ 相关讨论 → 相关推荐
+ * 加载优化：主体（帖子+评论+点赞态）先到先渲染，相关区（发现流/广场流）后台补齐，不阻塞首屏
  * 无效 id → 404；单栏聚焦（V2 阅读页例外条款）
  */
 "use client";
@@ -15,6 +16,8 @@ import { LinkifiedText } from "@/components/app/common/linkified-text";
 import { LoadError } from "@/components/app/common/load-error";
 import { AuthorLink } from "@/components/app/common/author-link";
 import { AvatarBox } from "@/components/app/common/avatar-box";
+import { CommentMenu } from "@/components/app/common/comment-menu";
+import { CommentIcon, LikeIcon, ViewIcon } from "@/components/app/common/action-icons";
 import { createClient } from "@/lib/supabase/client";
 import { bumpViews, fetchComments, fetchDiscoveries, fetchDiscoveryById, fetchSquarePosts, isLiked, toggleLike } from "@/lib/queries";
 import type { CommentDTO, DiscoveryDTO, SquarePostDTO } from "@/lib/types";
@@ -34,19 +37,20 @@ export default function DiscoverDetailPage() {
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [likeBusy, setLikeBusy] = useState(false);
+  const [myId, setMyId] = useState("");
 
   const load = useCallback(() => {
     const supabase = createClient();
-    /* BUG-4：进入详情 +1 浏览（失败静默，不影响展示） */
+    /* BUG-4：进入详情 +1 浏览（失败静默，不影响展示；013 起作者本人不计、30 分钟去重） */
     void bumpViews(supabase, "discovery", id as string).catch(() => {});
+    void supabase.auth.getUser().then(({ data }) => setMyId(data.user?.id ?? ""));
+    /* 主体：帖子 + 点赞态 + 评论 —— 到齐即渲染 */
     void Promise.all([
       fetchDiscoveryById(supabase, id as string),
-      isLiked(createClient(), "discovery", id as string),
-      fetchDiscoveries(supabase),
+      isLiked(supabase, "discovery", id as string),
       fetchComments(supabase, "discovery", id as string),
-      fetchSquarePosts(supabase),
     ])
-      .then(([found, likedNow, allItems, commentList, postList]) => {
+      .then(([found, likedNow, commentList]) => {
         if (!found) {
           setState("missing");
           return;
@@ -54,12 +58,20 @@ export default function DiscoverDetailPage() {
         setItem(found);
         setLikesCount(found.likes);
         setLiked(likedNow);
-        setAll(allItems);
         setComments(commentList);
-        setDiscussions(postList.slice(0, 8));
         setState("ready");
       })
       .catch(() => setState("error"));
+    /* 相关区：后台补齐，不阻塞首屏（限定条数，防全表拖慢） */
+    void Promise.all([
+      fetchDiscoveries(supabase, 40),
+      fetchSquarePosts(supabase, 30),
+    ])
+      .then(([allItems, postList]) => {
+        setAll(allItems);
+        setDiscussions(postList);
+      })
+      .catch(() => { /* 相关区失败静默：主体仍正常展示 */ });
   }, [id]);
 
   /* 重试（事件处理器内重置状态，避免 effect 内同步 setState） */
@@ -108,8 +120,30 @@ export default function DiscoverDetailPage() {
     void fetchComments(createClient(), "discovery", id as string).then(setComments);
   }
 
+  /** 评论框 Enter 发送，Shift+Enter 换行 */
+  function onCommentKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+    }
+  }
+
+  function reloadComments() {
+    void fetchComments(createClient(), "discovery", id as string).then(setComments);
+  }
+
   if (state === "loading") {
-    return <div className="app-content discovery-detail-wrap"><p className="feed-loading">加载中…</p></div>;
+    return (
+      <div className="app-content discovery-detail-wrap">
+        <article className="discovery-detail">
+          <div className="detail-skeleton detail-skeleton-head" />
+          <div className="detail-skeleton detail-skeleton-line" />
+          <div className="detail-skeleton detail-skeleton-line short" />
+          <div className="detail-skeleton detail-skeleton-card" />
+          <div className="detail-skeleton detail-skeleton-line" />
+        </article>
+      </div>
+    );
   }
   if (state === "error") {
     return <div className="app-content discovery-detail-wrap"><LoadError onRetry={retry} /></div>;
@@ -139,9 +173,14 @@ export default function DiscoverDetailPage() {
       <article className="discovery-detail">
         <Link className="discovery-back" href="/discover">← 返回发现</Link>
 
-        {/* ① 发帖头：头像 + 昵称（加粗，可点跳主页）+ 右侧时间 */}
+        {/* ① 发帖头：头像 + 昵称（加粗，可点跳主页）+ 右侧时间；头像同样可点（体验修复） */}
         <div className="detail-user">
-          <AvatarBox path={current.authorAvatar} name={current.authorName ?? "推"} className="detail-avatar" />
+          <AvatarBox
+            path={current.authorAvatar}
+            name={current.authorName ?? "推"}
+            className="detail-avatar"
+            authorId={current.authorId}
+          />
           <b className="detail-username"><AuthorLink authorId={current.authorId} name={current.authorName ?? "引力推荐"} /></b>
           <span className="detail-user-time">{current.time ?? ""}</span>
         </div>
@@ -172,27 +211,29 @@ export default function DiscoverDetailPage() {
           </a>
         )}
 
-        {/* ⑤ 互动栏：1px 细线分隔，评论 / 点赞（可点，2c 落库）/ 浏览 */}
+        {/* ⑤ 互动栏：1px 细线分隔，评论 / 点赞（可点，2c 落库）/ 浏览，均带图标（体验修复） */}
         <div className="detail-bar">
-          <span>{commentCount} 评论</span>
+          <span><CommentIcon />{commentCount} 评论</span>
           <button
             type="button"
             className={`detail-like${liked ? " active" : ""}`}
             onClick={() => void onLike()}
             aria-pressed={liked}
             disabled={likeBusy}
-          >{liked ? "已赞" : "赞"} {likesCount}</button>
-          <span>{current.views ?? 0} 浏览</span>
+          ><LikeIcon />{liked ? "已赞" : "赞"} {likesCount}</button>
+          <span><ViewIcon />{current.views ?? 0} 浏览</span>
         </div>
 
-        {/* ⑥ 评论区：输入框 + 列表（楼主昵称品牌色高亮） */}
+        {/* ⑥ 评论区：输入框（多行）+ 列表（楼主昵称品牌色高亮 + 水平三点操作菜单） */}
         <section className="detail-comments">
-          <h2 className="detail-section-title">评论 · {commentCount}</h2>
+          <h2 className="detail-section-title"><CommentIcon size={16} />评论 · {commentCount}</h2>
           <form className="detail-comment-form" onSubmit={submitComment}>
-            <input
+            <textarea
+              rows={2}
               value={commentText}
               onChange={(event) => setCommentText(event.target.value)}
-              placeholder="说点什么…"
+              onKeyDown={onCommentKeyDown}
+              placeholder="说点什么…（Enter 发送，Shift+Enter 换行）"
               aria-label="发表评论"
             />
             <button type="submit" disabled={sending || !commentText.trim()}>{sending ? "发送中…" : "评论"}</button>
@@ -202,12 +243,19 @@ export default function DiscoverDetailPage() {
             const isOwner = comment.authorName === current.authorName;
             return (
               <div className="detail-comment" key={comment.id}>
-                <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="detail-avatar detail-comment-avatar" />
+                <AvatarBox
+                  path={comment.authorAvatar}
+                  name={comment.authorName}
+                  className="detail-avatar detail-comment-avatar"
+                  authorId={comment.authorId}
+                />
                 <div className="detail-comment-body">
-                  <p className="detail-comment-head">
+                  {/* 头部行用 div 而非 p：内含 CommentMenu（div），p 不能嵌套 div（防 hydration 报错） */}
+                  <div className="detail-comment-head">
                     <b className={isOwner ? "owner" : undefined}><AuthorLink authorId={comment.authorId} name={comment.authorName} /></b>
                     <small>{comment.time}{comment.likes > 0 ? ` · ${comment.likes} 赞` : ""}</small>
-                  </p>
+                    <CommentMenu comment={comment} isOwner={comment.authorId === myId} onDeleted={reloadComments} />
+                  </div>
                   <p className="detail-comment-content">{comment.content}</p>
                 </div>
               </div>

@@ -13,10 +13,11 @@
   min-width: 0;
 }
 
-/* ① 封面横幅：高宽比 3:1，按钮悬浮右上角 */
+/* ① 封面横幅：宽高比 4:1（2026-08-22 从 3:1 降低高度，保持头像骑跨衔接自然）；
+ * 更换封面按钮默认隐藏，鼠标移入封面区域显示（touch 设备恒显兜底） */
 .profile-cover {
   position: relative;
-  aspect-ratio: 3 / 1;
+  aspect-ratio: 4 / 1;
   border-radius: 14px;
   background: var(--bg-hover);
   background-size: cover;
@@ -34,6 +35,20 @@
   position: absolute;
   top: 12px;
   right: 12px;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.profile-cover:hover .profile-cover-actions,
+.profile-cover:focus-within .profile-cover-actions {
+  opacity: 1;
+}
+
+/* 无 hover 能力的设备（触屏）始终显示，保证可更换封面 */
+@media (hover: none) {
+  .profile-cover-actions {
+    opacity: 1;
+  }
 }
 
 .profile-cover-btn {
@@ -52,13 +67,9 @@
   color: var(--primary);
 }
 
-/* ② 头像行：头像单独负边距下沉骑跨封面底边；【编辑个人资料】按钮
- * 不随头像上移，留在下方白色内容区的右上角（同一行、行最右）
- * 昵称 + 数据统计与头像同一行、同一水平高度 */
+/* ② 头像行：头像单独一行负边距下沉骑跨封面底边；下方依次是昵称行（右侧操作按钮）、统计行
+ * 统计行垂直布局在头像正下方（2026-08-22 结构调整：移除横向并排） */
 .profile-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
   padding: 0 18px;
   position: relative;
   z-index: 2;
@@ -80,13 +91,13 @@
   font-weight: 600;
 }
 
-/* 昵称 + 数据统计：同一行、同一水平高度（baseline 对齐） */
+/* 昵称 + 操作按钮：同一行（昵称左、按钮右） */
 .profile-name-row {
   display: flex;
-  align-items: baseline;
-  gap: 18px;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
   min-width: 0;
-  flex: 1;
 }
 
 .profile-name {
@@ -138,17 +149,14 @@
   font-weight: 400;
 }
 
-/* ③ 简介行：昵称+数据行下方，可空；为空保留占位留白（缩进对齐昵称） */
+/* ③ 统计行：头像正下方，垂直布局（发布 / 关注或粉丝；积分已下线，不再展示） */
 .profile-bio-row {
-  padding: 0 18px 16px;
-  min-height: 0;
+  padding: 14px 18px 16px;
 }
 
 .profile-bio {
   margin: 0;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: var(--bg-hover);
+  max-width: 560px;
   color: var(--text-muted);
   font-size: 13px;
   line-height: 1.7;
@@ -157,6 +165,7 @@
 .profile-stats {
   display: flex;
   gap: 18px;
+  margin-top: 10px;
   color: var(--text-muted);
   font-size: 13px;
   white-space: nowrap;
@@ -215,6 +224,12 @@
   margin-bottom: 10px;
 }
 
+/* 帖子卡右上角三点菜单（本人可见）：删除 / 修改 / 复制 / 分享 */
+.profile-post-menu {
+  position: relative;
+  margin-left: auto;
+}
+
 .profile-post-avatar {
   display: flex;
   align-items: center;
@@ -244,6 +259,82 @@
   font-size: 14px;
   line-height: 1.7;
   word-break: break-word;
+}
+
+/* 帖子卡数据统计行：赞 / 评论 / 浏览，带图标（2026-08-22 新增，避免「发现」区单调） */
+.profile-post-stats {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.profile-post-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 内联编辑正文（修改菜单） */
+.profile-post-edit {
+  margin-bottom: 12px;
+}
+
+.profile-post-edit textarea {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  padding: 10px 12px;
+  resize: vertical;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.profile-post-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.profile-post-edit-actions button {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.profile-post-edit-actions button:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.profile-post-edit-actions button[type="submit"] {
+  border: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+.profile-post-edit-actions button[type="submit"]:hover {
+  background: var(--primary-dark);
+  color: var(--on-primary);
+}
+
+.profile-post-edit-actions button:disabled {
+  color: var(--text-disabled);
+  cursor: default;
 }
 
 .profile-post-promo {

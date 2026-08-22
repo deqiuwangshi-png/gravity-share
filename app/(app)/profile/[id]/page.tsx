@@ -25,9 +25,8 @@ export default async function OtherProfilePage({ params }: { params: Promise<{ i
     .maybeSingle();
   if (!profile) notFound();
 
-  const name = (profile.name as string) || "引力用户";
+  const name = ((profile.name as string) ?? "").trim() || "引力用户";
   const bio = (profile.bio as string) ?? "";
-  const points = 0; /* BUG-8：积分列已收口，他人主页不展示 */
   const avatarUrl = (profile.avatar_url as string) ?? "";
   const coverUrl = (profile.cover_url as string) ?? "";
   const followerCount = await fetchFollowerCount(supabase, id);
@@ -37,7 +36,6 @@ export default async function OtherProfilePage({ params }: { params: Promise<{ i
     <ProfileView
       name={name}
       bio={bio}
-      points={points}
       userId={id}
       isSelf={false}
       followerCount={followerCount}

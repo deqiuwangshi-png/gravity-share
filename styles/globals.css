@@ -87,6 +87,17 @@ a {
   color: var(--primary);
 }
 
+/* 头像可点（AvatarBox authorId 分支）：与 AuthorLink 同交互语言 */
+.avatar-link {
+  display: inline-flex;
+  cursor: pointer;
+  transition: opacity 180ms ease;
+}
+
+.avatar-link:hover {
+  opacity: 0.82;
+}
+
 /* 头像图片（AvatarBox img 分支）：圆形裁剪 + 覆盖填充；尺寸由场景类控制 */
 .avatar-img {
   border-radius: 50%;

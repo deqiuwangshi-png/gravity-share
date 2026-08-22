@@ -1,6 +1,7 @@
 /**
  * 广场评论输入框（client，2b 起落库）
  * 提交后 insert comments（RLS 校验作者）；成功后 router.refresh() 让服务端重拉评论列表与计数
+ * 多行：textarea rows=2，Enter 发送、Shift+Enter 换行（修复单行 input 太矮、评论区拥挤的问题）
  */
 "use client";
 
@@ -14,7 +15,7 @@ export function SquareCommentBox({ postId }: { postId: string }) {
   const [error, setError] = useState(false);
   const router = useRouter();
 
-  async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const content = text.trim();
     if (!content || sending) return;
@@ -41,19 +42,30 @@ export function SquareCommentBox({ postId }: { postId: string }) {
     router.refresh();
   }
 
+  /** Enter 发送，Shift+Enter 换行 */
+  function onKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+    }
+  }
+
   return (
-    <form className="square-comment-box" onSubmit={handleSubmit}>
-      <input
-        type="text"
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        placeholder="说点什么…"
-        aria-label="评论内容"
-      />
-      <button className="square-comment-submit" type="submit" disabled={sending || !text.trim()}>
-        {sending ? "发送中…" : "发布"}
-      </button>
-      {error && <span className="square-mock-note" role="alert">发布失败，请重试</span>}
-    </form>
+    <div className="square-comment-wrap">
+      <form className="square-comment-box" onSubmit={handleSubmit}>
+        <textarea
+          rows={2}
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="说点什么…（Enter 发送，Shift+Enter 换行）"
+          aria-label="评论内容"
+        />
+        <button className="square-comment-submit" type="submit" disabled={sending || !text.trim()}>
+          {sending ? "发送中…" : "发布"}
+        </button>
+      </form>
+      {error && <p className="square-comment-error" role="alert">发布失败，请重试</p>}
+    </div>
   );
 }

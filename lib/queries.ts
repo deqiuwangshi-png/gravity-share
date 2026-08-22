@@ -68,6 +68,11 @@ const FAVORITES = "favorites";
 const FOLLOWS = "follows";
 const NOTIFICATIONS = "notifications";
 
+/** users.name 可能为空字符串（注册未设置昵称）——空名一律回退「引力推荐」，避免头像空圈/空名展示 */
+function safeName(name: string | null | undefined): string {
+  return (name ?? "").trim() || "引力推荐";
+}
+
 function toDiscoveryDTO(row: DiscoveryRow): DiscoveryDTO {
   return {
     id: row.id,
@@ -76,7 +81,7 @@ function toDiscoveryDTO(row: DiscoveryRow): DiscoveryDTO {
     note: row.note,
     description: row.description ?? undefined,
     authorId: row.users?.id ?? "",
-    authorName: row.users?.name ?? "引力推荐",
+    authorName: safeName(row.users?.name),
     authorAvatar: row.users?.avatar_url ?? undefined,
     time: formatRelativeTime(row.created_at),
     views: row.views,
@@ -99,7 +104,7 @@ function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
   return {
     id: row.id,
     authorId: row.users?.id ?? "",
-    authorName: row.users?.name ?? "引力推荐",
+    authorName: safeName(row.users?.name),
     authorAvatar: row.users?.avatar_url ?? undefined,
     content: row.content,
     tags: row.tags,
@@ -116,7 +121,7 @@ function toCommentDTO(row: CommentRow): CommentDTO {
   return {
     id: row.id,
     authorId: row.users?.id ?? "",
-    authorName: row.users?.name ?? "引力推荐",
+    authorName: safeName(row.users?.name),
     authorAvatar: row.users?.avatar_url ?? undefined,
     content: row.content,
     time: formatRelativeTime(row.created_at),
@@ -124,12 +129,13 @@ function toCommentDTO(row: CommentRow): CommentDTO {
   };
 }
 
-/** 发现流（时间倒序） */
-export async function fetchDiscoveries(supabase: SupabaseClient): Promise<DiscoveryDTO[]> {
+/** 发现流（时间倒序；limit 供详情页相关区控制拉取量，避免全表拖慢首屏） */
+export async function fetchDiscoveries(supabase: SupabaseClient, limit?: number): Promise<DiscoveryDTO[]> {
   const { data } = await supabase
     .from(KIND)
     .select("*, users!discoveries_author_id_fkey(id, name, avatar_url)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(limit ?? 100);
   return (data as DiscoveryRow[] | null)?.map(toDiscoveryDTO) ?? [];
 }
 
@@ -164,12 +170,13 @@ export async function fetchDiscoveriesByAuthor(supabase: SupabaseClient, userId:
   return (data as DiscoveryRow[] | null)?.map(toDiscoveryDTO) ?? [];
 }
 
-/** 广场话题流（时间倒序） */
-export async function fetchSquarePosts(supabase: SupabaseClient): Promise<SquarePostDTO[]> {
+/** 广场话题流（时间倒序；limit 供详情页相关区控制拉取量） */
+export async function fetchSquarePosts(supabase: SupabaseClient, limit?: number): Promise<SquarePostDTO[]> {
   const { data } = await supabase
     .from(SQUARE)
     .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(limit ?? 100);
   return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
 }
 

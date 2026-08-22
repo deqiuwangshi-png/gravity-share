@@ -1,5 +1,6 @@
 /* (app) 发现详情页评论区（输入框 + 评论列表）
- * 2026-08-21 从 detail.css 拆出（V3 ≤400 行治理）；最终规格：32px 头像 + 楼主昵称品牌色高亮 */
+ * 2026-08-21 从 detail.css 拆出（V3 ≤400 行治理）；最终规格：32px 头像 + 楼主昵称品牌色高亮
+ * 2026-08-22 评论框单行 input → 多行 textarea（修复太矮/拥挤）；新增评论水平三点操作菜单 */
 
 /* ⑥ 评论区 */
 .detail-comments {
@@ -8,29 +9,34 @@
 
 .detail-comment-form {
   display: flex;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 16px;
 }
 
-.detail-comment-form input {
+.detail-comment-form textarea {
   flex: 1;
-  height: 38px;
-  padding: 0 14px;
+  min-height: 58px;
+  max-height: 132px;
+  padding: 10px 14px;
+  resize: vertical;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 12px;
   outline: 0;
   background: var(--surface);
   color: var(--foreground);
   font: inherit;
   font-size: 13px;
+  line-height: 1.6;
   transition: border-color 180ms ease;
 }
 
-.detail-comment-form input:focus {
+.detail-comment-form textarea:focus {
   border-color: var(--border-primary);
 }
 
 .detail-comment-form button {
+  flex-shrink: 0;
   height: 38px;
   padding: 0 18px;
   border: 0;
@@ -65,11 +71,16 @@
   min-width: 0;
 }
 
+/* 头部行：楼主昵称（品牌色高亮）+ 时间 + 右侧三点菜单 */
 .detail-comment-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   margin-bottom: 4px;
+}
+
+.detail-comment-head .comment-menu {
+  margin-left: auto;
 }
 
 /* 楼主昵称品牌色高亮（评论者与发帖人一致） */
@@ -97,4 +108,116 @@
   margin: 0;
   color: var(--text-soft);
   font-size: 13px;
+}
+
+/* ---------- 评论 / 内容 三点操作菜单（详情、广场、个人主页共用） ---------- */
+.comment-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.comment-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.comment-menu-btn:hover {
+  background: var(--bg-hover);
+  color: var(--foreground);
+}
+
+.comment-menu-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  display: grid;
+  min-width: 108px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.comment-menu-pop button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+  transition: background 180ms ease;
+}
+
+.comment-menu-pop button:hover {
+  background: var(--bg-hover);
+}
+
+.comment-menu-pop button:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+/* 操作反馈浮层（已复制 / 已举报 / 删除失败） */
+.comment-menu-notice {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 31;
+  max-width: 200px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--foreground);
+  color: var(--surface);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---------- 详情页骨架屏（替代纯文字「加载中…」，提升加载观感） ---------- */
+.detail-skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-raised) 50%, var(--bg-hover) 75%);
+  background-size: 200% 100%;
+  animation: detail-skeleton-shimmer 1.4s ease infinite;
+}
+
+.detail-skeleton-head {
+  width: 180px;
+  height: 40px;
+  margin-bottom: 16px;
+}
+
+.detail-skeleton-line {
+  width: 100%;
+  height: 14px;
+  margin-bottom: 10px;
+}
+
+.detail-skeleton-line.short {
+  width: 62%;
+}
+
+.detail-skeleton-card {
+  width: 100%;
+  height: 90px;
+  margin-bottom: 18px;
+}
+
+@keyframes detail-skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }

@@ -25,7 +25,6 @@ import type { DiscoveryDTO } from "@/lib/types";
 export default function ProfileView({
   name,
   bio,
-  points,
   userId,
   isSelf = true,
   followerCount = 0,
@@ -35,7 +34,6 @@ export default function ProfileView({
 }: {
   name: string;
   bio: string;
-  points: number;
   userId: string;
   isSelf?: boolean;
   followerCount?: number;
@@ -139,43 +137,43 @@ export default function ProfileView({
         </div>
         {coverError && <p className="profile-cover-error">{coverError}</p>}
 
+        {/* 头像 → 昵称行（右侧操作按钮）→ 统计行（头像正下方，垂直布局） */}
         <div className="profile-head">
           <AvatarBox path={avatarUrl} name={name} className="profile-avatar" />
           <div className="profile-name-row">
             <h1 className="profile-name">{name}</h1>
-            <div className="profile-stats">
-              <span><b>{myPosts.length}</b>发布</span>
-              {isSelf && <span><b>{points}</b>积分</span>} {/* BUG-8：积分仅自己可见 */}
-              {isSelf
-                ? <span><b>{followingCount}</b>关注</span>
-                : <span><b>{followerCount}</b>粉丝</span>}
-            </div>
+            {isSelf ? (
+              <button className="profile-edit-btn" type="button" data-placeholder>编辑个人资料</button>
+            ) : (
+              <button
+                className={`profile-follow-btn${following ? " following" : ""}`}
+                type="button"
+                onClick={() => void onFollow()}
+                disabled={followBusy}
+                aria-pressed={following}
+              >{following ? "已关注" : "关注"}</button>
+            )}
           </div>
-          {isSelf ? (
-            <button className="profile-edit-btn" type="button" data-placeholder>编辑个人资料</button>
-          ) : (
-            <button
-              className={`profile-follow-btn${following ? " following" : ""}`}
-              type="button"
-              onClick={() => void onFollow()}
-              disabled={followBusy}
-              aria-pressed={following}
-            >{following ? "已关注" : "关注"}</button>
-          )}
+          <div className="profile-stats">
+            <span><b>{myPosts.length}</b>发布</span>
+            {isSelf
+              ? <span><b>{followingCount}</b>关注</span>
+              : <span><b>{followerCount}</b>粉丝</span>}
+          </div>
         </div>
 
-        {/* 简介：昵称+数据行下方，可空；为空保留占位留白 */}
+        {/* 简介：统计行下方，左对齐纯文本（非卡片），行高 1.7 弱层级；可空 */}
         <div className="profile-bio-row">{bio ? <p className="profile-bio">{bio}</p> : null}</div>
 
         <ProfileTabs active={tab} onChange={setTab} />
 
         <div className="profile-tab-panel">
           {tab === "发现" && (list.length > 0
-            ? list.map((item) => <ProfilePost item={item} key={item.id} />)
+            ? list.map((item) => <ProfilePost item={item} key={item.id} isSelf={isSelf} onChanged={load} />)
             : <p className="profile-empty">还没有发布内容，点右上角「+ 发布」分享好东西。</p>)}
 
           {tab === "推广" && (list.length > 0
-            ? list.map((item) => <ProfilePost item={item} key={item.id} />)
+            ? list.map((item) => <ProfilePost item={item} key={item.id} isSelf={isSelf} onChanged={load} />)
             : <p className="profile-empty">还没有推广内容，走「推广外链」入口发布的会显示在这里。</p>)}
 
           {tab === "收藏" && (isSelf

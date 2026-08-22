@@ -48,7 +48,7 @@ export function DiscoveryCard({
   return (
     <Link className="discovery-card" href={`/discover/${item.id}`}>
       <div className="card-user">
-        <AvatarBox path={item.authorAvatar} name={item.authorName ?? "推"} className="card-avatar" />
+        <AvatarBox path={item.authorAvatar} name={item.authorName ?? "推"} className="card-avatar" authorId={item.authorId} />
         <span className="card-user-meta">
           <b><AuthorLink authorId={item.authorId} name={item.authorName ?? "引力推荐"} /></b>
           <small>{item.time ?? ""}</small>

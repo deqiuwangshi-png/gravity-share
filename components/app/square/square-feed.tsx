@@ -13,6 +13,7 @@ import { fetchSquarePosts, SQUARE_UPDATED_EVENT } from "@/lib/queries";
 import { hasUrl } from "@/components/app/common/linkified-text";
 import { AuthorLink } from "@/components/app/common/author-link";
 import { AvatarBox } from "@/components/app/common/avatar-box";
+import { CommentIcon, LikeIcon, ViewIcon } from "@/components/app/common/action-icons";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquareFeed() {
@@ -91,9 +92,9 @@ export function SquareFeed() {
               </div>
               <p className="square-card-content">{post.content}</p>
               <div className="square-card-meta">
-                <span>{post.likes} 赞</span>
-                <span>{post.comments} 评论</span>
-                <span>{post.views} 浏览</span>
+                <span><LikeIcon />{post.likes} 赞</span>
+                <span><CommentIcon />{post.comments} 评论</span>
+                <span><ViewIcon />{post.views} 浏览</span>
                 {(hasUrl(post.content) || post.url) && <span className="square-card-link-mark">含链接</span>}
               </div>
             </Link>
