@@ -44,17 +44,22 @@ export default async function GoPage({
   const { trusted, blocked } = await fetchLinkDomains(supabase);
   const risk = riskOf(href, trusted, blocked);
 
-  /* 020：跳转审计（每次进入 /go 记一条；service_role 写 url_audit，客户端无权限） */
+  /* 020：跳转审计（每次进入 /go 记一条；service_role 写 url_audit，客户端无权限）
+   * 注意：PostgrestBuilder 是 thenable 无 .catch()，用 try/catch；审计失败不阻塞跳转 */
   const admin = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  await admin.from("url_audit").insert({
-    url: href.slice(0, 2048),
-    host: host.slice(0, 253),
-    risk,
-    user_id: user?.id ?? null,
-  }).catch(() => {});
+  try {
+    await admin.from("url_audit").insert({
+      url: href.slice(0, 2048),
+      host: host.slice(0, 253),
+      risk,
+      user_id: user?.id ?? null,
+    });
+  } catch {
+    /* 审计写入失败不影响跳转 */
+  }
 
   /* 低风险：服务端直接跳转（仅白名单域名，防开放重定向） */
   if (risk === "low") redirect(href);

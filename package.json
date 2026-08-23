@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "check": "eslint && pnpm test && node scripts/check-styles.mjs && knip"
+    "typecheck": "tsc --noEmit",
+    "check": "eslint && pnpm test && node scripts/check-styles.mjs && knip && pnpm typecheck"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

@@ -6,7 +6,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import { LoadError } from "@/components/app/common/load-error";
 import { SquareCard } from "@/components/app/common/square-card";
 import { SQUARE_CATEGORIES, SQUARE_CATEGORY_META } from "@/lib/config";

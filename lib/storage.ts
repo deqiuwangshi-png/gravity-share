@@ -1,6 +1,6 @@
 /**
  * 图片存储工具（S-1 起）：校验 / 上传 / 公开 URL
- * 桶：avatars（头像）/ covers（封面）/ posts（广场原创配图）
+ * 桶：avatars（头像）/ covers（封面）/ posts（广场原创配图）/ announcements（公告海报，运营配置）
  * 2026-08-23 安全加固（V1）：上传改走 /api/upload（服务端魔术字节 + 大小强制），
  * 客户端不再直传 storage——服务端返回 path，本函数保持原签名（调用方零改动）。
  * 表里存存储 path（非完整 URL），展示时 publicImageUrl 拼接
@@ -10,10 +10,13 @@ import { createClient } from "@/lib/supabase/client";
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_SIZE = 5 * 1024 * 1024;
 
-export type UploadTarget = "avatar" | "cover" | "post";
+export type UploadTarget = "avatar" | "cover" | "post" | "announcements";
 
 function bucketOf(target: UploadTarget): string {
-  return target === "avatar" ? "avatars" : target === "cover" ? "covers" : "posts";
+  if (target === "avatar") return "avatars";
+  if (target === "cover") return "covers";
+  if (target === "post") return "posts";
+  return "announcements";
 }
 
 /** 前端校验：返回错误文案（null = 通过）；服务端 /api/upload 会再次强制（魔术字节/大小） */
