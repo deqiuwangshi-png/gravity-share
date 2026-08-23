@@ -1,0 +1,8 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  // 死代码检测配置（见 docs/ARCHITECTURE-STEWARDSHIP.md L1）
+  // knip 内置 next 插件自动豁免 app/**/page.tsx、layout.tsx、route.ts 等约定文件，
+  // 内置 vitest 插件识别 *.test.ts，均无需手动配置。
+  // 存量死代码在 docs/ARCHITECTURE-DEBT-INVENTORY.md §6 登记；
+  // 确认清理后 knip 输出归零，本文件无需改动。
+}

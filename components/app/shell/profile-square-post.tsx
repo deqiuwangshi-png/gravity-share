@@ -1,6 +1,6 @@
 /**
- * 个人主页广场帖卡（client）——头像/昵称/时间（右侧三点菜单）→ 正文（可内联编辑）
- * → 配图 → 统计行（赞/评论/浏览，带图标）
+ * 个人主页「推荐」Tab 帖卡（client，2026-08-23 内容池归一后改读 square_posts）
+ * 头像/昵称/时间（右侧三点菜单）→ 正文（可内联编辑）→ 配图 → 统计行
  * 整卡可点 → /square/[id]；菜单与编辑交互 stopPropagation 防误跳
  */
 "use client";
@@ -8,13 +8,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { PostMenu } from "@/components/app/common/post-menu";
-import { SquarePostEditForm } from "./square-post-edit-form";
+import { SquarePostEditForm } from "@/components/app/square/square-post-edit-form";
 import { AvatarBox } from "@/components/app/common/avatar-box";
-import { CommentIcon, LikeIcon, ViewIcon } from "@/components/app/common/action-icons";
+import { MessageCircle, Heart, Eye } from "lucide-react";
 import { publicImageUrl } from "@/lib/storage";
 import type { SquarePostDTO } from "@/lib/types";
 
-export function SquareProfilePost({
+export function ProfileSquarePost({
   post,
   isSelf,
   onChanged,
@@ -27,8 +27,8 @@ export function SquareProfilePost({
 
   const inner = (
     <>
-      <div className="square-profile-post-head">
-        <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-profile-post-avatar" authorId={post.authorId} />
+      <div className="profile-post-head">
+        <AvatarBox path={post.authorAvatar} name={post.authorName} className="profile-post-avatar" authorId={post.authorId} />
         <b>{post.authorName}</b>
         <small>{post.time}</small>
         <PostMenu
@@ -53,22 +53,22 @@ export function SquareProfilePost({
           onCancel={() => setEditing(false)}
         />
       ) : (
-        <p className="square-profile-post-body">{post.content}</p>
+        <p className="profile-post-body">{post.content}</p>
       )}
 
       {post.imageUrl && (
         /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
-        <img className="square-profile-post-image" src={publicImageUrl("post", post.imageUrl)} alt="帖子配图" />
+        <img className="profile-post-image" src={publicImageUrl("post", post.imageUrl)} alt="帖子配图" />
       )}
 
-      <div className="square-profile-post-stats">
-        <span><LikeIcon />{post.likes}</span>
-        <span><CommentIcon />{post.comments}</span>
-        <span><ViewIcon />{post.views}</span>
+      <div className="profile-post-stats">
+        <span><Heart size={15} />{post.likes}</span>
+        <span><MessageCircle size={15} />{post.comments}</span>
+        <span><Eye size={15} />{post.views}</span>
       </div>
     </>
   );
 
   /* 编辑态渲染为 div（不整卡跳转），常态整卡可点 */
-  return editing ? <div className="square-profile-post editing">{inner}</div> : <Link className="square-profile-post" href={`/square/${post.id}`}>{inner}</Link>;
+  return editing ? <div className="profile-post editing">{inner}</div> : <Link className="profile-post" href={`/square/${post.id}`}>{inner}</Link>;
 }

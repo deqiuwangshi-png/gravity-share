@@ -4,43 +4,22 @@
  * 公开读依赖 RLS（anon + 登录用户都可见）；写操作（发布/评论）在组件内直接用浏览器客户端 insert，靠 RLS 校验作者。
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CommentDTO, DiscoveryDTO, DiscoveryKind, NotificationDTO, SquarePostDTO } from "@/lib/types";
+import type { Announcement, CommentDTO, NotificationDTO, SquarePostDTO, UserCardDTO } from "@/lib/types";
 import { formatRelativeTime } from "@/lib/text";
 
 /** 数据变更事件（发布/评论写库后 dispatch，列表组件监听后重新拉取） */
-export const DISCOVERY_UPDATED_EVENT = "discovery-updated";
 export const SQUARE_UPDATED_EVENT = "square-updated";
 /** 通知变更事件（已读/全部已读后 dispatch，顶栏铃铛刷新未读红点） */
 export const NOTIFICATION_UPDATED_EVENT = "notification-updated";
 
-/** discoveries 行 + 关联作者名（join users.name） */
-type DiscoveryRow = {
-  id: string;
-  type: string;
-  title: string | null;
-  note: string;
-  description: string | null;
-  source: string;
-  origin: string | null;
-  tags: string[];
-  commercial: boolean;
-  promo_type: string | null;
-  commission: string | null;
-  url: string | null;
-  kind: string;
-  media_url: string | null;
-  reason: string | null;
-  views: number;
-  likes_count: number;
-  comments_count: number;
-  created_at: string;
-  users: { id: string; name: string; avatar_url: string | null } | null;
-};
-
-/** square_posts 行 + 关联作者名 */
-type SquarePostRow = {
+/** square_posts 行 + 关联作者名——导出供 DTO 映射测试构造 */
+export type SquarePostRow = {
   id: string;
   content: string;
+  post_type: string;
+  commission: string | null;
+  source_platform: string | null;
+  category: string;
   tags: string[];
   url: string | null;
   image_url: string | null;
@@ -48,76 +27,58 @@ type SquarePostRow = {
   likes_count: number;
   comments_count: number;
   created_at: string;
+  url_status: string;
   users: { id: string; name: string; avatar_url: string | null } | null;
 };
 
-/** comments 行 + 关联作者名 */
-type CommentRow = {
+/** comments 行 + 关联作者名——导出供 DTO 映射测试构造 */
+export type CommentRow = {
   id: string;
   content: string;
   likes: number;
+  parent_id: string | null;
   created_at: string;
   users: { id: string; name: string; avatar_url: string | null } | null;
 };
 
-const KIND = "discoveries";
 const SQUARE = "square_posts";
 const COMMENTS = "comments";
 const LIKES = "likes";
-const FAVORITES = "favorites";
+const COMMENT_LIKES = "comment_likes";
 const FOLLOWS = "follows";
 const NOTIFICATIONS = "notifications";
+const ANNOUNCEMENTS = "announcements";
+const LINK_DOMAINS = "link_domains";
 
 /** users.name 可能为空字符串（注册未设置昵称）——空名一律回退「引力推荐」，避免头像空圈/空名展示 */
 function safeName(name: string | null | undefined): string {
   return (name ?? "").trim() || "引力推荐";
 }
 
-function toDiscoveryDTO(row: DiscoveryRow): DiscoveryDTO {
-  return {
-    id: row.id,
-    type: row.type,
-    title: row.title ?? undefined,
-    note: row.note,
-    description: row.description ?? undefined,
-    authorId: row.users?.id ?? "",
-    authorName: safeName(row.users?.name),
-    authorAvatar: row.users?.avatar_url ?? undefined,
-    time: formatRelativeTime(row.created_at),
-    views: row.views,
-    likes: row.likes_count,
-    comments: row.comments_count,
-    tags: row.tags,
-    source: row.source,
-    origin: row.origin ?? undefined,
-    commercial: row.commercial,
-    promoType: row.promo_type ?? undefined,
-    commission: row.commission ?? undefined,
-    url: row.url ?? undefined,
-    kind: (row.kind as DiscoveryKind) ?? "link",
-    mediaUrl: row.media_url ?? undefined,
-    reason: row.reason ?? undefined,
-  };
-}
-
-function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
+export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
   return {
     id: row.id,
     authorId: row.users?.id ?? "",
     authorName: safeName(row.users?.name),
     authorAvatar: row.users?.avatar_url ?? undefined,
     content: row.content,
+    postType: (row.post_type as "share" | "opportunity" | "content") ?? "share",
+    commission: row.commission ?? undefined,
+    sourcePlatform: row.source_platform ?? undefined,
+    category: row.category ?? "其他",
     tags: row.tags,
     likes: row.likes_count,
     comments: row.comments_count,
     views: row.views,
     time: formatRelativeTime(row.created_at),
-    url: row.url ?? undefined,
+    /* V8：外链处置（blocked 不渲染链接，内容保留） */
+    url: row.url_status === "blocked" ? undefined : (row.url ?? undefined),
+    urlStatus: (row.url_status as SquarePostDTO["urlStatus"]) ?? "normal",
     imageUrl: row.image_url ?? undefined,
   };
 }
 
-function toCommentDTO(row: CommentRow): CommentDTO {
+export function toCommentDTO(row: CommentRow): CommentDTO {
   return {
     id: row.id,
     authorId: row.users?.id ?? "",
@@ -126,62 +87,60 @@ function toCommentDTO(row: CommentRow): CommentDTO {
     content: row.content,
     time: formatRelativeTime(row.created_at),
     likes: row.likes,
+    parentId: row.parent_id ?? undefined,
   };
 }
 
-/** 发现流分页查询参数：type 按分类过滤；from/to 为 range 闭区间（每批条数 = to - from + 1） */
-export type DiscoverQuery = { type?: string; from?: number; to?: number };
+/* ---------- 019 首页公告（走马灯） ---------- */
 
-/**
- * 发现流（时间倒序；支持类型过滤 + 服务端分页，供首页无限滚动懒加载）
- * 不传 opts 时保持全量拉取（分类页等旧调用兼容）
- */
-export async function fetchDiscoveries(supabase: SupabaseClient, opts?: DiscoverQuery): Promise<DiscoveryDTO[]> {
-  let query = supabase
-    .from(KIND)
-    .select("*, users!discoveries_author_id_fkey(id, name, avatar_url)")
-    .order("created_at", { ascending: false });
-  if (opts?.type) query = query.eq("type", opts.type);
-  if (opts?.from !== undefined && opts?.to !== undefined) query = query.range(opts.from, opts.to);
-  const { data } = await query;
-  return (data as DiscoveryRow[] | null)?.map(toDiscoveryDTO) ?? [];
+type AnnouncementRow = {
+  id: string;
+  kind: string;
+  icon: string | null;
+  title: string;
+  description: string | null;
+  link: string | null;
+  image_url: string | null;
+};
+
+function toAnnouncementDTO(row: AnnouncementRow): Announcement {
+  return {
+    id: row.id,
+    kind: (row.kind as Announcement["kind"]) ?? "notice",
+    icon: (row.icon as Announcement["icon"]) ?? undefined,
+    title: row.title,
+    desc: row.description ?? "",
+    link: row.link ?? undefined,
+    imageUrl: row.image_url ?? undefined,
+  };
 }
 
-/** 发现流类型列表（筛选 chips 数据源；只取 type 列，轻量） */
-export async function fetchDiscoveryTypes(supabase: SupabaseClient): Promise<string[]> {
-  const { data } = await supabase.from(KIND).select("type");
-  return [...new Set((data as Array<{ type: string }> | null)?.map((row) => row.type) ?? [])];
-}
-
-/** 发现详情（按 id） */
-export async function fetchDiscoveryById(supabase: SupabaseClient, id: string): Promise<DiscoveryDTO | null> {
+/** 上架公告（RLS 已过滤 active；时段过滤在查询层，按 sort 排序） */
+export async function fetchAnnouncements(supabase: SupabaseClient): Promise<Announcement[]> {
+  const now = new Date().toISOString();
   const { data } = await supabase
-    .from(KIND)
-    .select("*, users!discoveries_author_id_fkey(id, name, avatar_url)")
-    .eq("id", id)
-    .maybeSingle();
-  return data ? toDiscoveryDTO(data as DiscoveryRow) : null;
+    .from(ANNOUNCEMENTS)
+    .select("id, kind, icon, title, description, link, image_url")
+    .eq("active", true)
+    .or(`starts_at.is.null,starts_at.lte.${now}`)
+    .or(`ends_at.is.null,ends_at.gte.${now}`)
+    .order("sort", { ascending: true })
+    .order("created_at", { ascending: true });
+  return (data as AnnouncementRow[] | null)?.map(toAnnouncementDTO) ?? [];
 }
 
-/** 推荐位（reason 非空，最多 6 条）——首页内容流化后已不再使用，保留供后续"编辑精选"复用 */
-export async function fetchRecommended(supabase: SupabaseClient): Promise<DiscoveryDTO[]> {
-  const { data } = await supabase
-    .from(KIND)
-    .select("*, users!discoveries_author_id_fkey(id, name, avatar_url)")
-    .not("reason", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(6);
-  return (data as DiscoveryRow[] | null)?.map(toDiscoveryDTO) ?? [];
-}
+/* ---------- 020 安全加固：外链域名信誉库（/go 分级用） ---------- */
 
-/** 某用户发布的发现（个人主页「我的帖子」） */
-export async function fetchDiscoveriesByAuthor(supabase: SupabaseClient, userId: string): Promise<DiscoveryDTO[]> {
-  const { data } = await supabase
-    .from(KIND)
-    .select("*, users!discoveries_author_id_fkey(id, name, avatar_url)")
-    .eq("author_id", userId)
-    .order("created_at", { ascending: false });
-  return (data as DiscoveryRow[] | null)?.map(toDiscoveryDTO) ?? [];
+/** 域名信誉库（link_domains 表，Table Editor 在线维护；trusted 直跳 / blocked 拦截） */
+export async function fetchLinkDomains(supabase: SupabaseClient): Promise<{ trusted: Set<string>; blocked: Set<string> }> {
+  const { data } = await supabase.from(LINK_DOMAINS).select("domain, kind");
+  const trusted = new Set<string>();
+  const blocked = new Set<string>();
+  for (const row of (data as Array<{ domain: string; kind: string }> | null) ?? []) {
+    if (row.kind === "trusted") trusted.add(row.domain.toLowerCase());
+    else if (row.kind === "blocked") blocked.add(row.domain.toLowerCase());
+  }
+  return { trusted, blocked };
 }
 
 /** 广场话题流（时间倒序；limit 供详情页相关区控制拉取量） */
@@ -204,7 +163,7 @@ export async function fetchSquarePostById(supabase: SupabaseClient, id: string):
   return data ? toSquarePostDTO(data as SquarePostRow) : null;
 }
 
-/** 某用户发布的广场帖（个人主页「广场」tab，时间倒序） */
+/** 某用户发布的广场帖（个人主页「推荐」Tab，时间倒序） */
 export async function fetchSquarePostsByAuthor(supabase: SupabaseClient, userId: string): Promise<SquarePostDTO[]> {
   const { data } = await supabase
     .from(SQUARE)
@@ -214,16 +173,12 @@ export async function fetchSquarePostsByAuthor(supabase: SupabaseClient, userId:
   return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
 }
 
-/** 评论列表（discovery / square 归一，时间正序） */
-export async function fetchComments(
-  supabase: SupabaseClient,
-  targetType: "discovery" | "square",
-  targetId: string,
-): Promise<CommentDTO[]> {
+/** 评论列表（square 帖子，时间正序；内容池归一后仅 square） */
+export async function fetchComments(supabase: SupabaseClient, targetId: string): Promise<CommentDTO[]> {
   const { data } = await supabase
     .from(COMMENTS)
     .select("*, users!comments_author_id_fkey(id, name, avatar_url)")
-    .eq("target_type", targetType)
+    .eq("target_type", "square")
     .eq("target_id", targetId)
     .order("created_at", { ascending: true });
   return (data as CommentRow[] | null)?.map(toCommentDTO) ?? [];
@@ -262,7 +217,7 @@ function toNotificationDTO(row: NotificationRow): NotificationDTO {
     content: row.content,
     time: formatRelativeTime(row.created_at),
     read: row.read,
-    targetType: (row.target_type as "discovery" | "square" | null) ?? undefined,
+    targetType: (row.target_type as "square" | null) ?? undefined,
     itemId: row.item_id ?? undefined,
   };
 }
@@ -307,19 +262,15 @@ async function currentUserId(supabase: SupabaseClient): Promise<string | null> {
   return user?.id ?? null;
 }
 
-/** 我是否已赞（target_type: discovery / square） */
-export async function isLiked(
-  supabase: SupabaseClient,
-  targetType: "discovery" | "square",
-  targetId: string,
-): Promise<boolean> {
+/** 我是否已赞（square 帖子） */
+export async function isLiked(supabase: SupabaseClient, targetId: string): Promise<boolean> {
   const uid = await currentUserId(supabase);
   if (!uid) return false;
   const { data } = await supabase
     .from(LIKES)
     .select("user_id")
     .eq("user_id", uid)
-    .eq("target_type", targetType)
+    .eq("target_type", "square")
     .eq("target_id", targetId)
     .maybeSingle();
   return !!data;
@@ -329,68 +280,62 @@ export async function isLiked(
  * 点赞 toggle，返回新状态；计数由数据库触发器维护
  * 失败抛错（P1-3）：调用方 try/catch 保持原状态，避免 UI 与库漂移
  */
-export async function toggleLike(
-  supabase: SupabaseClient,
-  targetType: "discovery" | "square",
-  targetId: string,
-): Promise<boolean> {
+export async function toggleLike(supabase: SupabaseClient, targetId: string): Promise<boolean> {
   const uid = await currentUserId(supabase);
   if (!uid) return false;
-  const liked = await isLiked(supabase, targetType, targetId);
+  const liked = await isLiked(supabase, targetId);
   if (liked) {
-    const { error } = await supabase.from(LIKES).delete().eq("user_id", uid).eq("target_type", targetType).eq("target_id", targetId);
+    const { error } = await supabase.from(LIKES).delete().eq("user_id", uid).eq("target_type", "square").eq("target_id", targetId);
     if (error) throw new Error("操作失败，请重试");
     return false;
   }
-  const { error } = await supabase.from(LIKES).insert({ user_id: uid, target_type: targetType, target_id: targetId });
+  const { error } = await supabase.from(LIKES).insert({ user_id: uid, target_type: "square", target_id: targetId });
   if (error) throw new Error("操作失败，请重试");
   return true;
 }
 
-/** 我是否已收藏某发现 */
-export async function isFavorited(supabase: SupabaseClient, discoveryId: string): Promise<boolean> {
+/* ---------- 017 评论点赞（comment_likes 表 + 触发器维护 comments.likes） ---------- */
+
+/** 我是否已赞该评论（内部辅助，toggleCommentLike 用） */
+async function isCommentLiked(supabase: SupabaseClient, commentId: string): Promise<boolean> {
   const uid = await currentUserId(supabase);
   if (!uid) return false;
   const { data } = await supabase
-    .from(FAVORITES)
-    .select("user_id")
+    .from(COMMENT_LIKES)
+    .select("comment_id")
     .eq("user_id", uid)
-    .eq("discovery_id", discoveryId)
+    .eq("comment_id", commentId)
     .maybeSingle();
   return !!data;
 }
 
-/** 收藏 toggle，返回新状态；失败抛错（P1-3） */
-export async function toggleFavorite(supabase: SupabaseClient, discoveryId: string): Promise<boolean> {
+/** 批量取我的评论点赞态（评论区挂载时一次 in 查询，避免每评论一次 N+1） */
+export async function fetchCommentLikeMap(supabase: SupabaseClient, commentIds: string[]): Promise<Record<string, boolean>> {
+  const uid = await currentUserId(supabase);
+  if (!uid || commentIds.length === 0) return {};
+  const { data } = await supabase
+    .from(COMMENT_LIKES)
+    .select("comment_id")
+    .eq("user_id", uid)
+    .in("comment_id", commentIds);
+  const map: Record<string, boolean> = {};
+  for (const row of data ?? []) map[row.comment_id as string] = true;
+  return map;
+}
+
+/** 评论点赞 toggle，返回新状态；失败抛错（调用方回滚）；计数由触发器维护（017） */
+export async function toggleCommentLike(supabase: SupabaseClient, commentId: string): Promise<boolean> {
   const uid = await currentUserId(supabase);
   if (!uid) return false;
-  const favorited = await isFavorited(supabase, discoveryId);
-  if (favorited) {
-    const { error } = await supabase.from(FAVORITES).delete().eq("user_id", uid).eq("discovery_id", discoveryId);
+  const liked = await isCommentLiked(supabase, commentId);
+  if (liked) {
+    const { error } = await supabase.from(COMMENT_LIKES).delete().eq("user_id", uid).eq("comment_id", commentId);
     if (error) throw new Error("操作失败，请重试");
     return false;
   }
-  const { error } = await supabase.from(FAVORITES).insert({ user_id: uid, discovery_id: discoveryId });
+  const { error } = await supabase.from(COMMENT_LIKES).insert({ user_id: uid, comment_id: commentId });
   if (error) throw new Error("操作失败，请重试");
   return true;
-}
-
-/** 我的收藏列表（个人主页收藏 tab，join discoveries + 作者） */
-export async function fetchFavorites(supabase: SupabaseClient): Promise<DiscoveryDTO[]> {
-  const uid = await currentUserId(supabase);
-  if (!uid) return [];
-  /* 双重嵌套需显式 FK：favorites→discoveries（favorites_discovery_id_fkey）→ users（discoveries_author_id_fkey），
-   * 否则 favorites 自身指向 users 的 user_id 外键会造成歧义（PostgREST 300） */
-  const { data } = await supabase
-    .from(FAVORITES)
-    .select("discoveries!favorites_discovery_id_fkey(*, users!discoveries_author_id_fkey(id, name, avatar_url))")
-    .eq("user_id", uid)
-    .order("created_at", { ascending: false });
-  return (
-    (data as Array<{ discoveries: DiscoveryRow | null }> | null)
-      ?.map((row) => (row.discoveries ? toDiscoveryDTO(row.discoveries) : null))
-      .filter((item): item is DiscoveryDTO => item !== null) ?? []
-  );
 }
 
 /** 我是否已关注该用户 */
@@ -439,13 +384,57 @@ export async function fetchFollowingCount(supabase: SupabaseClient, userId: stri
   return count ?? 0;
 }
 
+/* ---------- D3 关注列表（join users 返回用户卡片，按关注/被关注时间倒序） ---------- */
+
+type FollowRow = {
+  following_id: string;
+  follower_id: string;
+  created_at: string;
+  users: { id: string; name: string; bio: string | null; avatar_url: string | null } | null;
+};
+
+function toUserCardDTO(row: FollowRow, selfId: string): UserCardDTO {
+  return {
+    id: selfId,
+    name: (row.users?.name ?? "").trim() || "引力用户",
+    bio: row.users?.bio ?? "",
+    avatarUrl: row.users?.avatar_url ?? undefined,
+  };
+}
+
+/** 我关注的用户列表（join users，按关注时间倒序） */
+export async function fetchFollowing(supabase: SupabaseClient, userId: string): Promise<UserCardDTO[]> {
+  const { data } = await supabase
+    .from(FOLLOWS)
+    .select("following_id, created_at, users!follows_following_id_fkey(id, name, bio, avatar_url)")
+    .eq("follower_id", userId)
+    .order("created_at", { ascending: false });
+  return (
+    (data as Array<FollowRow & { following_id: string }> | null)?.map((row) => toUserCardDTO(row, row.following_id)) ?? []
+  );
+}
+
+/** 关注我的人列表（join users，按被关注时间倒序） */
+export async function fetchFollowers(supabase: SupabaseClient, userId: string): Promise<UserCardDTO[]> {
+  const { data } = await supabase
+    .from(FOLLOWS)
+    .select("follower_id, created_at, users!follows_follower_id_fkey(id, name, bio, avatar_url)")
+    .eq("following_id", userId)
+    .order("created_at", { ascending: false });
+  return (
+    (data as Array<FollowRow & { follower_id: string }> | null)?.map((row) => toUserCardDTO(row, row.follower_id)) ?? []
+  );
+}
+
+/** 我关注的所有用户 id（粉丝页判断每项关注态，一次查询避免 N+1） */
+export async function fetchFollowingIds(supabase: SupabaseClient, userId: string): Promise<string[]> {
+  const { data } = await supabase.from(FOLLOWS).select("following_id").eq("follower_id", userId);
+  return (data as Array<{ following_id: string }> | null)?.map((row) => row.following_id) ?? [];
+}
+
 /* ---------- BUG-4 浏览计数（RPC：security definer 只 +views，不放开表 update） ---------- */
 
-/** 浏览 +1（详情页进入调用；失败静默不影响展示） */
-export async function bumpViews(
-  supabase: SupabaseClient,
-  targetType: "discovery" | "square",
-  targetId: string,
-): Promise<void> {
-  await supabase.rpc("bump_views", { target_type: targetType, target_id: targetId });
+/** 浏览 +1（square 详情页进入调用；失败静默不影响展示） */
+export async function bumpViews(supabase: SupabaseClient, targetId: string): Promise<void> {
+  await supabase.rpc("bump_views", { target_type: "square", target_id: targetId });
 }

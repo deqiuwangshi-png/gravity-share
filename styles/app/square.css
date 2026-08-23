@@ -1,32 +1,31 @@
-/* (app) 广场（/square）：领域胶囊 + 紧凑话题列表 + 详情页（/square/[id]）
- * 2026-08-21 列表+详情两级结构改造；2026-08-21 三入口后移除发帖框，新增领域胶囊 */
+/* (app) 广场（/square）：内容分类导航 + 紧凑话题列表
+ * 2026-08-21 列表+详情两级结构改造；2026-08-23 我的领域/探索领域合并为单层内容分类
+ * 详情页样式已拆分至 square-detail.css（治理：单文件 ≤ 400 行） */
 
-/* ---------- 领域胶囊（我的领域 + 探索领域） ---------- */
+/* ---------- 内容分类导航（单层固定分类，一行横向排列，可横向滚动） ---------- */
 
-.square-domains {
-  margin-bottom: 22px;
-}
-
-.square-domain-row {
+.square-cats {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 22px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
-.square-domain-row.explore {
-  margin-bottom: 0;
+.square-cats::-webkit-scrollbar {
+  height: 4px;
 }
 
-.square-domain-label {
+.square-cats::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.square-cat {
   flex-shrink: 0;
-  margin-right: 2px;
-  color: var(--text-soft);
-  font-size: 11px;
-}
-
-.square-domain-chip {
   padding: 6px 14px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -37,41 +36,16 @@
   transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
 }
 
-.square-domain-chip:hover {
+.square-cat:hover {
   border-color: var(--border-primary);
   color: var(--primary);
 }
 
-.square-domain-chip.active {
+.square-cat.active {
   border-color: var(--primary);
   background: var(--primary-soft);
   color: var(--primary);
   font-weight: 600;
-}
-
-/* 探索领域：蓝色虚线 + 「新」标记 */
-.square-domain-chip.explore {
-  border-style: dashed;
-  border-color: var(--border-primary);
-  color: var(--primary);
-}
-
-.square-domain-chip.explore em {
-  margin-left: 4px;
-  font-size: 10px;
-  font-style: normal;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.square-domain-chip.explore.active {
-  border-style: solid;
-  background: var(--primary-soft);
-}
-
-.square-mock-note {
-  color: var(--primary);
-  font-size: 12px;
 }
 
 /* ---------- 列表：紧凑话题卡（整卡可点 → 详情） ---------- */
@@ -133,6 +107,36 @@
   font-size: 12px;
 }
 
+/* 发布类型标识（2026-08-23 三入口：机会披露 / 内容来源平台，合规警示） */
+.square-card-notice,
+.square-post-notice {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.square-card-notice b,
+.square-post-notice b {
+  font-weight: 600;
+}
+
+.square-card-notice.opportunity,
+.square-post-notice.opportunity {
+  color: var(--text-muted);
+}
+
+.square-card-notice.opportunity b,
+.square-post-notice.opportunity b {
+  color: #a32d2d;
+}
+
+.square-card-notice.source,
+.square-post-notice.source {
+  color: var(--text-soft);
+}
+
 /* 列表卡统计：图标 + 数字对齐（2026-08-22 图标化） */
 .square-card-meta span {
   display: inline-flex;
@@ -143,17 +147,6 @@
 /* 含外链标记（列表卡） */
 .square-card-link-mark {
   color: var(--primary);
-}
-
-/* 帖子正文外链（详情页，URL 解析） */
-.linkified {
-  color: var(--primary);
-  word-break: break-all;
-  transition: color 180ms ease;
-}
-
-.linkified:hover {
-  color: var(--primary-dark);
 }
 
 /* ---------- 通用：头像 / 标签（列表与详情共用） ---------- */
@@ -184,331 +177,4 @@
   background: var(--bg-hover);
   color: var(--text-muted);
   font-size: 11px;
-}
-
-/* ---------- 详情页（/square/[id]，单栏聚焦，无右栏） ---------- */
-
-.square-detail {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 4px 40px;
-}
-
-.square-back {
-  display: inline-block;
-  margin-bottom: 22px;
-  color: var(--text-muted);
-  font-size: 13px;
-  transition: color 180ms ease;
-}
-
-.square-back:hover {
-  color: var(--primary);
-}
-
-.square-post-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-/* 帖子三点菜单：推到发帖头右端（2026-08-23 新增） */
-.square-post-head .comment-menu {
-  margin-left: auto;
-}
-
-/* ---------- 广场帖内联编辑（详情页 / 个人主页共用，2026-08-23） ---------- */
-
-.square-post-edit {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.square-post-edit textarea,
-.square-post-edit input[type="url"] {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 10px;
-  outline: 0;
-  background: var(--surface);
-  color: var(--foreground);
-  font: inherit;
-  font-size: 13px;
-  line-height: 1.6;
-  box-sizing: border-box;
-}
-
-.square-post-edit textarea {
-  resize: vertical;
-  min-height: 88px;
-}
-
-.square-post-edit-image {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.square-post-edit-image-preview {
-  width: 140px;
-  max-height: 88px;
-  border-radius: 10px;
-  object-fit: cover;
-  background: var(--bg-hover);
-}
-
-.square-post-edit-image-btn {
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 12px;
-  transition: border-color 180ms ease, color 180ms ease;
-}
-
-.square-post-edit-image-btn:hover {
-  border-color: var(--border-primary);
-  color: var(--primary);
-}
-
-.square-post-edit-image-btn.remove:hover {
-  border-color: var(--error);
-  color: var(--error);
-}
-
-.square-post-edit-error {
-  margin: 0;
-  color: var(--error);
-  font-size: 12px;
-}
-
-.square-post-edit-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.square-post-edit-actions button {
-  padding: 6px 16px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 12px;
-  transition: border-color 180ms ease, color 180ms ease;
-}
-
-.square-post-edit-actions button:hover {
-  border-color: var(--border-primary);
-  color: var(--primary);
-}
-
-.square-post-edit-actions button[type="submit"] {
-  border: 0;
-  background: var(--primary);
-  color: var(--on-primary);
-  font-weight: 600;
-}
-
-.square-post-edit-actions button[type="submit"]:hover {
-  background: var(--primary-dark);
-  color: var(--on-primary);
-}
-
-.square-post-edit-actions button:disabled {
-  color: var(--text-disabled);
-  cursor: default;
-}
-
-.square-post-meta strong,
-.square-post-meta small {
-  display: block;
-}
-
-.square-post-meta strong {
-  font-size: 13px;
-}
-
-.square-post-meta small {
-  margin-top: 2px;
-  color: var(--text-soft);
-  font-size: 11px;
-}
-
-.square-content {
-  margin: 0;
-  color: var(--foreground);
-  font-size: 15px;
-  line-height: 1.85;
-}
-
-/* 互动条：点赞（可点）+ 浏览，带图标（2026-08-22 图标化） */
-.square-actions {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-top: 20px;
-  padding: 13px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-
-.square-like {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: 0;
-  background: transparent;
-  color: var(--primary);
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  transition: background 180ms ease;
-}
-
-.square-like.active {
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: var(--primary-soft);
-}
-
-.square-views {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--text-soft);
-  font-size: 13px;
-}
-
-/* 评论区 */
-.square-comments {
-  margin-top: 22px;
-}
-
-.square-comments h2 {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 12px;
-  font-size: 15px;
-}
-
-.square-comment-wrap {
-  margin-bottom: 16px;
-}
-
-.square-comment-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-}
-
-.square-comment-box:focus-within {
-  border-color: var(--border-primary);
-}
-
-.square-comment-box textarea {
-  min-width: 0;
-  min-height: 40px;
-  max-height: 132px;
-  flex: 1;
-  padding: 4px 2px;
-  resize: vertical;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--foreground);
-  font: inherit;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.square-comment-box textarea::placeholder {
-  color: var(--text-soft);
-}
-
-.square-comment-submit {
-  flex-shrink: 0;
-  border: 0;
-  background: transparent;
-  color: var(--primary);
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.square-comment-error {
-  margin: 6px 2px 0;
-  color: var(--error);
-  font-size: 12px;
-}
-
-.square-comment-list {
-  display: grid;
-}
-
-.square-comment {
-  display: flex;
-  gap: 10px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.square-comment:last-child {
-  border-bottom: 0;
-}
-
-.square-comment-body {
-  min-width: 0;
-  flex: 1;
-}
-
-.square-comment-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.square-comment-meta .comment-menu {
-  margin-left: auto;
-}
-
-.square-comment-meta strong {
-  font-size: 12px;
-}
-
-.square-comment-meta small {
-  color: var(--text-soft);
-  font-size: 11px;
-}
-
-.square-comment-body p {
-  margin: 4px 0 0;
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-/* 广场帖子配图（S-1 起，详情展示） */
-.square-post-image {
-  display: block;
-  width: 100%;
-  max-height: 420px;
-  margin: 14px 0 0;
-  border-radius: 12px;
-  object-fit: cover;
-  background: var(--bg-hover);
 }

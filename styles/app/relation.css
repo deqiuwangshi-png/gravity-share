@@ -1,0 +1,71 @@
+/* (app) 关注/粉丝列表页（D3，2026-08-23）——用户卡片列表，入口为个人主页统计数字 */
+
+.relation-list {
+  display: grid;
+  gap: 10px;
+}
+
+.relation-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 180ms ease;
+}
+
+.relation-item:hover {
+  border-color: var(--border-primary);
+}
+
+.relation-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  text-decoration: none;
+}
+
+.relation-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.relation-meta {
+  min-width: 0;
+}
+
+.relation-meta strong {
+  display: block;
+  font-size: 13px;
+  color: var(--foreground);
+}
+
+.relation-meta small {
+  display: block;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--text-soft);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relation-empty {
+  padding: 48px 18px;
+  color: var(--text-soft);
+  font-size: 13px;
+  text-align: center;
+}

@@ -2,7 +2,6 @@
  * 全站静态配置（导航、发布类型等）。改配置来这里，不用翻组件。
  */
 import { ICONS } from "@/lib/icons";
-import { categories } from "@/lib/data";
 
 /** 侧边栏主导航：[图标, 名称, 路由]（首页 / 分类 / 广场；发现流已并入首页，2026-08-22） */
 export const MAIN_NAV = [
@@ -12,28 +11,42 @@ export const MAIN_NAV = [
 ] as const satisfies ReadonlyArray<readonly [string, string, string]>;
 
 /**
- * 发布表单分类（BUG-5 归一：以 categories 为唯一事实源，排除「商业推广」——推广走 B 入口）
- * name 即 discoveries.type 落库值，保证用户发布内容在分类页可达
+ * 广场发布类型（固定枚举，2026-08-23 三入口改版：分享/机会/内容）
+ * 与 SQUARE_CATEGORIES（内容领域）是两个维度：post_type 是发布性质，category 是内容领域
+ * ⚠ 改此枚举必须同步迁移 015 的 square_posts_post_type_check 约束，否则库与前端漂移
  */
-export const PUBLISH_TYPES = categories
-  .filter((cat) => cat.slug !== "promotions")
-  .map((cat) => ({ icon: cat.icon, name: cat.name, slug: cat.slug })) as ReadonlyArray<{
-  icon: string;
-  name: string;
-  slug: string;
-}>;
+export const SQUARE_POST_TYPES = ["share", "opportunity", "content"] as const;
 
-/** 来源平台（发布表单下拉） */
-export const ORIGIN_PLATFORMS = ["微信", "知乎", "CSDN", "FlowUs", "个人博客", "活动", "其他"] as const;
+/** 内容入口·来源平台（选填下拉，post_type='content' 跨平台分发标识） */
+export const SOURCE_PLATFORMS = ["微信公众号", "个人博客", "知乎", "CSDN", "掘金", "视频（B站/YouTube 等）", "作品集", "开源项目", "其他"] as const;
 
-/** 推广对象类型（商业发布 B 入口：推广的是什么；2026-08-22 从「佣金类型」改为「对象类型」） */
-export const PROMO_TARGETS = ["产品", "软件", "网站", "服务", "项目", "课程", "其他"] as const;
+/**
+ * 广场内容分类（固定枚举，2026-08-23：原「我的领域/探索领域」合并为单层内容分类）
+ * 分类是内容属性（发布时落库 square_posts.category），不是用户兴趣标签；
+ * 「全部」为筛选入口，不在内容分类之列
+ * ⚠ 改此枚举必须同步迁移 014 的 square_posts_category_check 约束，否则库与前端漂移
+ */
+export const SQUARE_CATEGORIES = ["工具", "技术", "行业", "项目", "资源", "作品", "学习", "博客", "交易", "地区", "情感", "其他"] as const;
 
-/** 广场领域胶囊 · 我的领域（用户已知圈子） */
-export const MY_DOMAINS = ["全部", "AI", "开发", "工具"] as const;
-
-/** 广场领域胶囊 · 探索领域（用户未知圈子，打破信息孤岛） */
-export const EXPLORE_DOMAINS = ["设计", "教育", "创业"] as const;
+/**
+ * 分类展示元数据（分类页入口卡片，2026-08-23 内容池归一后）：
+ * slug 供 /categories/[slug] 路由，icon/desc 供入口卡片展示
+ * ⚠ 键名必须与 SQUARE_CATEGORIES 一致；新增分类同步补此表
+ */
+export const SQUARE_CATEGORY_META: Record<string, { slug: string; icon: string; desc: string }> = {
+  工具: { slug: "tools", icon: ICONS.tool, desc: "效率工具与软件服务" },
+  技术: { slug: "tech", icon: ICONS.dev, desc: "开发、架构与代码实践" },
+  行业: { slug: "industry", icon: ICONS.service, desc: "行业动态与机会" },
+  项目: { slug: "projects", icon: ICONS.discover, desc: "可参与的项目与合作" },
+  资源: { slug: "resources", icon: ICONS.design, desc: "设计、素材与实用资源" },
+  作品: { slug: "works", icon: ICONS.course, desc: "独立创作者的作品" },
+  学习: { slug: "learning", icon: ICONS.knowledge, desc: "教程、课程与知识" },
+  博客: { slug: "blogs", icon: ICONS.home, desc: "文章与深度内容" },
+  交易: { slug: "trading", icon: ICONS.opportunity, desc: "明码标价的推广与合作" },
+  地区: { slug: "local", icon: ICONS.plaza, desc: "本地与区域内容" },
+  情感: { slug: "feelings", icon: ICONS.categories, desc: "交流与情感话题" },
+  其他: { slug: "others", icon: ICONS.search, desc: "不好分类的内容" },
+};
 
 /**
  * 站点合规信息（C3：备案占位统一，营销页 footer 与个人主页 aside 共用；
@@ -46,10 +59,17 @@ export const SITE_INFO = {
 } as const;
 
 /**
- * 第三方登录提供商（GitHub / Google 已启用；mark 为社交按钮上的品牌简写）
- * 新增 provider：Dashboard 开对应 Provider 后在此追加一项即可
+ * 用户反馈收集（2026-08-23）：飞书多维表格表单公开提交链接（零代码承接反馈）
+ * 由用户在飞书创建「用户反馈」多维表格并开启表单分享后提供
+ */
+export const FEISHU_FEEDBACK_URL =
+  "https://my.feishu.cn/share/base/form/shrcnZWcPd0kCajDWj7Z04sdimb";
+
+/**
+ * 第三方登录提供商（GitHub / Google 已启用；品牌图标由 auth-form 内联官方 SVG 渲染）
+ * 新增 provider：Dashboard 开对应 Provider 后在此追加一项，并在 auth-form 的 ProviderIcon 补充图标
  */
 export const OAUTH_PROVIDERS = [
-  { id: "github", label: "GitHub", mark: "GH", enabled: true },
-  { id: "google", label: "Google", mark: "G", enabled: true },
+  { id: "github", label: "GitHub", enabled: true },
+  { id: "google", label: "Google", enabled: true },
 ] as const;

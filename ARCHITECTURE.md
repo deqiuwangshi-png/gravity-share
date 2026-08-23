@@ -1,6 +1,6 @@
 # 引力（yinli）架构规范
 
-> 版本：v2.7（极简）· 适用范围：本项目全部新增 / 重构代码
+> 版本：v2.8（极简）· 适用范围：本项目全部新增 / 重构代码
 > 总纲一页纸见 [`docs/SYSTEM-ARCHITECTURE.md`](docs/SYSTEM-ARCHITECTURE.md)
 > 核心主张：**四个柜子、三条规则、一个色板。架构是"涨"出来的，不是"设计"出来的。**
 
@@ -17,6 +17,7 @@
 | 路径别名 | `@/*` → 项目根 | 所有 import 用 `@/` 开头，禁止相对路径跨目录引用 |
 | 数据边界 | **Supabase BaaS（Auth + Postgres RLS + Storage）** | 读走 `lib/queries.ts`（双端 client 注入）；写靠 RLS + 列级权限；一致性靠触发器；服务端操作走 `lib/supabase/admin.ts`（service_role，**仅 route handler，严禁客户端 import**）；**不引入自建后端** |
 | 第三方登录 | GitHub + Google（Supabase OAuth，PKCE） | 回调统一走 `/auth/callback`（code → session）；provider 清单在 `lib/config.ts` 的 `OAUTH_PROVIDERS` |
+| 测试 | vitest（纯函数冒烟） | `pnpm test`；测试文件 `lib/*.test.ts`（已 exclude 出 tsconfig，不影响 build） |
 
 ## 2. 四个柜子（目录就这四层）
 
@@ -25,7 +26,7 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-012，幂等可重跑）
+supabase/     迁移柜 —— 数据库唯一真相（001-020，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
@@ -34,30 +35,35 @@ yinli/
 │   ├── (marketing)/            落地页 / + 法律页
 │   ├── (auth)/                 认证 /login（登录即注册：邮箱/手机号 OTP，/register → /login）
 │   │                           /forgot-password /reset-password
-│   ├── (app)/                  应用区：/home（发现流已并入首页，2026-08-22）
+│   ├── (app)/                  应用区：/home（公告 + 三列卡片流 HomeFeed）
 │   │                           /discover/[id]（详情） /categories(+[slug])
 │   │                           /square(+[id]) /profile(+[id])
+│   ├── go/                     外链安全网关（/go?url=…，白/黑名单分级，防开放重定向）
 │   ├── auth/callback/          第三方登录 / 密码重置统一回调（code → session）
 │   ├── api/account/delete/     自助注销（service_role，server-only）
+│   ├── api/auth/devices/       登录设备管理（service_role 查 auth.sessions：GET 列表 / DELETE 撤销，绑定本人）
 │   ├── error.tsx               根错误边界（含重试）
 │   └── layout.tsx              根布局
 ├── styles/                     样式柜：全部 CSS 统一管理（import 一律 @/styles/...）
 │   ├── globals.css             色板 + 全局基础（avatar-img / author-link / logo-mark / error-fallback）
 │   ├── marketing/              落地页区：site / sections / legal
 │   ├── auth/                   认证区：shell / card
-│   └── app/                    应用区 14 文件：shell / discovery / list / modal /
+│   └── app/                    应用区：shell / discovery / home / list / modal / publish-form /
 │                               announcement / user-menu / settings / settings-delete / feed /
-│                               square / detail / detail-comments / profile / notification
+│                               square / square-detail / detail / detail-comments / profile /
+│                               profile-posts / notification / toast / go
 ├── components/                 组件柜：访问区 + feature 双层
-│   ├── common/                 跨区共享：logo / linkified-text / author-link / avatar-box / load-error
+│   ├── common/                 跨区共享：logo / linkified-text / author-link / avatar-box / load-error /
+│   │                           toast（ToastProvider）/ post-menu（三点操作菜单）
 │   ├── marketing/              落地页区：legal-layout
 │   └── app/                    应用区（feature 分层）
 │       ├── shell/              应用壳：app-shell / app-aside / app-section / list-column /
 │       │                       settings-panel / user-menu / publish-modal / notification-drawer /
-│       │                       profile-view / profile-tabs
-│       ├── discovery/          发现流（首页内容区）：discovery-card / discover-filter（无限滚动）/
+│       │                       profile-view / profile-tabs / profile-comment
+│       ├── discovery/          首页内容流：home-feed（三列卡片，读广场数据）/ discovery-card /
 │       │                       announcement-carousel / profile-post
-│       └── square/             广场：square-feed / square-actions / square-comment-box
+│       └── square/             广场：square-feed（单列列表）/ square-actions / square-comment-box /
+│                               square-post-view / square-post-edit-form / square-profile-post
 ├── lib/                        数据柜：纯 TS，禁止 import 组件
 │   ├── queries.ts              查询层：读（DTO 映射）+ 互动/通知操作 + bumpViews（注入双端 client）
 │   ├── storage.ts              图片上传 / 删除（removeImage）/ 公开 URL（纯函数，server/client 通用）
@@ -66,11 +72,19 @@ yinli/
 │   ├── data.ts                 静态配置（分类 / 公告 / 热词）
 │   ├── config.ts               导航 / 发布类型（categories 派生）/ SITE_INFO / OAUTH_PROVIDERS
 │   ├── icons.ts                图标单一来源
-│   └── text.ts                 文本工具（URL / #标签提取 / 形态识别 / 相对时间）
+│   ├── text.ts                 文本工具（URL / #标签提取 / 形态识别 / 相对时间）
+│   └── links.ts                外链安全分级（riskOf / safeHref，供 /go 网关）
 ├── supabase/migrations/        数据库唯一真相（001 users → 002 内容 → 003 互动 → 004 存储 →
 │                               005 公开读 → 006 分类对齐 → 007 views RPC → 008 points 收口 →
 │                               009 通知清理 → 010 加固 → 011 OAuth 建档 → 012 storage RLS 修复 →
-│                               013 views 防刷 + 评论计数回落，全幂等）
+│                               013 views 防刷 → 014 广场分类 → 015 广场发布类型 →
+│                               016 discoveries 退役（数据并入 square_posts）→ 017 评论回复/点赞/通知 →
+│                               018 设备会话 RPC（security definer 查/撤 auth.sessions）→
+│                               019 公告走马灯数据化（announcements 表 + RLS）→
+│                               020 安全加固（link_domains 域名信誉库 / url_audit 跳转审计 /
+│                               reports 举报 / square_posts.url_status / 发布评论限频），全幂等；
+│                               手动复制 SQL 到 Supabase Dashboard 执行，不引入 CLI）
+├── vitest.config.ts            vitest 配置 + lib/*.test.ts（纯函数冒烟测试）
 ├── public/                     静态资源
 ├── docs/                       架构规范 / 评审 / 方案 / 配置文档
 └── 配置文件
@@ -116,12 +130,12 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 类型 | 组件 Props 用 `XxxProps` 命名；展示模型用 `XxxDTO`（queries.ts 统一映射） | `type AppSectionProps` / `DiscoveryDTO` |
 | 常量 | UPPER_SNAKE_CASE | `MARKETING_CATEGORIES` |
 | 样式文件 | 按访问区归入 `styles/<区>/`，文件名 = 组件/区块维度，单文件 ≤ 400 行 | `styles/app/settings.css` |
-| 数据库 | 迁移文件 `supabase/migrations/NNN-*.sql`，幂等可重跑，头部注释动机 | `002-content-seed.sql` |
+| 数据库 | 迁移文件 `supabase/migrations/NNN-*.sql`，幂等可重跑，头部注释动机；**手动复制 SQL 到 Supabase Dashboard 执行（不引入 CLI）** | `002-content-seed.sql` |
 
 ### 5.1 Server / Client 边界
 
 - 默认 Server Component；需要交互状态 / 浏览器 API 时才加 `"use client"`
-- 查库的 Server 页面（/home、/categories、marketing、/square/[id]、/profile）加 `export const dynamic = "force-dynamic"`（防 build 时固化数据）
+- 查库的 Server 页面加 `export const dynamic = "force-dynamic"`（防 build 时固化数据）；列表由 client 组件（HomeFeed / SquareFeed 等）拉取则无需
 - Client 组件尽量下沉到叶子节点，避免客户端化整棵子树
 
 ## 6. 色板（全站 15 个颜色变量，定义在 `globals.css`）
@@ -144,6 +158,14 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 4. **数据只从 `lib/queries.ts` / `lib/data.ts` 拿**，颜色只从色板取
 5. **文档同步**：结构有重大调整时更新本文档与一页纸版（R4 提交自检）
 
+### 7.5 维护方案（治理护栏）
+
+架构防腐化策略见 [`docs/ARCHITECTURE-STEWARDSHIP.md`](docs/ARCHITECTURE-STEWARDSHIP.md)：
+- **日常改动后跑 `pnpm check`**（eslint + 测试 + 治理脚本 + 死代码检测），新死代码当场清理；
+- **债务台账** `docs/ARCHITECTURE-DEBT-INVENTORY.md` 持续登记，经确认后分批清理；
+- **迁移手动执行**（用户决策，不引入 CLI）：执行后迁移文件头加 `-- ✅ 已执行 YYYY-MM-DD` 标记；
+- AI 改动遵守 AGENTS.md「维护与完成定义（DoD）」。
+
 ## 8. 阶段边界与演进状态
 
 **演进决策（2026-08-21）**：前端模拟优先 → 已接 Supabase BaaS，数据层上库完成 → 2026-08-22 认证与安全闭环。
@@ -161,12 +183,17 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 批次 B（一致性） | ✅ | 分类归一（categories 派生）/ views 计数 RPC / storage 纯函数化 + 孤儿清理 / next 白名单 + points 收口 |
 | 批次 C（加固 + 合规） | ✅ | 通知清理触发器 / 列级 revoke + 自关注约束 / 假数据清理 / 备案占位统一 / 安全头 4 项 / 根错误边界 |
 | 第三方登录 | ✅ | GitHub + Google（OAuth PKCE，`OAUTH_PROVIDERS` 驱动，`/auth/callback` 统一回调） |
-| 认证闭环 | ✅ | 忘记密码（recovery session + `/reset-password`）/ 自助注销（service_role + storage 即时清理） |
-| 架构评审 v4 / v5 | ✅ | 问题清零基线（v4）→ 9.0/10（v5，2026-08-22） |
-| 规模化前置（CSP / 分页缓存 / 测试 / 迁移 CLI 等 9 项） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七「规模化前置清单」 |
+| 认证闭环 | ✅ | 忘记密码（recovery session + `/reset-password`）/ 自助注销（service_role + storage 即时清理）/ 登录设备管理（auth.sessions 列表 + 撤销，双栏设置「登录设备」项） |
+| 架构评审 v4 / v5 / v6 | ✅ | 问题清零基线（v4）→ 9.0/10（v5，2026-08-22）→ 8.4/10（v6，2026-08-23） |
+| 广场分类 / 发布类型（014/015） | ✅ | 内容分类（SQUARE_CATEGORIES）+ 发布类型三入口（share/opportunity/content）；手动复制 SQL 已入库 |
+| 外链安全网关 `/go` | ✅ | 白/黑名单分级（lib/links.ts），白名单服务端直跳，未知需确认，高危拦截 |
+| 首页三列卡片 | ✅ | HomeFeed（读广场数据三列卡片），与广场单列列表分离；CSS 拆分回 ≤400 |
+| 内容池归一（016） | ✅ | discoveries 退役并入 square_posts：发布统一广场、分类页/个人主页改读 square、`/discover/[id]` 重定向到 `/square/[id]` |
+| vitest 冒烟 | ✅ | 纯函数测试（lib/text.test.ts / lib/links.test.ts）落地 |
+| 规模化前置（CSP / 分页缓存 / 迁移 CLI 等） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七；迁移 CLI 经用户决策改用手动复制 |
 
 **防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；`lib/queries.ts` 超过 500 行或新增领域时拆 `lib/db/`；新增写操作必须先定「RLS / 列级权限 / 触发器 / Handler」归属。
 
 ---
 
-*本规范 v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*
+*本规范 v2.8 于 2026-08-23 修订（回填：/go 外链网关、home-feed 首页三列卡片、toast/post-menu/lib-links、迁移清单 001-015（补 014 广场分类 / 015 广场发布类型）、CSS 拆分（square-detail / profile-posts / publish-form / home）、vitest 冒烟；明确迁移 = 手动复制 SQL 执行、不引入 CLI）。v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*

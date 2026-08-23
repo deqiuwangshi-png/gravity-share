@@ -73,11 +73,6 @@
   transform: translateY(-1px);
 }
 
-.btn-light {
-  background: transparent;
-  color: var(--foreground);
-}
-
 .btn-primary,
 .search-button {
   background: var(--primary);
@@ -257,17 +252,6 @@
 
 .footer-col a:hover {
   color: var(--primary);
-}
-
-/* 免责声明强调块 */
-.footer-legal p {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: var(--radius-control);
-  background: var(--primary-soft);
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.7;
 }
 
 .footer-bottom {

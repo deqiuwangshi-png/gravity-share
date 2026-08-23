@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { isLiked, toggleLike } from "@/lib/queries";
-import { LikeIcon, ViewIcon } from "@/components/app/common/action-icons";
+import { Heart, Eye } from "lucide-react";
 
 export function SquareActions({ postId, likes, views }: { postId: string; likes: number; views: number }) {
   const [liked, setLiked] = useState(false);
@@ -15,14 +15,14 @@ export function SquareActions({ postId, likes, views }: { postId: string; likes:
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    void isLiked(createClient(), "square", postId).then(setLiked);
+    void isLiked(createClient(), postId).then(setLiked);
   }, [postId]);
 
   async function onToggle() {
     if (busy) return;
     setBusy(true);
     try {
-      const next = await toggleLike(createClient(), "square", postId);
+      const next = await toggleLike(createClient(), postId);
       setLiked(next);
       setCount((c) => c + (next ? 1 : -1));
     } catch {
@@ -40,9 +40,9 @@ export function SquareActions({ postId, likes, views }: { postId: string; likes:
         aria-pressed={liked}
         disabled={busy}
       >
-        <LikeIcon />{liked ? "已赞" : "赞"} {count}
+        <Heart size={15} />{liked ? "已赞" : "赞"} {count}
       </button>
-      <span className="square-views"><ViewIcon />浏览 {views}</span>
+      <span className="square-views"><Eye size={15} />浏览 {views}</span>
     </div>
   );
 }

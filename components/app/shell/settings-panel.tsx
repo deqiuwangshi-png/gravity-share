@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { FEISHU_FEEDBACK_URL } from "@/lib/config";
 import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
+import { useToast } from "@/components/app/common/toast";
+import { DevicesPanel } from "./devices-panel";
 
-export type PanelId = "settings" | "help";
+export type PanelId = "settings" | "security" | "devices" | "help";
 
+/** 双栏左侧导航（2026-08-23：账户安全/登录设备从设置内容中抽离为独立项） */
 const NAV_ITEMS = [
   ["用户设置", "settings"],
+  ["账户安全", "security"],
+  ["登录设备", "devices"],
   ["帮助与反馈", "help"],
 ] as const satisfies ReadonlyArray<readonly [string, PanelId]>;
 
@@ -69,7 +75,10 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  /* 修改密码（重置邮件发送中） */
+  const [passwordSending, setPasswordSending] = useState(false);
   const router = useRouter();
+  const { show } = useToast();
 
   useEffect(() => {
     const supabase = createClient();
@@ -159,6 +168,28 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
     }
   }
 
+  /**
+   * 修改密码（复用忘记密码链路）：发送重置邮件 → 邮件链接经 /auth/callback 建 recovery session
+   * → /reset-password 设置新密码。与 forgot-form 同款 redirectTo，链路已跑通。
+   */
+  async function handleChangePassword() {
+    if (passwordSending) return;
+    if (!email) {
+      show("未绑定邮箱，无法重置密码", "danger");
+      return;
+    }
+    setPasswordSending(true);
+    const { error } = await createClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+    });
+    setPasswordSending(false);
+    if (error) {
+      show("邮件发送失败，请稍后重试", "danger");
+      return;
+    }
+    show("重置邮件已发送，请查收邮箱");
+  }
+
   /** 注销账号（服务端删 auth.users + storage，级联清互动/通知；内容保留但作者置空） */
   async function handleDeleteAccount() {
     if (deleteText !== "删除" || deleting) return;
@@ -191,11 +222,6 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
               {label}
             </button>
           ))}
-          <div className="settings-side" data-placeholder>
-            <strong>创作者计划</strong>
-            <small>Lv.1 · 距离 Lv.2 还差 2 篇发布</small>
-            <div className="settings-progress"><i style={{ width: "60%" }} /></div>
-          </div>
         </aside>
         <section className="settings-content">
           <header className="settings-header">
@@ -281,10 +307,12 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
                   <SettingRow label="简介" value={bio || "未填写"} action="编辑" onAction={() => startEdit("bio")} />
                 )}
                 <SettingRow label="加入时间" value={joined || "—"} />
+              </>
+            )}
+            {tab === "security" && (
+              <>
                 <h3 className="settings-group">账户安全</h3>
-                <SettingRow label="修改密码" value="通过验证邮件重置" action="修改" />
-                <SettingRow label="登录设备" value="由 Supabase 管理" action="管理" />
-                <SettingRow label="两步验证" value="未开启" action="开启" />
+                <SettingRow label="修改密码" value="通过验证邮件重置" action={passwordSending ? "发送中…" : "发送邮件"} onAction={() => void handleChangePassword()} />
                 <div className="settings-row danger">
                   <span className="settings-row-label">永久删除账号</span>
                   {deleteConfirm ? (
@@ -310,6 +338,9 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
                 {deleteError && <p className="settings-edit-error" role="alert">{deleteError}</p>}
               </>
             )}
+            {tab === "devices" && (
+              <DevicesPanel />
+            )}
             {tab === "help" && (
               <>
                 <SettingRow label="如何开始使用引力？" action="查看" />
@@ -321,9 +352,10 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
                 </div>
                 <div className="settings-feedback">
                   <h3>反馈意见</h3>
-                  <textarea placeholder="告诉我们你的想法或遇到的问题…" rows={3} />
-                  <input type="text" placeholder="联系方式（选填）" />
-                  <button className="settings-submit" type="button">提交反馈</button>
+                  <p className="settings-feedback-desc">遇到问题或有建议？通过飞书表单告诉我们，我们会尽快处理。</p>
+                  <a className="settings-feedback-link" href={FEISHU_FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
+                    前往提交反馈 →
+                  </a>
                 </div>
               </>
             )}

@@ -1,12 +1,22 @@
+/**
+ * 首页公告走马灯（client，019 起读库）——server 读 fetchAnnouncements 传 props，本组件只管轮播
+ * - notice 文字卡：图标（有则显示）+ 标题 + 描述 + 「查看详情」（有 link 时）
+ * - event / ad 海报卡：image_url 大图（整卡可点），无图时回落文字卡
+ * - 链接：站内路径 next/link；外链 http(s) 走 /go 安全网关（safeHref）
+ * - 轮播：自动 4s + Hover 暂停 + 圆点手动切换；单条不轮播
+ */
 "use client";
 
 import { useEffect, useState } from "react";
-import { ANNOUNCEMENTS } from "@/lib/data";
+import Link from "next/link";
+import { safeHref } from "@/lib/links";
+import { publicImageUrl } from "@/lib/storage";
+import type { Announcement } from "@/lib/types";
 
 /** 自动轮播间隔（毫秒） */
 const INTERVAL = 4000;
 
-/** 图标标识 → 内联 SVG（极简几何线条，数据层只存标识，图形由组件渲染） */
+/** 文字卡图标标识 → 内联 SVG（数据层只存标识，图形由组件渲染） */
 const ICONS = {
   spark: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -27,20 +37,39 @@ const ICONS = {
   ),
 } as const;
 
-/** 无图公告走马灯：自动轮播 + Hover 暂停 + 圆点手动切换 */
-export function AnnouncementCarousel() {
+/** 海报图 URL：image_url 为 http(s) 直接使用，否则视为 storage announcements 桶的 path */
+function posterUrl(url: string): string {
+  return /^https?:\/\//.test(url) ? url : publicImageUrl("announcements", url);
+}
+
+/** 链接壳：站内 next/link，外链 /go 安全网关；无 link 返回 null（纯展示） */
+function AnnounceLink({ item, children, className }: { item: Announcement; children: React.ReactNode; className?: string }) {
+  if (!item.link) return <span className={className}>{children}</span>;
+  if (item.link.startsWith("/")) {
+    return <Link className={className} href={item.link}>{children}</Link>;
+  }
+  const href = safeHref(item.link) ?? item.link;
+  return <a className={className} href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
+}
+
+export function AnnouncementCarousel({ items }: { items: Announcement[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  /* 数据更新（增删公告）时索引越界保护 */
+  const safeIndex = items.length === 0 ? 0 : index % items.length;
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || items.length <= 1) return;
     const timer = setInterval(() => {
-      setIndex((i) => (i + 1) % ANNOUNCEMENTS.length);
+      setIndex((i) => (i + 1) % items.length);
     }, INTERVAL);
     return () => clearInterval(timer);
-  }, [paused]);
+  }, [paused, items.length]);
 
-  const item = ANNOUNCEMENTS[index];
+  const item = items[safeIndex];
+  if (!item) return null;
+
+  const isPoster = (item.kind === "event" || item.kind === "ad") && item.imageUrl;
 
   return (
     <section
@@ -48,25 +77,37 @@ export function AnnouncementCarousel() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <article className="announce-card" key={index}>
-        <span className="announce-icon">{ICONS[item.icon]}</span>
-        <div className="announce-text">
-          <h3>{item.title}</h3>
-          <p>{item.desc}</p>
+      {isPoster ? (
+        <AnnounceLink item={item} className="announce-card announce-poster">
+          {/* eslint-disable-next-line @next/next/no-img-element -- 运营海报（storage 或外链） */}
+          <img src={posterUrl(item.imageUrl!)} alt={item.title} referrerPolicy="no-referrer" />
+          <span className="announce-poster-tag">{item.kind === "ad" ? "广告" : "活动"}</span>
+        </AnnounceLink>
+      ) : (
+        <article className="announce-card" key={item.id}>
+          {item.icon && <span className="announce-icon">{ICONS[item.icon]}</span>}
+          <div className="announce-text">
+            <h3>{item.title}</h3>
+            {item.desc && <p>{item.desc}</p>}
+          </div>
+          {item.link && (
+            <AnnounceLink item={item} className="announce-link">查看详情 →</AnnounceLink>
+          )}
+        </article>
+      )}
+      {items.length > 1 && (
+        <div className="announce-dots" role="tablist" aria-label="公告切换">
+          {items.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`announce-dot${i === safeIndex ? " active" : ""}`}
+              onClick={() => setIndex(i)}
+              aria-label={`第 ${i + 1} 条公告`}
+            />
+          ))}
         </div>
-        <span className="announce-link" data-placeholder>查看详情 →</span>
-      </article>
-      <div className="announce-dots" role="tablist" aria-label="公告切换">
-        {ANNOUNCEMENTS.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            className={`announce-dot${i === index ? " active" : ""}`}
-            onClick={() => setIndex(i)}
-            aria-label={`第 ${i + 1} 条公告`}
-          />
-        ))}
-      </div>
+      )}
     </section>
   );
 }

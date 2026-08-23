@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { CommentMenu } from "@/components/app/common/comment-menu";
+import { PostMenu } from "@/components/app/common/post-menu";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import type { CommentDTO } from "@/lib/types";
 
@@ -22,7 +22,7 @@ export function ProfileComment({
         <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="profile-comment-avatar" authorId={comment.authorId} />
         <b>{comment.authorName}</b>
         <small>{comment.time}</small>
-        <CommentMenu comment={comment} isOwner onDeleted={onChanged} />
+        <PostMenu targetType="comment" targetId={comment.id} isOwner content={comment.content} onDeleted={onChanged} />
       </div>
       <p className="profile-comment-content">{comment.content}</p>
     </div>

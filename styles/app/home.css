@@ -1,0 +1,123 @@
+/* (app) 首页内容流三列卡片（HomeFeed：读广场数据，2026-08-23）
+ * 与广场页单列列表（square-list / square-card）分离——首页用三列卡片布局 */
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.home-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-primary);
+  box-shadow: 0 8px 24px rgba(25, 45, 38, 0.06);
+}
+
+/* 头部：头像 + 用户名 + 时间 */
+.home-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.home-avatar {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-card-meta {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.home-card-meta b {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-card-meta small {
+  color: var(--text-soft);
+  font-size: 10px;
+}
+
+/* 正文：最多 3 行，超出省略 */
+.home-card-body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin: 0;
+  color: var(--foreground);
+  font-size: 13px;
+  line-height: 1.65;
+  word-break: break-word;
+}
+
+/* 发布类型标识（机会披露 / 内容来源，合规警示，与广场列表视觉一致） */
+.home-card-notice {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.home-card-notice b {
+  font-weight: 600;
+}
+
+.home-card-notice.opportunity {
+  color: var(--text-muted);
+}
+
+.home-card-notice.opportunity b {
+  color: var(--error);
+}
+
+.home-card-notice.source {
+  color: var(--text-soft);
+}
+
+/* 底部统计：赞 / 评论 / 浏览 + 含链接标记 */
+.home-card-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 10px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.home-card-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.home-card-link-mark {
+  color: var(--primary);
+}

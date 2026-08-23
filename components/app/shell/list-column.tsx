@@ -1,6 +1,11 @@
 /**
- * 排名列表面板（如「热门发现」「最近新增」）
+ * 右栏列表面板（「最新发现」等，2026-08-23 内容池归一后接真实数据）
+ * items 为可点击条目（整项跳 /square/[id]），不再使用静态占位
  */
+import Link from "next/link";
+
+export type ListColumnItem = { id: string; title: string; meta: string };
+
 export function ListColumn({
   title,
   description,
@@ -8,7 +13,7 @@ export function ListColumn({
 }: {
   title: string;
   description: string;
-  items: string[];
+  items: ListColumnItem[];
 }) {
   return (
     <div>
@@ -17,18 +22,17 @@ export function ListColumn({
           <h2>{title}</h2>
           <p>{description}</p>
         </div>
-        <span className="section-action" data-placeholder>更多 →</span>
       </div>
       <div className="list-panel">
         {items.map((item, index) => (
-          <div className="list-item" data-placeholder key={item}>
+          <Link className="list-item" href={`/square/${item.id}`} key={item.id}>
             <span>{String(index + 1).padStart(2, "0")}</span>
             <div>
-              <strong>{item}</strong>
-              <small>{index === 0 ? "AI · 工具" : "开发 · 资源"}</small>
+              <strong>{item.title}</strong>
+              <small>{item.meta}</small>
             </div>
             <b>→</b>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

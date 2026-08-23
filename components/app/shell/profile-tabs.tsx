@@ -6,7 +6,7 @@
  */
 "use client";
 
-export const PROFILE_TABS = ["推荐", "评论"] as const;
+const PROFILE_TABS = ["推荐", "评论"] as const;
 export type ProfileTab = (typeof PROFILE_TABS)[number];
 
 export function ProfileTabs({

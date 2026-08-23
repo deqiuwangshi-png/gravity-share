@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ProfilePost } from "@/components/app/discovery/profile-post";
+import { ProfileSquarePost } from "@/components/app/shell/profile-square-post";
 import { ProfileComment } from "@/components/app/shell/profile-comment";
 import { ProfileTabs, type ProfileTab } from "@/components/app/shell/profile-tabs";
 import { AvatarBox } from "@/components/app/common/avatar-box";
@@ -16,13 +16,13 @@ import { createClient } from "@/lib/supabase/client";
 import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
 import { SITE_INFO } from "@/lib/config";
 import {
-  DISCOVERY_UPDATED_EVENT,
+  SQUARE_UPDATED_EVENT,
   fetchCommentsByAuthor,
-  fetchDiscoveriesByAuthor,
+  fetchSquarePostsByAuthor,
   isFollowing,
   toggleFollow,
 } from "@/lib/queries";
-import type { CommentDTO, DiscoveryDTO } from "@/lib/types";
+import type { CommentDTO, SquarePostDTO } from "@/lib/types";
 
 export default function ProfileView({
   name,
@@ -44,7 +44,7 @@ export default function ProfileView({
   coverUrl?: string;
 }) {
   const [tab, setTab] = useState<ProfileTab>("推荐");
-  const [myPosts, setMyPosts] = useState<DiscoveryDTO[]>([]);
+  const [myPosts, setMyPosts] = useState<SquarePostDTO[]>([]);
   const [myComments, setMyComments] = useState<CommentDTO[]>([]);
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
@@ -53,15 +53,15 @@ export default function ProfileView({
   const [coverError, setCoverError] = useState("");
 
   const load = useCallback(() => {
-    void fetchDiscoveriesByAuthor(createClient(), userId).then(setMyPosts).catch(() => { /* 失败保持空态，事件触发再试 */ });
+    void fetchSquarePostsByAuthor(createClient(), userId).then(setMyPosts).catch(() => { /* 失败保持空态，事件触发再试 */ });
     void fetchCommentsByAuthor(createClient(), userId).then(setMyComments).catch(() => {});
   }, [userId]);
 
   useEffect(() => {
     load();
     const onUpdate = () => load();
-    window.addEventListener(DISCOVERY_UPDATED_EVENT, onUpdate);
-    return () => window.removeEventListener(DISCOVERY_UPDATED_EVENT, onUpdate);
+    window.addEventListener(SQUARE_UPDATED_EVENT, onUpdate);
+    return () => window.removeEventListener(SQUARE_UPDATED_EVENT, onUpdate);
   }, [load]);
 
   useEffect(() => {
@@ -158,9 +158,14 @@ export default function ProfileView({
           </div>
           <div className="profile-stats">
             <span><b>{myPosts.length}</b>发布</span>
-            {isSelf
-              ? <span><b>{followingCount}</b>关注</span>
-              : <span><b>{followerCount}</b>粉丝</span>}
+            {isSelf ? (
+              <>
+                <Link className="profile-stat-link" href="/profile/following"><b>{followingCount}</b>关注</Link>
+                <Link className="profile-stat-link" href="/profile/followers"><b>{followerCount}</b>粉丝</Link>
+              </>
+            ) : (
+              <span><b>{followerCount}</b>粉丝</span>
+            )}
           </div>
         </div>
 
@@ -171,7 +176,7 @@ export default function ProfileView({
 
         <div className="profile-tab-panel">
           {tab === "推荐" && (myPosts.length > 0
-            ? myPosts.map((item) => <ProfilePost item={item} key={item.id} isSelf={isSelf} onChanged={load} />)
+            ? myPosts.map((item) => <ProfileSquarePost post={item} key={item.id} isSelf={isSelf} onChanged={load} />)
             : <p className="profile-empty">还没有发布内容，点右上角「+ 发布」分享好东西。</p>)}
 
           {tab === "评论" && (myComments.length > 0

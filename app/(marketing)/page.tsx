@@ -2,12 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/common/logo";
 import { ICONS } from "@/lib/icons";
 import { SITE_INFO } from "@/lib/config";
-import { MARKETING_CATEGORIES, MARKETING_SEARCH_HINTS } from "@/lib/data";
-import { createClient } from "@/lib/supabase/server";
-import { fetchDiscoveries } from "@/lib/queries";
-
-/** 2b：营销首页精选读库（RLS 公开读，未登录可读）；动态渲染不固化 build 时数据 */
-export const dynamic = "force-dynamic";
+import { LANDING_CARDS, MARKETING_CATEGORIES, MARKETING_SEARCH_HINTS } from "@/lib/data";
 
 const problems = [
   ["平台割裂", "内容分散在几十个平台，每个都要单独逛一遍"],
@@ -21,10 +16,7 @@ const steps = [
   ["分享", "把你发现的好东西发布出来，让更多人看见"],
 ];
 
-export default async function Home() {
-  const supabase = await createClient();
-  const discoveryItems = (await fetchDiscoveries(supabase)).slice(0, 3);
-
+export default function Home() {
   return (
     <div className="site-shell">
       <header className="site-header">
@@ -81,11 +73,13 @@ export default async function Home() {
             <div><h2 className="section-title">正在被发现</h2><p className="section-desc">来自互联网不同角落的好东西</p></div>
             <span className="more" data-placeholder>查看更多 <span aria-hidden="true">→</span></span>
           </div>
-          <div className="cards">{discoveryItems.map((item) => <article className="card" key={item.title ?? item.id}>
-            <div className="card-top"><span className="type">{item.type}</span><button className="save" type="button" aria-label={`收藏${item.title ?? ""}`}>{ICONS.save}</button></div>
-            <h3>{item.title ?? ""}</h3><p>{item.description ?? ""}</p>
-            <div className="card-meta"><span>推荐自：{item.source}</span><span className="card-link" data-placeholder>查看 <span aria-hidden="true">→</span></span></div>
-          </article>)}</div>
+          <div className="cards">{LANDING_CARDS.map((card) => (
+            <article className="card" key={card.title}>
+              <div className="card-top"><span className="type">{card.type}</span><button className="save" type="button" aria-label={`收藏${card.title}`}>{ICONS.save}</button></div>
+              <h3>{card.title}</h3><p>{card.summary}</p>
+              <div className="card-meta"><span>推荐自：{card.source}</span><span className="card-link" data-placeholder>查看 <span aria-hidden="true">→</span></span></div>
+            </article>
+          ))}</div>
         </section>
 
         <section className="section container" id="how">

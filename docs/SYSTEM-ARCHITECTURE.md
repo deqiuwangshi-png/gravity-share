@@ -12,32 +12,36 @@ app/          页面柜 —— 一页一个文件，文件名就是网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 查询层、类型、配置、图标、Supabase 客户端
-supabase/     迁移柜 —— 数据库唯一真相（001-012，幂等可重跑）
+supabase/     迁移柜 —— 数据库唯一真相（001-020，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
 app/
 ├── (marketing)/  落地页 / + 法律页
 ├── (auth)/       登录 / 注册 / 忘记密码 / 重置密码
-├── (app)/        home / discover(+[id]) / categories(+[slug]) /
+├── (app)/        home（公告 + 三列卡片流）/ discover(+[id]) / categories(+[slug]) /
 │                 square(+[id]) / profile(+[id] 他人主页)
+├── go/           外链安全网关（/go?url=…，白/黑名单分级）
 ├── auth/callback/  第三方登录 / 密码重置统一回调
 └── api/account/delete/  自助注销（service_role，server-only）
 styles/
 ├── globals.css   色板 + 全局基础
-├── marketing/ · auth/ · app/（14 文件，单文件 ≤400 行）
+├── marketing/ · auth/ · app/（单文件 ≤400 行；含 square-detail / profile-posts / publish-form / home 等拆分文件）
 components/
-├── common/       logo / linkified-text / author-link / avatar-box / load-error
+├── common/       logo / linkified-text / author-link / avatar-box / load-error / toast / post-menu
 ├── marketing/    legal-layout
-└── app/          shell/（10）· discovery/（4）· square/（4）
+└── app/          shell/（11）· discovery/（4：home-feed 首页三列卡片 / discovery-card 等）· square/（6）
 lib/
 ├── queries.ts    查询层：读 + 互动/通知操作 + bumpViews（DTO 映射，注入双端 client）
 ├── storage.ts    图片上传 / 删除 / 公开 URL（纯函数，双端通用）
 ├── supabase/     client.ts（浏览器）/ server.ts（cookie 会话）/ admin.ts（service_role，仅 server）
 ├── data.ts       静态配置（分类 / 公告 / 热词）
-└── types / config（含 OAUTH_PROVIDERS / SITE_INFO）/ icons / text
-supabase/migrations/   001-012（users → 内容 → 互动 → 存储 → 公开读 → 分类 → views →
-                       points 收口 → 通知清理 → 加固 → OAuth 建档 → storage RLS 修复，全幂等）
+└── types / config（含 OAUTH_PROVIDERS / SITE_INFO / SQUARE_CATEGORIES）/ icons / text / links（外链分级）
+supabase/migrations/   001-020（users → 内容 → 互动 → 存储 → 公开读 → 分类 → views →
+                       points 收口 → 通知清理 → 加固 → OAuth 建档 → storage RLS 修复 →
+                       views 防刷 → 广场分类 → 广场发布类型 → discoveries 退役并入 square_posts →
+                       评论回复/点赞/通知 → 设备会话 RPC → 公告走马灯数据化 → 安全加固
+                       （域名信誉库/跳转审计/举报/外链处置/限频），全幂等；手动复制 SQL 执行）
 ```
 
 > 数据：**全部在 Supabase**（9 张表 + 3 存储桶 + RLS + 列级权限 + 触发器）。页面不写死数据，读走 `lib/queries.ts`，写靠 RLS + 触发器保护，管理操作走 service_role 服务端路由。
@@ -62,7 +66,7 @@ supabase/migrations/   001-012（users → 内容 → 互动 → 存储 → 公�
 
 | 模块（路由） | 说明 |
 |---|---|
-| 首页 `/home` | 公告走马灯 + 发现流（类型筛选 + 无限滚动懒加载，12 条/批）；原推荐位下线 |
+| 首页 `/home` | 公告走马灯 + 三列卡片流（HomeFeed 读广场数据，与广场单列列表分离）；原推荐位下线 |
 | 发现详情 `/discover/[id]` | 社交动态页（正文/外链/点赞/评论落库、评论操作菜单）；发现列表页已并入首页（2026-08-22） |
 | 分类 `/categories` | 入口页动态计数 + 分类详情 `/categories/[slug]` |
 | 广场 `/square` | 领域胶囊 + 话题流；详情 `/square/[id]`（点赞/评论/配图） |
@@ -72,6 +76,7 @@ supabase/migrations/   001-012（users → 内容 → 互动 → 存储 → 公�
 | 头像/封面 | 设置面板传头像、个人主页换封面、广场发帖配图（公开桶；换图自动清旧图） |
 | 认证闭环 | 邮箱 + GitHub/Google 登录、密码重置（/reset-password）、自助注销（含 storage 即时清理） |
 | 安全加固 | 列级权限（points/计数列只读）、浏览计数 RPC、通知清理触发器、安全头 4 项 |
+| 外链安全网关 | `/go?url=…` 白/黑名单分级（lib/links.ts），白名单服务端直跳防开放重定向，未知需确认，高危拦截 |
 
 ## 五、色板（全站就这 15 个颜色变量，定义在 `styles/globals.css`）
 
@@ -116,8 +121,8 @@ supabase/migrations/   001-012（users → 内容 → 互动 → 存储 → 公�
 | S1 | **CSP 安全头** | 上线前（部署域名定稿后） | 四项基础头已上线（C4）；CSP 需 nonce/hash 方案处理 inline style 与 next/font，单独专项 |
 | S2 | **分页 / 缓存** | `discoveries` > 200 条 **或** 任一列表接口响应 > 300ms | queries 层加 `limit/offset` + 游标（created_at 倒序）；**顺带解决**列表卡片收藏/点赞态 N+1（`isFavorited`/`isLiked` 每卡一查 → 批量取） |
 | S3 | **queries.ts 拆分** | `lib/queries.ts` > 500 行 **或** 新增第三个领域操作 | 拆 `lib/db/{discoveries,square,interactions,notifications}.ts`，queries.ts 变 re-export |
-| S4 | **测试 / CI** | 页面 > 20 **或** 组件 > 30 | vitest + 冒烟测试（至少覆盖：RLS 读/写、触发器计数、404 兜底三条链路）；GitHub Actions 跑 lint+build |
-| S5 | **迁移 CLI 化** | 上线前（脱离手工 Dashboard 执行） | `supabase init` + `supabase db push`，迁移纳入 git 版本管理（配合移除 .gitignore 排除项） |
+| S4 | **测试 / CI** | 页面 > 20 **或** 组件 > 30 | 纯函数冒烟已落地（`pnpm test`，覆盖 lib/text、lib/links）；**RLS 读/写、触发器计数等集成测试 + GitHub Actions CI 仍待**（需 Supabase local 栈） |
+| S5 | **迁移执行方式** | — | **用户决策（2026-08-23）：不引入 CLI**，迁移由手动复制 SQL 到 Supabase Dashboard 执行；迁移文件仍走 git 版本管理 |
 | S6 | **通知中心完整页** | 通知 > 20 条（抽屉预览放不下） | 新建 `/notifications` 完整页（分页 + 全部已读 + 筛选），抽屉只留预览 |
 | S7 | **写路径服务端校验** | 上线前（业务规则出现第二个需要强制的场景） | 推广合规等规则收敛：DB CHECK 约束（如 commission 必填）或 Route Handler 统一收口 |
 | S8 | **分类上库** | 出现「后台要配分类」的需求 | `categories` 从 `lib/data.ts` 迁 `public.categories` 表 + 管理页（当前静态配置够用，迁移 006 已归一） |

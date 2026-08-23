@@ -33,6 +33,8 @@ export function AvatarBox({
       src={publicImageUrl("avatar", path)}
       alt={name}
       onError={() => setFailed(true)}
+      /* V6：OAuth 外链头像不向第三方图床泄露 Referer */
+      referrerPolicy="no-referrer"
     />
   );
 

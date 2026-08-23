@@ -1,7 +1,7 @@
 /**
  * 广场评论输入框（client，2b 起落库）
- * 提交后 insert comments（RLS 校验作者）；成功后 router.refresh() 让服务端重拉评论列表与计数
- * 多行：textarea rows=2，Enter 发送、Shift+Enter 换行（修复单行 input 太矮、评论区拥挤的问题）
+ * 提交后 insert comments（RLS 校验作者）；成功后调用 onCreated 刷新评论列表（或 router.refresh() 兜底）
+ * 多行：textarea rows=2，Enter 发送、Shift+Enter 换行
  */
 "use client";
 
@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export function SquareCommentBox({ postId }: { postId: string }) {
+export function SquareCommentBox({ postId, onCreated }: { postId: string; onCreated?: () => void }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(false);
@@ -39,7 +39,8 @@ export function SquareCommentBox({ postId }: { postId: string }) {
       return;
     }
     setText("");
-    router.refresh();
+    if (onCreated) onCreated();
+    else router.refresh();
   }
 
   /** Enter 发送，Shift+Enter 换行 */

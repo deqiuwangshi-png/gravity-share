@@ -99,7 +99,8 @@ export function NotificationDrawer({
     }
     if (item.targetType && item.itemId) {
       onClose();
-      router.push(item.targetType === "discovery" ? `/discover/${item.itemId}` : `/square/${item.itemId}`);
+      /* 016 内容池归一后通知仅指向 square 帖子 */
+      router.push(`/square/${item.itemId}`);
     }
   }
 

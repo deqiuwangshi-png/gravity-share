@@ -56,44 +56,6 @@
   animation: user-menu-in 150ms ease;
 }
 
-.user-menu-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 8px 12px;
-}
-
-.user-menu-head > span {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.user-menu-head div {
-  min-width: 0;
-}
-
-.user-menu-head strong,
-.user-menu-head small {
-  display: block;
-}
-
-.user-menu-head strong {
-  font-size: 13px;
-}
-
-.user-menu-head small {
-  margin-top: 2px;
-  color: var(--text-soft);
-  font-size: 11px;
-}
-
 .user-menu-item {
   display: flex;
   align-items: center;

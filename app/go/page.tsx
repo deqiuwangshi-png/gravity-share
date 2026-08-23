@@ -1,15 +1,19 @@
 /**
  * 安全跳转页（/go?url=…，2026-08-23）——「离开引力前的一道闸门」
  * - 独立于 (app) 壳层：无侧边栏 / 顶栏 / 搜索框，全屏深色遮罩 + 居中极简白卡片
- * - 低风险（白名单）：服务端 redirect 直接跳转，无感
+ * - 低风险（白名单 link_domains）：服务端 redirect 直接跳转，无感
  * - 未知风险：全屏闸门卡「即将离开引力」→ 显示真实域名 → 大按钮 继续访问（新标签）/ 返回
  * - 高风险（黑名单 / 非法 URL）：全屏「已禁止访问」卡，无继续入口
+ * - 020 阶段二：白/黑名单迁库（Table Editor 维护）；每次进入记录一条 url_audit（可审计）
  * 开放重定向缓解：仅白名单域名服务端直接跳；未知/高危必须用户确认且展示真实域名
  */
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import "@/styles/app/go.css";
 import { riskOf } from "@/lib/links";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchLinkDomains } from "@/lib/queries";
 import { GoActions } from "./go-actions";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +38,23 @@ export default async function GoPage({
 
   const href = target.href;
   const host = target.hostname;
-  const risk = riskOf(href);
+
+  /* 域名信誉库（link_domains，Table Editor 在线维护） */
+  const supabase = await createClient();
+  const { trusted, blocked } = await fetchLinkDomains(supabase);
+  const risk = riskOf(href, trusted, blocked);
+
+  /* 020：跳转审计（每次进入 /go 记一条；service_role 写 url_audit，客户端无权限） */
+  const admin = createAdminClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  await admin.from("url_audit").insert({
+    url: href.slice(0, 2048),
+    host: host.slice(0, 253),
+    risk,
+    user_id: user?.id ?? null,
+  }).catch(() => {});
 
   /* 低风险：服务端直接跳转（仅白名单域名，防开放重定向） */
   if (risk === "low") redirect(href);
@@ -54,7 +74,7 @@ export default async function GoPage({
           <p className="go-kicker">引力安全提示</p>
           <h1>即将离开引力</h1>
           <p className="go-domain">{host}</p>
-          <p className="go-desc">你将前往第三方网站，平台不控制该网站内容。</p>
+          <p className="go-desc">您即将访问外部网站，引力无法保证其内容与安全，请确认目标网址。</p>
           <GoActions url={href} />
         </div>
       )}

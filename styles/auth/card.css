@@ -15,7 +15,7 @@
 
 .auth-heading h2 {
   margin: 0;
-  font-size: 38px;
+  font-size: 34px;
   letter-spacing: -1.5px;
 }
 
@@ -29,7 +29,7 @@
 .auth-mode-switch {
   display: flex;
   gap: 26px;
-  margin-top: 34px;
+  margin-top: 26px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -98,8 +98,8 @@
 
 .auth-form {
   display: grid;
-  gap: 18px;
-  margin-top: 26px;
+  gap: 15px;
+  margin-top: 22px;
 }
 
 .auth-form > label {
@@ -112,7 +112,7 @@
 
 .auth-form input:not([type="checkbox"]) {
   width: 100%;
-  height: 48px;
+  height: 44px;
   padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
@@ -170,7 +170,6 @@
 }
 
 .auth-form-options a,
-.auth-switch-copy a,
 .auth-legal a {
   color: var(--primary);
   font-weight: 600;
@@ -181,7 +180,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  height: 50px;
+  height: 46px;
   margin-top: 4px;
   padding: 0 17px 0 20px;
   border: 0;
@@ -209,7 +208,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 27px 0 18px;
+  margin: 20px 0 14px;
   color: var(--text-soft);
   font-size: 12px;
 }
@@ -235,7 +234,7 @@
   justify-content: center;
   flex: 1 1 0;
   min-width: 0;
-  gap: 6px;
+  gap: 8px;
   height: 48px;
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
@@ -243,6 +242,7 @@
   color: var(--foreground);
   cursor: pointer;
   font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
   transition: border-color 180ms ease, background 180ms ease;
 }
@@ -252,24 +252,15 @@
   background: var(--primary-subtle);
 }
 
-.social-mark {
-  color: var(--primary);
-  font-size: 18px;
+.auth-social svg {
+  flex-shrink: 0;
 }
 
-.auth-switch-copy,
 .auth-legal {
+  margin: 22px auto 0;
   color: var(--text-muted);
   font-size: 12px;
   text-align: center;
-}
-
-.auth-switch-copy {
-  margin: 22px 0 0;
-}
-
-.auth-legal {
-  margin: 28px auto 0;
 }
 
 @media (max-width: 820px) {

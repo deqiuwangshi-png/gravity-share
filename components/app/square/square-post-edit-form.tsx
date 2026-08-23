@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
+import { SQUARE_CATEGORIES } from "@/lib/config";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquarePostEditForm({
@@ -21,6 +22,8 @@ export function SquarePostEditForm({
 }) {
   const [content, setContent] = useState(post.content);
   const [url, setUrl] = useState(post.url ?? "");
+  /* 内容分类（固定枚举，随帖子展示模型传入） */
+  const [category, setCategory] = useState(post.category);
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   /* true = 保留原图；false = 移除配图（换新图时自动覆盖） */
@@ -60,7 +63,7 @@ export function SquarePostEditForm({
     }
     const { error: updateError } = await createClient()
       .from("square_posts")
-      .update({ content: text, url: url.trim() || null, image_url: nextImage })
+      .update({ content: text, url: url.trim() || null, image_url: nextImage, category })
       .eq("id", post.id);
     if (updateError) {
       /* 回滚新图，避免孤儿文件 */
@@ -93,6 +96,21 @@ export function SquarePostEditForm({
         placeholder="链接（可选）"
         aria-label="帖子链接"
       />
+
+      {/* 内容分类（固定枚举，分类是内容属性，与 #标签 分离） */}
+      <div className="publish-field publish-type-field">
+        <span>分类</span>
+        <div className="publish-chips">
+          {SQUARE_CATEGORIES.map((name) => (
+            <button
+              type="button"
+              key={name}
+              className={`publish-chip${category === name ? " active" : ""}`}
+              onClick={() => setCategory(name)}
+            >{name}</button>
+          ))}
+        </div>
+      </div>
 
       <div className="square-post-edit-image">
         {/* 当前展示图：新预览 > 保留原图 > 无 */}

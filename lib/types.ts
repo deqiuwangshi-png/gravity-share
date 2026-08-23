@@ -2,58 +2,22 @@
  * 全局类型（一个文件装下，别多开目录）
  */
 
-/** 内容形态（详情页媒体展示，发布时按 URL 后缀自动识别） */
-export type DiscoveryKind = "link" | "video" | "doc" | "image";
-
-/** 分类：以 discoveries.type 为事实源（内容有什么类型，分类就有什么） */
-export interface Category {
-  /** URL 用英文 slug，如 开发工具 → dev-tools */
-  slug: string;
-  /** 分类名（与 discoveries.type 对应） */
-  name: string;
-  /** 入口卡片一句话描述 */
-  description: string;
-  /** 图标（复用 ICONS） */
-  icon: string;
-}
-
-/** 站内公告（走马灯）：icon 为图标标识，组件内映射为 SVG */
+/** 站内公告（首页走马灯，019 起读库）：kind 决定展示形态，link 可空 */
 export interface Announcement {
-  icon: "spark" | "gem" | "ring";
+  id: string;
+  /** notice 公告（文字卡）| event 活动 | ad 广告（海报大图卡） */
+  kind: "notice" | "event" | "ad";
+  /** 文字卡图标（notice 用；海报卡可空） */
+  icon?: "spark" | "gem" | "ring";
   title: string;
   desc: string;
+  /** 跳转目标：站内路径或外链 http(s)（外链前端走 /go 安全网关） */
+  link?: string;
+  /** 海报图存储 path（event/ad 用） */
+  imageUrl?: string;
 }
 
 /* ---------- 2b 数据库 DTO（组件消费形态，author_name 由查询层 join users 填充） ---------- */
-
-/** 发现内容展示模型（对应 discoveries 表） */
-export interface DiscoveryDTO {
-  id: string;
-  type: string;
-  title?: string;
-  note: string;
-  description?: string;
-  /** 作者用户 id（跳转他人主页用） */
-  authorId: string;
-  authorName: string;
-  /** 作者头像存储 path（S-1 起，空则首字母回退） */
-  authorAvatar?: string;
-  time: string;
-  views: number;
-  likes: number;
-  comments: number;
-  tags: string[];
-  source: string;
-  origin?: string;
-  commercial?: boolean;
-  promoType?: string;
-  commission?: string;
-  url?: string;
-  kind: DiscoveryKind;
-  mediaUrl?: string;
-  /** 推荐位内容才填（/home 推荐理由展示） */
-  reason?: string;
-}
 
 /** 广场帖子展示模型（对应 square_posts 表） */
 export interface SquarePostDTO {
@@ -62,17 +26,27 @@ export interface SquarePostDTO {
   authorName: string;
   authorAvatar?: string;
   content: string;
+  /** 发布类型（2026-08-23 三入口：share 分享 / opportunity 机会 / content 内容） */
+  postType: "share" | "opportunity" | "content";
+  /** 机会披露（选填，postType=opportunity 合规：佣金/奖励等利益关系） */
+  commission?: string;
+  /** 内容来源平台（选填，postType=content 跨平台分发标识） */
+  sourcePlatform?: string;
+  /** 内容分类（固定枚举，发布时落库，与自由 #标签 分离） */
+  category: string;
   tags: string[];
   likes: number;
   comments: number;
   views: number;
   time: string;
   url?: string;
+  /** 外链处置状态（020：blocked = 不渲染外链，内容保留） */
+  urlStatus?: "normal" | "reported" | "blocked";
   /** 原创配图存储 path（S-1 起，广场详情展示） */
   imageUrl?: string;
 }
 
-/** 评论展示模型（对应 comments 表，discovery / square 归一） */
+/** 评论展示模型（对应 comments 表，017 起支持回复一层嵌套） */
 export interface CommentDTO {
   id: string;
   authorId: string;
@@ -81,6 +55,8 @@ export interface CommentDTO {
   content: string;
   time: string;
   likes: number;
+  /** 回复的父评论 id（undefined = 顶层评论） */
+  parentId?: string;
 }
 
 /** 通知展示模型（对应 notifications 表，2c 起接库） */
@@ -92,7 +68,15 @@ export interface NotificationDTO {
   content: string;
   time: string;
   read: boolean;
-  /** 跳转目标（target_type + item_id 都有才可跳） */
-  targetType?: "discovery" | "square";
+  /** 跳转目标（target_type + item_id 都有才可跳；016 内容池归一后仅 square） */
+  targetType?: "square";
   itemId?: string;
+}
+
+/** 用户卡片（关注/粉丝列表项，join users） */
+export interface UserCardDTO {
+  id: string;
+  name: string;
+  bio: string;
+  avatarUrl?: string;
 }

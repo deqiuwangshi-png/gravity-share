@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AppAside } from "@/components/app/shell/app-aside";
-import { categories } from "@/lib/data";
+import { SQUARE_CATEGORIES, SQUARE_CATEGORY_META } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
-import { fetchDiscoveries } from "@/lib/queries";
+import { fetchSquarePosts } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "全部分类 | 引力",
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CategoriesPage() {
   const supabase = await createClient();
-  const items = await fetchDiscoveries(supabase);
+  const posts = await fetchSquarePosts(supabase);
 
   return <div className="app-content app-layout">
     <div className="app-feed">
@@ -24,14 +24,15 @@ export default async function CategoriesPage() {
         <p>按方向浏览所有内容分类</p>
       </header>
 
-      <div className="category-grid">{categories.map((cat) => {
-        const count = items.filter((item) => item.type === cat.name).length;
+      <div className="category-grid">{SQUARE_CATEGORIES.map((name) => {
+        const meta = SQUARE_CATEGORY_META[name];
+        const count = posts.filter((post) => post.category === name).length;
         return (
-          <Link className="category-card" href={`/categories/${cat.slug}`} key={cat.slug}>
-            <span className="category-icon">{cat.icon}</span>
+          <Link className="category-card" href={`/categories/${meta.slug}`} key={name}>
+            <span className="category-icon">{meta.icon}</span>
             <div>
-              <strong>{cat.name}</strong>
-              <small>{cat.description}</small>
+              <strong>{name}</strong>
+              <small>{meta.desc}</small>
               <em>{count} 个内容</em>
             </div>
             <span className="category-arrow" aria-hidden="true">→</span>

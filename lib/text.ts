@@ -18,15 +18,6 @@ export function extractTags(text: string): string[] {
   return [...text.matchAll(/#([^\s#，。！？；、]+)/g)].map((match) => match[1]);
 }
 
-/** 按 URL 后缀自动识别内容形态（发布零输入） */
-export function judgeKind(url: string | undefined): "link" | "video" | "doc" | "image" {
-  const path = (url ?? "").toLowerCase().split("?")[0];
-  if (/\.(mp4|mov|webm|avi|mkv)$/.test(path)) return "video";
-  if (/\.(pdf|docx?|xlsx?|pptx?|md|txt|epub)$/.test(path)) return "doc";
-  if (/\.(png|jpe?g|gif|webp|svg|avif)$/.test(path)) return "image";
-  return "link";
-}
-
 /** 相对时间（库 created_at → 展示文案：刚刚 / X 分钟前 / X 小时前 / X 天前 / 日期）
  * 注意：1 分钟内必须返回中文「刚刚」——旧实现返回英文 "now"，在评论区表现为乱码字符（体验 BUG） */
 export function formatRelativeTime(iso: string): string {

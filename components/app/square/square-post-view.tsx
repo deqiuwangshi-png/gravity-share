@@ -14,11 +14,14 @@ import { AuthorLink } from "@/components/app/common/author-link";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { LinkifiedText } from "@/components/app/common/linkified-text";
 import { publicImageUrl } from "@/lib/storage";
+import { normalizeUrl, safeHref } from "@/lib/links";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner: boolean }) {
   const [editing, setEditing] = useState(false);
   const router = useRouter();
+  /* 修复「填了网址不显示」：url 字段入库但从未渲染；正文已含该链接时不重复展示 */
+  const linkUrl = post.url && !post.content.includes(post.url) ? normalizeUrl(post.url) : null;
 
   return (
     <>
@@ -52,9 +55,24 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
       ) : (
         <>
           <p className="square-content"><LinkifiedText text={post.content} /></p>
+          {post.urlStatus === "blocked" ? (
+            <p className="square-post-link-removed">该链接已被移除</p>
+          ) : (
+            linkUrl && (
+              <a className="square-post-link" href={safeHref(linkUrl) ?? linkUrl} target="_blank" rel="noopener noreferrer">
+                原文链接：{post.url}
+              </a>
+            )
+          )}
           {post.imageUrl && (
             /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
             <img className="square-post-image" src={publicImageUrl("post", post.imageUrl)} alt="帖子配图" />
+          )}
+          {post.postType === "opportunity" && (
+            <p className="square-post-notice opportunity"><b>⚠ 机会</b>{post.commission ? ` · ${post.commission}` : ""}</p>
+          )}
+          {post.postType === "content" && post.sourcePlatform && (
+            <p className="square-post-notice source">来源：{post.sourcePlatform}</p>
           )}
         </>
       )}

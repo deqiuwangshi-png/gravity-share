@@ -1,7 +1,7 @@
 /**
  * 轻量提示系统（2026-08-23）——统一替代浏览器原生 confirm 与局部悬浮提示
  * - show()：底部居中 toast，CSS 动画淡入淡出，2.2s 自动消失（tone: neutral / danger）
- * - 删除等危险操作不再弹窗二次确认，由各菜单内联确认（见 PostMenu/CommentMenu）
+ * - 删除等危险操作不再弹窗二次确认，由各菜单内联确认（见 PostMenu）
  * ToastProvider 挂载于 (app)/layout.tsx，应用区全部组件可用 useToast()
  */
 "use client";

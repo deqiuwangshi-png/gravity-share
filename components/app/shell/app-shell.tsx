@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/common/logo";
 import { SettingsPanel, type PanelId } from "./settings-panel";
@@ -21,6 +21,14 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
   const [search, setSearch] = useState("");
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const router = useRouter();
+
+  /** 最小搜索（D1）：回车跳 /square?q=…，由 SquareFeed 用 useSearchParams 过滤（零新依赖） */
+  function onSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const q = search.trim();
+    router.push(q ? `/square?q=${encodeURIComponent(q)}` : "/square");
+  }
 
   /* 未读红点：查库（2c）；抽屉内已读后监听事件刷新 */
   useEffect(() => {
@@ -42,7 +50,7 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
     </aside>
     <main className="app-main">
       <header className="app-topbar">
-        <form className="global-search" onSubmit={(event) => event.preventDefault()}><span className="app-search-icon">{ICONS.search}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索你需要的东西……" aria-label="全局搜索" /><kbd>/</kbd></form>
+        <form className="global-search" onSubmit={onSearchSubmit}><span className="app-search-icon">{ICONS.search}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索你需要的东西……（回车搜索）" aria-label="全局搜索" /><kbd>/</kbd></form>
         <div className="topbar-actions">
           <NotificationTrigger
             open={notifyOpen}
