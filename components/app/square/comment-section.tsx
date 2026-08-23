@@ -14,6 +14,7 @@ import { SquareCommentBox } from "./square-comment-box";
 import { PostMenu } from "@/components/app/common/post-menu";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { AuthorLink } from "@/components/app/common/author-link";
+import { AuthorBadge } from "@/components/app/common/author-badge";
 import type { CommentDTO } from "@/lib/types";
 
 export function CommentSection({
@@ -117,10 +118,10 @@ export function CommentSection({
       <div className="square-comment-list">
         {topComments.map((comment) => (
           <div className="square-comment" key={comment.id}>
-            <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="square-avatar" authorId={comment.authorId} />
+            <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="square-avatar" badge={comment.authorBadge} authorId={comment.authorId} />
             <div className="square-comment-body">
               <div className="square-comment-meta">
-                <strong><AuthorLink authorId={comment.authorId} name={comment.authorName} /></strong>
+                <strong><AuthorLink authorId={comment.authorId} name={comment.authorName} /><AuthorBadge badge={comment.authorBadge} /></strong>
                 <small>{comment.time}</small>
                 <PostMenu targetType="comment" targetId={comment.id} isOwner={comment.authorId === myId} content={comment.content} onDeleted={refresh} />
               </div>
@@ -148,10 +149,10 @@ export function CommentSection({
 
               {repliesByParent[comment.id]?.map((reply) => (
                 <div className="square-comment square-comment-reply" key={reply.id}>
-                  <AvatarBox path={reply.authorAvatar} name={reply.authorName} className="square-avatar" authorId={reply.authorId} />
+                  <AvatarBox path={reply.authorAvatar} name={reply.authorName} className="square-avatar" badge={reply.authorBadge} authorId={reply.authorId} />
                   <div className="square-comment-body">
                     <div className="square-comment-meta">
-                      <strong><AuthorLink authorId={reply.authorId} name={reply.authorName} /></strong>
+                      <strong><AuthorLink authorId={reply.authorId} name={reply.authorName} /><AuthorBadge badge={reply.authorBadge} /></strong>
                       <small>{reply.time}</small>
                       <PostMenu targetType="comment" targetId={reply.id} isOwner={reply.authorId === myId} content={reply.content} onDeleted={refresh} />
                     </div>

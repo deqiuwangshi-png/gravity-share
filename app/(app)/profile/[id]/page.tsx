@@ -20,7 +20,7 @@ export default async function OtherProfilePage({ params }: { params: Promise<{ i
 
   const { data: profile } = await supabase
     .from("users")
-    .select("name, bio, avatar_url, cover_url")
+    .select("name, bio, avatar_url, cover_url, badge")
     .eq("id", id)
     .maybeSingle();
   if (!profile) notFound();
@@ -29,6 +29,7 @@ export default async function OtherProfilePage({ params }: { params: Promise<{ i
   const bio = (profile.bio as string) ?? "";
   const avatarUrl = (profile.avatar_url as string) ?? "";
   const coverUrl = (profile.cover_url as string) ?? "";
+  const badge = ((profile.badge as string) ?? "none") as "none" | "official" | "discoverer";
   const followerCount = await fetchFollowerCount(supabase, id);
   const followingCount = await fetchFollowingCount(supabase, id);
 
@@ -41,6 +42,7 @@ export default async function OtherProfilePage({ params }: { params: Promise<{ i
       followerCount={followerCount}
       followingCount={followingCount}
       avatarUrl={avatarUrl}
+      badge={badge}
       coverUrl={coverUrl}
     />
   );

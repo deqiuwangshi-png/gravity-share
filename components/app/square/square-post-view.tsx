@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { PostMenu } from "@/components/app/common/post-menu";
 import { SquarePostEditForm } from "./square-post-edit-form";
 import { AuthorLink } from "@/components/app/common/author-link";
+import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { LinkifiedText } from "@/components/app/common/linkified-text";
 import { publicImageUrl } from "@/lib/storage";
@@ -26,9 +27,9 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
   return (
     <>
       <div className="square-post-head">
-        <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-avatar" authorId={post.authorId} />
+        <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-avatar" badge={post.authorBadge} authorId={post.authorId} />
         <div className="square-post-meta">
-          <strong><AuthorLink authorId={post.authorId} name={post.authorName} /></strong>
+          <strong><AuthorLink authorId={post.authorId} name={post.authorName} /><AuthorBadge badge={post.authorBadge} /></strong>
           <small>{post.time}</small>
         </div>
         <PostMenu

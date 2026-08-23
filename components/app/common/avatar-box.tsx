@@ -15,21 +15,25 @@ export function AvatarBox({
   name,
   className,
   authorId,
+  badge,
 }: {
   path?: string;
   name: string;
   className?: string;
   authorId?: string;
+  /** 用户标识（021）：official 时头像加相框描边 */
+  badge?: string;
 }) {
   const [failed, setFailed] = useState(false);
   const router = useRouter();
+  const frameClass = badge === "official" ? " avatar-official" : "";
 
   const inner = !path || failed ? (
-    <span className={className} aria-hidden="true">{name.charAt(0).toUpperCase()}</span>
+    <span className={`${className ?? ""}${frameClass}`} aria-hidden="true">{name.charAt(0).toUpperCase()}</span>
   ) : (
     // eslint-disable-next-line @next/next/no-img-element -- 用户上传图，走公开 URL
     <img
-      className={`${className ?? ""} avatar-img`.trim()}
+      className={`${className ?? ""} avatar-img${frameClass}`.trim()}
       src={publicImageUrl("avatar", path)}
       alt={name}
       onError={() => setFailed(true)}

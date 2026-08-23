@@ -1,0 +1,196 @@
+/* (app) 官方认证与用户标识（021）——徽标 + 认证页 */
+
+/* ---------- 徽标基础 ---------- */
+.author-badge {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+/* 官方蓝 V（机构/企业认证） */
+.badge-official {
+  color: #2b7bff;
+}
+
+.badge-official svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 金牌「发现者」（个人认证）：金色胶囊文字 */
+.badge-discoverer {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f6c453, #e8a33d);
+  color: #5b3a00;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* 官方头像相框（AvatarBox badge=official 时叠加） */
+.avatar-official {
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px #2b7bff;
+  border-radius: 50%;
+}
+
+/* ---------- 认证页（设置双栏「官方认证」） ---------- */
+.verify-panel,
+.verify-status {
+  display: grid;
+  gap: 14px;
+}
+
+.verify-desc {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.verify-types {
+  display: grid;
+  gap: 10px;
+}
+
+.verify-type {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease;
+}
+
+.verify-type:hover {
+  border-color: var(--border-primary);
+}
+
+.verify-type strong {
+  font-size: 13px;
+}
+
+.verify-type small {
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.verify-form {
+  display: grid;
+  gap: 10px;
+}
+
+.verify-form h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.verify-form textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 10px 12px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  box-sizing: border-box;
+}
+
+.verify-form textarea:focus {
+  border-color: var(--border-primary);
+}
+
+.verify-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.verify-form-actions button {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.verify-form-actions button:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.verify-form-actions button.primary {
+  border: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+.verify-form-actions button.primary:hover {
+  background: var(--primary-dark);
+  color: var(--on-primary);
+}
+
+.verify-form-actions button:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+.verify-rejected {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--error);
+  border-radius: 8px;
+  color: var(--error);
+  font-size: 12px;
+  background: var(--error-soft, transparent);
+}
+
+.verify-status h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.verify-status p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.verify-status.approved p {
+  color: var(--text-muted);
+}
+
+.verify-badge-inline {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 4px;
+  vertical-align: middle;
+}
+
+.verify-badge-inline.badge-discoverer {
+  margin: 0 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.verify-badge-inline.badge-official svg {
+  width: 16px;
+  height: 16px;
+}

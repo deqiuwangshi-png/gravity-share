@@ -223,7 +223,8 @@
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1.6fr;
+  /* 品牌区略宽 + 服务/法律/社区三列均分（同一行水平排列） */
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
   gap: 48px;
   padding-bottom: 34px;
   border-bottom: 1px solid var(--border);

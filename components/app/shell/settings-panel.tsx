@@ -5,17 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { FEISHU_FEEDBACK_URL } from "@/lib/config";
-import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
 import { useToast } from "@/components/app/common/toast";
 import { DevicesPanel } from "./devices-panel";
+import { VerifyPanel } from "./verify-panel";
 
-export type PanelId = "settings" | "security" | "devices" | "help";
+export type PanelId = "settings" | "security" | "devices" | "verify" | "help";
 
-/** 双栏左侧导航（2026-08-23：账户安全/登录设备从设置内容中抽离为独立项） */
+/** 双栏左侧导航（2026-08-23：账户安全/登录设备抽离为独立项；021 加官方认证） */
 const NAV_ITEMS = [
   ["用户设置", "settings"],
   ["账户安全", "security"],
   ["登录设备", "devices"],
+  ["官方认证", "verify"],
   ["帮助与反馈", "help"],
 ] as const satisfies ReadonlyArray<readonly [string, PanelId]>;
 
@@ -56,19 +57,16 @@ function SettingRow({
  */
 export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; onClose: () => void }) {
   const [tab, setTab] = useState<PanelId>(initialTab);
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [joined, setJoined] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
-  const [editing, setEditing] = useState<"name" | "bio" | null>(null);
+  /* 简介行内编辑（头像/昵称已迁移到主页「编辑个人资料」弹窗） */
+  const [editing, setEditing] = useState<"bio" | null>(null);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [avatarError, setAvatarError] = useState("");
-  const [avatarUploading, setAvatarUploading] = useState(false);
 
   /* 注销账号（输入「删除」确认，防误触） */
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -89,18 +87,11 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
       setEmail(u.email ?? "");
       const { data: profile } = await supabase
         .from("users")
-        .select("name, bio, created_at, avatar_url")
+        .select("bio, created_at")
         .eq("id", u.id)
         .maybeSingle();
-      setName(
-        (profile?.name as string) ||
-          (u.user_metadata?.name as string) ||
-          u.email?.split("@")[0] ||
-          "引力用户",
-      );
       setBio((profile?.bio as string) ?? "");
       setJoined((profile?.created_at as string)?.slice(0, 7) ?? "");
-      setAvatarUrl((profile?.avatar_url as string) ?? "");
     });
   }, []);
 
@@ -112,60 +103,24 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  function startEdit(field: "name" | "bio") {
+  function startEdit(field: "bio") {
     setEditing(field);
-    setDraft(field === "name" ? name : bio);
+    setDraft(bio);
     setError("");
   }
 
   async function saveEdit() {
     if (!userId || !editing) return;
-    const value = editing === "name" ? draft.trim() : draft;
-    if (editing === "name" && !value) return;
     setSaving(true);
     setError("");
-    const supabase = createClient();
-    const patch = editing === "name" ? { name: value } : { bio: value };
-    const { error: saveError } = await supabase.from("users").update(patch).eq("id", userId);
+    const { error: saveError } = await createClient().from("users").update({ bio: draft }).eq("id", userId);
     setSaving(false);
     if (saveError) {
       setError("保存失败，请稍后重试");
       return;
     }
-    if (editing === "name") setName(value);
-    else setBio(value);
+    setBio(draft);
     setEditing(null);
-  }
-
-  /** 头像上传（S-1）：校验 → storage → update users.avatar_url */
-  async function onAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file || !userId) return;
-    const invalid = validateImage(file);
-    if (invalid) {
-      setAvatarError(invalid);
-      return;
-    }
-    setAvatarError("");
-    setAvatarUploading(true);
-    try {
-      const path = await uploadImage("avatar", file, userId);
-      const { error: saveError } = await createClient().from("users").update({ avatar_url: path }).eq("id", userId);
-      if (saveError) {
-        /* BUG-14：更新失败回滚新图 */
-        void removeImage("avatar", path);
-        setAvatarError("保存失败，请重试");
-        return;
-      }
-      /* BUG-14：换图成功清理旧图（与旧 path 不同才删） */
-      if (avatarUrl && avatarUrl !== path) void removeImage("avatar", avatarUrl);
-      setAvatarUrl(path);
-    } catch {
-      setAvatarError("上传失败，请重试");
-    } finally {
-      setAvatarUploading(false);
-    }
   }
 
   /**
@@ -232,52 +187,6 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
             {tab === "settings" && (
               <>
                 <h3 className="settings-group">个人资料</h3>
-                <div className="settings-row">
-                  <span className="settings-row-label">头像</span>
-                  {avatarUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图 */
-                    <img className="settings-avatar-img" src={publicImageUrl("avatar", avatarUrl)} alt="头像" />
-                  ) : (
-                    <span className="settings-avatar-fallback">{name.charAt(0).toUpperCase()}</span>
-                  )}
-                  <input
-                    id="avatar-file"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    hidden
-                    onChange={(event) => void onAvatarChange(event)}
-                  />
-                  <label className="settings-row-action" htmlFor="avatar-file" role="button">
-                    {avatarUploading ? "上传中…" : "修改"}
-                  </label>
-                </div>
-                {avatarError && <p className="settings-edit-error">{avatarError}</p>}
-                {editing === "name" ? (
-                  <div className="settings-edit">
-                    <div className="settings-row">
-                      <span className="settings-row-label">昵称</span>
-                      <input
-                        className="settings-input"
-                        value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") void saveEdit();
-                        }}
-                        autoFocus
-                        maxLength={24}
-                      />
-                      <div className="settings-row-actions">
-                        <button type="button" onClick={() => setEditing(null)} disabled={saving}>取消</button>
-                        <button type="button" className="save" onClick={() => void saveEdit()} disabled={saving || !draft.trim()}>
-                          {saving ? "保存中…" : "保存"}
-                        </button>
-                      </div>
-                    </div>
-                    {error && <p className="settings-edit-error">{error}</p>}
-                  </div>
-                ) : (
-                  <SettingRow label="昵称" value={name} action="修改" onAction={() => startEdit("name")} />
-                )}
                 <SettingRow label="邮箱" value={email || "未设置"} action="修改" />
                 {editing === "bio" ? (
                   <div className="settings-edit">
@@ -340,6 +249,9 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
             )}
             {tab === "devices" && (
               <DevicesPanel />
+            )}
+            {tab === "verify" && (
+              <VerifyPanel />
             )}
             {tab === "help" && (
               <>

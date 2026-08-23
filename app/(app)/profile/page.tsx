@@ -17,7 +17,7 @@ export default async function ProfilePage() {
   /* 读 public.users 资料（RLS：auth.uid() = id，仅自己） */
   const { data: profile } = await supabase
     .from("users")
-    .select("name, bio, avatar_url, cover_url")
+    .select("name, bio, avatar_url, cover_url, badge")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -29,6 +29,7 @@ export default async function ProfilePage() {
   const bio = (profile?.bio as string) ?? "";
   const avatarUrl = (profile?.avatar_url as string) ?? "";
   const coverUrl = (profile?.cover_url as string) ?? "";
+  const badge = ((profile?.badge as string) ?? "none") as "none" | "official" | "discoverer";
   const followerCount = await fetchFollowerCount(supabase, user.id);
   const followingCount = await fetchFollowingCount(supabase, user.id);
 
@@ -40,6 +41,7 @@ export default async function ProfilePage() {
       followerCount={followerCount}
       followingCount={followingCount}
       avatarUrl={avatarUrl}
+      badge={badge}
       coverUrl={coverUrl}
     />
   );

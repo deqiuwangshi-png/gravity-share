@@ -8,6 +8,7 @@ import "@/styles/app/notification.css";
 import "@/styles/app/settings.css";
 import "@/styles/app/settings-delete.css";
 import "@/styles/app/settings-devices.css";
+import "@/styles/app/verify.css";
 import "@/styles/app/feed.css";
 import "@/styles/app/home.css";
 import "@/styles/app/square.css";

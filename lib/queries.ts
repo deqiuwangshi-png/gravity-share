@@ -28,7 +28,7 @@ export type SquarePostRow = {
   comments_count: number;
   created_at: string;
   url_status: string;
-  users: { id: string; name: string; avatar_url: string | null } | null;
+  users: { id: string; name: string; avatar_url: string | null; badge: string | null } | null;
 };
 
 /** comments 行 + 关联作者名——导出供 DTO 映射测试构造 */
@@ -38,7 +38,7 @@ export type CommentRow = {
   likes: number;
   parent_id: string | null;
   created_at: string;
-  users: { id: string; name: string; avatar_url: string | null } | null;
+  users: { id: string; name: string; avatar_url: string | null; badge: string | null } | null;
 };
 
 const SQUARE = "square_posts";
@@ -61,6 +61,7 @@ export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
     authorId: row.users?.id ?? "",
     authorName: safeName(row.users?.name),
     authorAvatar: row.users?.avatar_url ?? undefined,
+    authorBadge: (row.users?.badge as SquarePostDTO["authorBadge"]) ?? "none",
     content: row.content,
     postType: (row.post_type as "share" | "opportunity" | "content") ?? "share",
     commission: row.commission ?? undefined,
@@ -84,6 +85,7 @@ export function toCommentDTO(row: CommentRow): CommentDTO {
     authorId: row.users?.id ?? "",
     authorName: safeName(row.users?.name),
     authorAvatar: row.users?.avatar_url ?? undefined,
+    authorBadge: (row.users?.badge as CommentDTO["authorBadge"]) ?? "none",
     content: row.content,
     time: formatRelativeTime(row.created_at),
     likes: row.likes,
@@ -147,7 +149,7 @@ export async function fetchLinkDomains(supabase: SupabaseClient): Promise<{ trus
 export async function fetchSquarePosts(supabase: SupabaseClient, limit?: number): Promise<SquarePostDTO[]> {
   const { data } = await supabase
     .from(SQUARE)
-    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url)")
+    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
     .order("created_at", { ascending: false })
     .limit(limit ?? 100);
   return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
@@ -157,7 +159,7 @@ export async function fetchSquarePosts(supabase: SupabaseClient, limit?: number)
 export async function fetchSquarePostById(supabase: SupabaseClient, id: string): Promise<SquarePostDTO | null> {
   const { data } = await supabase
     .from(SQUARE)
-    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url)")
+    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
     .eq("id", id)
     .maybeSingle();
   return data ? toSquarePostDTO(data as SquarePostRow) : null;
@@ -167,7 +169,7 @@ export async function fetchSquarePostById(supabase: SupabaseClient, id: string):
 export async function fetchSquarePostsByAuthor(supabase: SupabaseClient, userId: string): Promise<SquarePostDTO[]> {
   const { data } = await supabase
     .from(SQUARE)
-    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url)")
+    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
     .eq("author_id", userId)
     .order("created_at", { ascending: false });
   return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
@@ -177,7 +179,7 @@ export async function fetchSquarePostsByAuthor(supabase: SupabaseClient, userId:
 export async function fetchComments(supabase: SupabaseClient, targetId: string): Promise<CommentDTO[]> {
   const { data } = await supabase
     .from(COMMENTS)
-    .select("*, users!comments_author_id_fkey(id, name, avatar_url)")
+    .select("*, users!comments_author_id_fkey(id, name, avatar_url, badge)")
     .eq("target_type", "square")
     .eq("target_id", targetId)
     .order("created_at", { ascending: true });
@@ -188,7 +190,7 @@ export async function fetchComments(supabase: SupabaseClient, targetId: string):
 export async function fetchCommentsByAuthor(supabase: SupabaseClient, userId: string): Promise<CommentDTO[]> {
   const { data } = await supabase
     .from(COMMENTS)
-    .select("*, users!comments_author_id_fkey(id, name, avatar_url)")
+    .select("*, users!comments_author_id_fkey(id, name, avatar_url, badge)")
     .eq("author_id", userId)
     .order("created_at", { ascending: false });
   return (data as CommentRow[] | null)?.map(toCommentDTO) ?? [];
@@ -430,6 +432,30 @@ export async function fetchFollowers(supabase: SupabaseClient, userId: string): 
 export async function fetchFollowingIds(supabase: SupabaseClient, userId: string): Promise<string[]> {
   const { data } = await supabase.from(FOLLOWS).select("following_id").eq("follower_id", userId);
   return (data as Array<{ following_id: string }> | null)?.map((row) => row.following_id) ?? [];
+}
+
+/* ---------- 021 官方认证（verifications 申请表，本人读） ---------- */
+
+export type VerificationRow = {
+  id: string;
+  vtype: "personal" | "organization" | "enterprise";
+  statement: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+};
+
+/** 我的认证申请（RLS 本人读；最新一条在前） */
+export async function fetchVerifications(supabase: SupabaseClient): Promise<VerificationRow[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("verifications")
+    .select("id, vtype, statement, status, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+  return (data as VerificationRow[] | null) ?? [];
 }
 
 /* ---------- BUG-4 浏览计数（RPC：security definer 只 +views，不放开表 update） ---------- */

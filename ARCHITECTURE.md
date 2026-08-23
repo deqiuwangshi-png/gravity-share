@@ -26,7 +26,7 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-020，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-021，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
@@ -82,7 +82,8 @@ yinli/
 │                               018 设备会话 RPC（security definer 查/撤 auth.sessions）→
 │                               019 公告走马灯数据化（announcements 表 + RLS）→
 │                               020 安全加固（link_domains 域名信誉库 / url_audit 跳转审计 /
-│                               reports 举报 / square_posts.url_status / 发布评论限频），全幂等；
+│                               reports 举报 / square_posts.url_status / 发布评论限频）→
+│                               021 认证标识（users.badge + verifications 申请表），全幂等；
 │                               手动复制 SQL 到 Supabase Dashboard 执行，不引入 CLI）
 ├── vitest.config.ts            vitest 配置 + lib/*.test.ts（纯函数冒烟测试）
 ├── public/                     静态资源

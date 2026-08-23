@@ -256,3 +256,79 @@
     display: none;
   }
 }
+
+/* 编辑个人资料弹窗（2026-08-23：头像/昵称迁移自用户设置；内容区复用 settings 行样式） */
+.profile-edit-overlay {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.profile-edit-modal {
+  width: min(420px, 100%);
+  border-radius: 14px;
+  background: var(--background);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.profile-edit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-edit-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.profile-edit-body {
+  display: grid;
+  gap: 4px;
+  padding: 18px 20px;
+}
+
+.profile-edit-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-edit-foot button {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.profile-edit-foot button:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.profile-edit-foot button.save {
+  border: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+.profile-edit-foot button.save:hover {
+  background: var(--primary-dark);
+  color: var(--on-primary);
+}
+
+.profile-edit-foot button:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}

@@ -14,6 +14,7 @@ import { LoadError } from "@/components/app/common/load-error";
 import { useSquarePosts } from "@/lib/use-square-posts";
 import { hasUrl } from "@/components/app/common/linkified-text";
 import { AuthorLink } from "@/components/app/common/author-link";
+import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { MessageCircle, Heart, Eye } from "lucide-react";
 
@@ -59,8 +60,8 @@ export function SquareFeed() {
           {filtered.map((post) => (
             <Link className="square-card" href={`/square/${post.id}`} key={post.id}>
               <div className="square-card-head">
-                <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-avatar" />
-                <strong><AuthorLink authorId={post.authorId} name={post.authorName} /></strong>
+                <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-avatar" badge={post.authorBadge} />
+                <strong><AuthorLink authorId={post.authorId} name={post.authorName} /><AuthorBadge badge={post.authorBadge} /></strong>
                 <small>{post.time}</small>
               </div>
               <p className="square-card-content">{post.content}</p>

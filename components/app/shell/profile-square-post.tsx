@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { PostMenu } from "@/components/app/common/post-menu";
+import { AuthorBadge } from "@/components/app/common/author-badge";
 import { SquarePostEditForm } from "@/components/app/square/square-post-edit-form";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { MessageCircle, Heart, Eye } from "lucide-react";
@@ -28,8 +29,8 @@ export function ProfileSquarePost({
   const inner = (
     <>
       <div className="profile-post-head">
-        <AvatarBox path={post.authorAvatar} name={post.authorName} className="profile-post-avatar" authorId={post.authorId} />
-        <b>{post.authorName}</b>
+        <AvatarBox path={post.authorAvatar} name={post.authorName} className="profile-post-avatar" badge={post.authorBadge} authorId={post.authorId} />
+        <b>{post.authorName}<AuthorBadge badge={post.authorBadge} /></b>
         <small>{post.time}</small>
         <PostMenu
           targetType="square"

@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { MessageCircle, Heart, Eye } from "lucide-react";
 import { AuthorLink } from "@/components/app/common/author-link";
+import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { hasUrl } from "@/components/app/common/linkified-text";
 import { hostOf } from "@/lib/links";
@@ -14,9 +15,9 @@ export function SquareCard({ post }: { post: SquarePostDTO }) {
   return (
     <Link className="home-card" href={`/square/${post.id}`}>
       <div className="home-card-head">
-        <AvatarBox path={post.authorAvatar} name={post.authorName} className="home-avatar" />
+        <AvatarBox path={post.authorAvatar} name={post.authorName} className="home-avatar" badge={post.authorBadge} />
         <span className="home-card-meta">
-          <b><AuthorLink authorId={post.authorId} name={post.authorName} /></b>
+          <b><AuthorLink authorId={post.authorId} name={post.authorName} /><AuthorBadge badge={post.authorBadge} /></b>
           <small>{post.time}</small>
         </span>
       </div>

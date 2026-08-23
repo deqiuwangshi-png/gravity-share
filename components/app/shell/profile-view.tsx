@@ -7,11 +7,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ProfileSquarePost } from "@/components/app/shell/profile-square-post";
 import { ProfileComment } from "@/components/app/shell/profile-comment";
 import { ProfileTabs, type ProfileTab } from "@/components/app/shell/profile-tabs";
+import { ProfileEditModal } from "@/components/app/shell/profile-edit-modal";
 import { AvatarBox } from "@/components/app/common/avatar-box";
+import { AuthorBadge } from "@/components/app/common/author-badge";
 import { createClient } from "@/lib/supabase/client";
 import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
 import { SITE_INFO } from "@/lib/config";
@@ -33,6 +36,7 @@ export default function ProfileView({
   followingCount = 0,
   avatarUrl = "",
   coverUrl = "",
+  badge = "none",
 }: {
   name: string;
   bio: string;
@@ -42,6 +46,8 @@ export default function ProfileView({
   followingCount?: number;
   avatarUrl?: string;
   coverUrl?: string;
+  /** 用户标识（021） */
+  badge?: "none" | "official" | "discoverer";
 }) {
   const [tab, setTab] = useState<ProfileTab>("推荐");
   const [myPosts, setMyPosts] = useState<SquarePostDTO[]>([]);
@@ -51,6 +57,9 @@ export default function ProfileView({
   const [cover, setCover] = useState(coverUrl);
   const [coverBusy, setCoverBusy] = useState(false);
   const [coverError, setCoverError] = useState("");
+  /* 编辑个人资料弹窗（头像+昵称；简介在用户设置里编辑） */
+  const [showEdit, setShowEdit] = useState(false);
+  const router = useRouter();
 
   const load = useCallback(() => {
     void fetchSquarePostsByAuthor(createClient(), userId).then(setMyPosts).catch(() => { /* 失败保持空态，事件触发再试 */ });
@@ -141,11 +150,11 @@ export default function ProfileView({
 
         {/* 头像 → 昵称行（右侧操作按钮）→ 统计行（头像正下方，垂直布局） */}
         <div className="profile-head">
-          <AvatarBox path={avatarUrl} name={name} className="profile-avatar" />
+          <AvatarBox path={avatarUrl} name={name} className="profile-avatar" badge={badge} />
           <div className="profile-name-row">
-            <h1 className="profile-name">{name}</h1>
+            <h1 className="profile-name">{name}<AuthorBadge badge={badge} /></h1>
             {isSelf ? (
-              <button className="profile-edit-btn" type="button" data-placeholder>编辑个人资料</button>
+              <button className="profile-edit-btn" type="button" onClick={() => setShowEdit(true)}>编辑个人资料</button>
             ) : (
               <button
                 className={`profile-follow-btn${following ? " following" : ""}`}
@@ -172,6 +181,16 @@ export default function ProfileView({
         {/* 简介：统计行下方，左对齐纯文本（非卡片），行高 1.7 弱层级；可空 */}
         <div className="profile-bio-row">{bio ? <p className="profile-bio">{bio}</p> : null}</div>
 
+        {showEdit && (
+          <ProfileEditModal
+            name={name}
+            avatarUrl={avatarUrl}
+            userId={userId}
+            onClose={() => setShowEdit(false)}
+            onSaved={() => router.refresh()}
+          />
+        )}
+
         <ProfileTabs active={tab} onChange={setTab} />
 
         <div className="profile-tab-panel">
@@ -188,8 +207,10 @@ export default function ProfileView({
       {/* 右栏：站点信息占位 */}
       <aside className="profile-aside">
         <div className="profile-aside-links">
+          <Link href="/guidelines">引力社区规范</Link>
           <Link href="/privacy">隐私政策</Link>
           <Link href="/terms">用户协议</Link>
+          <Link href="/enforcement">举报与处罚细则</Link>
         </div>
         <p className="profile-aside-meta">
           {SITE_INFO.icp}<br />

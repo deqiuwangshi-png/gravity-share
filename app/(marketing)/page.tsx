@@ -124,6 +124,12 @@ export default function Home() {
             <h3>服务</h3>
             <Link href="/about">关于引力</Link>
             <Link href="/help">帮助中心</Link>
+          </nav>
+          <nav className="footer-col" aria-label="法律链接">
+            <h3>法律</h3>
+            <Link href="/guidelines">引力社区规范</Link>
+            <Link href="/enforcement">举报与处罚细则</Link>
+            <Link href="/disclaimer">免责声明</Link>
             <Link href="/terms">用户协议</Link>
             <Link href="/privacy">隐私政策</Link>
           </nav>

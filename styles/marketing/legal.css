@@ -67,3 +67,48 @@
   color: var(--primary);
   font-weight: 600;
 }
+
+/* 2026-08-23 法律体系扩展：列表 / 表格 / 强调 */
+.legal-section ul,
+.legal-section ol {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.legal-section li {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-muted);
+}
+
+.legal-section b {
+  color: var(--foreground);
+}
+
+.legal-table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.legal-table th,
+.legal-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+.legal-table th {
+  background: var(--bg-hover);
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.legal-table td {
+  color: var(--text-muted);
+}

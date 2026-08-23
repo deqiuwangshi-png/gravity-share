@@ -6,6 +6,7 @@
 "use client";
 
 import { PostMenu } from "@/components/app/common/post-menu";
+import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import type { CommentDTO } from "@/lib/types";
 
@@ -19,8 +20,8 @@ export function ProfileComment({
   return (
     <div className="profile-comment">
       <div className="profile-comment-head">
-        <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="profile-comment-avatar" authorId={comment.authorId} />
-        <b>{comment.authorName}</b>
+        <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="profile-comment-avatar" badge={comment.authorBadge} authorId={comment.authorId} />
+        <b>{comment.authorName}<AuthorBadge badge={comment.authorBadge} /></b>
         <small>{comment.time}</small>
         <PostMenu targetType="comment" targetId={comment.id} isOwner content={comment.content} onDeleted={onChanged} />
       </div>
