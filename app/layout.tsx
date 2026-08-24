@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import "@/styles/globals.css";
 
 const geistSans = Geist({
@@ -18,7 +17,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="zh-CN" className={`${geistSans.variable} antialiased`}>
       <body>
         {children}
-        <Analytics />
       </body>
     </html>
   );

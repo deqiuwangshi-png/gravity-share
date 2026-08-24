@@ -127,6 +127,7 @@ export default function Home() {
           </nav>
           <nav className="footer-col" aria-label="法律链接">
             <h3>法律</h3>
+            <Link href="/governance">治理规则总纲</Link>
             <Link href="/guidelines">引力社区规范</Link>
             <Link href="/enforcement">举报与处罚细则</Link>
             <Link href="/disclaimer">免责声明</Link>

@@ -17,6 +17,14 @@ import { removeImage } from "@/lib/storage";
 import { MoreHorizontal } from "lucide-react";
 import { useToast } from "./toast";
 
+/** 举报原因（与 /guidelines 红线、/enforcement 专项对齐；举报时必选） */
+const REPORT_REASONS = ["违法内容", "侵权内容", "广告推广", "骚扰攻击", "虚假信息", "其他"] as const;
+
+/** 举报短 id 生成（模块级函数：规避 react-hooks/purity 对组件内不纯调用的拦截） */
+function makeReportId(): string {
+  return `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
 export function PostMenu({
   targetType,
   targetId,
@@ -44,6 +52,7 @@ export function PostMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -56,12 +65,14 @@ export function PostMenu({
       if (!ref.current?.contains(event.target as Node)) {
         setOpen(false);
         setConfirming(false);
+        setReporting(false);
       }
     }
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
         setConfirming(false);
+        setReporting(false);
       }
     }
     document.addEventListener("mousedown", onDown);
@@ -74,7 +85,10 @@ export function PostMenu({
 
   function toggle() {
     setOpen((prev) => {
-      if (prev) setConfirming(false);
+      if (prev) {
+        setConfirming(false);
+        setReporting(false);
+      }
       return !prev;
     });
   }
@@ -101,9 +115,11 @@ export function PostMenu({
     else router.refresh();
   }
 
-  /** 举报（V7 真实落地：写 reports 表，RLS 本人可提交；处置走 Table Editor/后台） */
-  async function onReport() {
-    setOpen(false);
+  /** 举报（2026-08-24：原因必选 → 写 reports 表 → 飞书工作台同步）
+   * 写库走 RLS（本人可提交）；飞书同步走 /api/reports/feishu（server 查重 + 写多维表格），失败静默不影响主流程 */
+  async function submitReport(reason: string) {
+    if (busy) return;
+    setBusy(true);
     try {
       const supabase = createClient();
       const {
@@ -114,18 +130,29 @@ export function PostMenu({
         return;
       }
       const { error } = await supabase.from("reports").insert({
-        id: `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+        id: makeReportId(),
         reporter_id: user.id,
         target_type: targetType,
         target_id: targetId,
+        reason,
       });
       if (error) {
         show("举报失败，请重试", "danger");
         return;
       }
       show("已收到举报，我们会尽快处理");
+      /* 同步飞书工作台（fire-and-forget：凭证缺失/不可达均静默） */
+      void fetch("/api/reports/feishu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetType, targetId, reason }),
+      }).catch(() => {});
     } catch {
       show("举报失败，请重试", "danger");
+    } finally {
+      setBusy(false);
+      setReporting(false);
+      setOpen(false);
     }
   }
 
@@ -199,8 +226,26 @@ export function PostMenu({
                 修改
               </button>
             </>
+          ) : reporting ? (
+            <>
+              <div className="comment-menu-confirm">选择举报原因</div>
+              {REPORT_REASONS.map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  role="menuitem"
+                  disabled={busy}
+                  onClick={(event) => { event.preventDefault(); event.stopPropagation(); void submitReport(reason); }}
+                >
+                  {reason}
+                </button>
+              ))}
+              <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setReporting(false); }}>
+                取消
+              </button>
+            </>
           ) : (
-            <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onReport(); }}>
+            <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setReporting(true); }}>
               举报
             </button>
           )}

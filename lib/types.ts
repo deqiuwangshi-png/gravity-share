@@ -51,6 +51,42 @@ export interface SquarePostDTO {
   imageUrl?: string;
 }
 
+/* ---------- 公告正文（marketing 区 /notice/[slug]，lib/data.ts 配置渲染） ---------- */
+
+/** 公告正文单篇（配置驱动：新增公告 = data.ts 加一条 + 走马灯插一条数据） */
+export interface NoticeArticle {
+  /** 路由段：/notice/[slug] */
+  slug: string;
+  /** 主标题 */
+  title: string;
+  /** 副标题（可选，如「——引力平台上线公告 · 致每一位创作者」） */
+  subtitle?: string;
+  /** 发布日期（展示用） */
+  date: string;
+  /** 署名（如「引力团队」） */
+  author: string;
+  /** 正文章节 */
+  sections: NoticeSection[];
+}
+
+/** 公告正文章节（heading h2 / sub h3 / paras 段落支持 **加粗** / list 无序 / ordered 有序 / quote 引用块 / parasAfter 列表或引用后的总结段） */
+export interface NoticeSection {
+  /** 章节标题（h2，可选：引言类章节可无标题） */
+  heading?: string;
+  /** 小标题（h3） */
+  sub?: string;
+  /** 段落（支持 **加粗** 行内标记） */
+  paras?: string[];
+  /** 无序列表项 */
+  list?: string[];
+  /** 有序列表项 */
+  ordered?: string[];
+  /** 引用块（多段：每元素一段 <p>） */
+  quote?: string[];
+  /** 列表 / 引用块之后的总结段（支持 **加粗**） */
+  parasAfter?: string;
+}
+
 /** 评论展示模型（对应 comments 表，017 起支持回复一层嵌套） */
 export interface CommentDTO {
   id: string;

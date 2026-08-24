@@ -10,6 +10,12 @@ import { OAUTH_PROVIDERS } from "@/lib/config";
 type Channel = "email" | "phone";
 
 /**
+ * 手机号通道临时下架开关（2026-08-24：短信网关暂缓配置，先隐藏入口避免用户卡在「验证码发送失败」）
+ * 不删除任何代码；改回 true 即可随时恢复手机号 OTP 登录（发码/校验/倒计时逻辑完整保留）
+ */
+const PHONE_AUTH_ENABLED = false;
+
+/**
  * 第三方品牌官方图标（行业标准做法：GitHub octocat mark / Google 四色 G）
  * lucide 刻意不收录品牌图标（无 Google），故内联官方品牌 SVG，避免为两个图标引入依赖
  */
@@ -179,10 +185,12 @@ export default function AuthForm() {
         <h2>欢迎来到引力</h2>
       </div>
 
-      <div className="auth-mode-switch" role="tablist" aria-label="账号通道">
-        <button type="button" className={channel === "email" ? "active" : ""} role="tab" aria-selected={channel === "email"} onClick={() => setChannel("email")}>邮箱</button>
-        <button type="button" className={channel === "phone" ? "active" : ""} role="tab" aria-selected={channel === "phone"} onClick={() => setChannel("phone")}>手机号</button>
-      </div>
+      {PHONE_AUTH_ENABLED && (
+        <div className="auth-mode-switch" role="tablist" aria-label="账号通道">
+          <button type="button" className={channel === "email" ? "active" : ""} role="tab" aria-selected={channel === "email"} onClick={() => setChannel("email")}>邮箱</button>
+          <button type="button" className={channel === "phone" ? "active" : ""} role="tab" aria-selected={channel === "phone"} onClick={() => setChannel("phone")}>手机号</button>
+        </div>
+      )}
 
       {channel === "email" ? (
         /* key 隔离：邮箱表单（非受控输入）与手机号表单（受控 value）切换时必须重建，

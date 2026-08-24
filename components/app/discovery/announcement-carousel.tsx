@@ -37,18 +37,24 @@ const ICONS = {
   ),
 } as const;
 
-/** 海报图 URL：image_url 为 http(s) 直接使用，否则视为 storage announcements 桶的 path */
-function posterUrl(url: string): string {
-  return /^https?:\/\//.test(url) ? url : publicImageUrl("announcements", url);
+/** 海报图 URL：https 外部图原样；http 拒绝（混合内容/被替换风险，2026-08-24 安全加固）；其余视为 storage announcements 桶 path */
+function posterUrl(url: string): string | null {
+  if (/^https:\/\//.test(url)) return url;
+  if (/^http:\/\//.test(url)) return null;
+  return publicImageUrl("announcements", url);
 }
 
-/** 链接壳：站内 next/link，外链 /go 安全网关；无 link 返回 null（纯展示） */
+/** 链接壳：站内 next/link，外链 /go 安全网关；不安全或无 link 返回纯展示（不可点） */
 function AnnounceLink({ item, children, className }: { item: Announcement; children: React.ReactNode; className?: string }) {
   if (!item.link) return <span className={className}>{children}</span>;
-  if (item.link.startsWith("/")) {
+  /* 站内路径严格校验：拒绝 // 协议相对（跳外部）与 \ 容错路径（2026-08-24 安全加固） */
+  const isInternal = item.link.startsWith("/") && !item.link.startsWith("//") && !item.link.includes("\\");
+  if (isInternal) {
     return <Link className={className} href={item.link}>{children}</Link>;
   }
-  const href = safeHref(item.link) ?? item.link;
+  const href = safeHref(item.link);
+  /* 非 http/https（javascript:/data: 等）：不渲染可点击链接，纯展示 */
+  if (!href) return <span className={className}>{children}</span>;
   return <a className={className} href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
 }
 
@@ -69,7 +75,9 @@ export function AnnouncementCarousel({ items }: { items: Announcement[] }) {
   const item = items[safeIndex];
   if (!item) return null;
 
-  const isPoster = (item.kind === "event" || item.kind === "ad") && item.imageUrl;
+  /* http 外部图被 posterUrl 拒绝 → posterSrc 为 null → 回落文字卡 */
+  const posterSrc = (item.kind === "event" || item.kind === "ad") && item.imageUrl ? posterUrl(item.imageUrl) : null;
+  const isPoster = posterSrc !== null;
 
   return (
     <section
@@ -79,8 +87,8 @@ export function AnnouncementCarousel({ items }: { items: Announcement[] }) {
     >
       {isPoster ? (
         <AnnounceLink item={item} className="announce-card announce-poster">
-          {/* eslint-disable-next-line @next/next/no-img-element -- 运营海报（storage 或外链） */}
-          <img src={posterUrl(item.imageUrl!)} alt={item.title} referrerPolicy="no-referrer" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- 运营海报（storage 或 https 外链） */}
+          <img src={posterSrc!} alt={item.title} referrerPolicy="no-referrer" />
           <span className="announce-poster-tag">{item.kind === "ad" ? "广告" : "活动"}</span>
         </AnnounceLink>
       ) : (

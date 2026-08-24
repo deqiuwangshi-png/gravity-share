@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalLayout title="用户协议" updated="2026-08-23">
+    <LegalLayout title="用户协议" updated="2026-08-24">
       <section className="legal-section">
         <h2>一、协议的接受与适用范围</h2>
         <p>欢迎使用引力。使用引力平台（包括网站及未来推出的相关服务，下称「平台」），即表示你已阅读、理解并同意本协议的全部条款。本协议适用于你在平台上的浏览、搜索、发布、评论、点赞、关注、认证申请等全部行为。</p>
@@ -26,6 +26,8 @@ export default function TermsPage() {
         <h2>三、内容发布与规范</h2>
         <p>你在平台发布的内容（含文字、图片、链接等）须为合法、真实、不侵犯他人权益的信息。你应确保对外链指向的网站、产品或服务拥有合法权利或已获得合法授权。</p>
         <p>你承诺不对自己的行为和结果推卸责任：内容是否真实、交易是否完成、权益是否受损，均由你与相关方自行判断与承担，平台仅提供展示与连接。</p>
+        <p><b>推广披露义务</b>：发布内容若包含返佣 / 分佣链接、付费课程或付费服务推广、其他产品分佣或「邀请注册得奖励」等存在交易关系的情形，你须主动标注「推广」，不得隐瞒或淡化交易关系；未履行披露义务的，平台可依据《举报与处罚细则》处置。</p>
+        <p>未经许可的跨境网络接入服务（VPN 等）推广、传销式返佣、赌博诈骗及灰产推广属于<b>违禁推广</b>，禁止发布；一经发现，平台将直接采取最严厉处置并依法向有关部门报告。</p>
         <p>平台禁止的行为清单见《引力社区规范》，请一并阅读并遵守。</p>
       </section>
 
@@ -60,7 +62,7 @@ export default function TermsPage() {
 
       <section className="legal-section">
         <h2>九、联系我们</h2>
-        <p>如对本协议有任何疑问，欢迎通过帮助中心、站内反馈或飞书反馈表单联系我们。相关文档：<Link href="/privacy">隐私政策</Link> · <Link href="/guidelines">引力社区规范</Link> · <Link href="/disclaimer">免责声明</Link> · <Link href="/enforcement">举报与处罚细则</Link>。</p>
+        <p>如对本协议有任何疑问，欢迎通过帮助中心、站内反馈或飞书反馈表单联系我们。相关文档：<Link href="/governance">治理规则总纲</Link> · <Link href="/privacy">隐私政策</Link> · <Link href="/guidelines">引力社区规范</Link> · <Link href="/disclaimer">免责声明</Link> · <Link href="/enforcement">举报与处罚细则</Link>。</p>
       </section>
     </LegalLayout>
   );

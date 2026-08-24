@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
+import { sanitizeUrl } from "@/lib/url-policy";
 import { SQUARE_CATEGORIES } from "@/lib/config";
 import type { SquarePostDTO } from "@/lib/types";
 
@@ -49,6 +50,12 @@ export function SquarePostEditForm({
     event.preventDefault();
     const text = content.trim();
     if (!text || busy) return;
+    /* 2026-08-24 安全加固：链接入库前标准化（协议白名单/拒内网），非法值提示不静默丢弃 */
+    const nextUrl = url.trim() ? sanitizeUrl(url) : null;
+    if (url.trim() && !nextUrl) {
+      setError("链接格式不正确（仅支持 http/https 且非内网地址）");
+      return;
+    }
     setBusy(true);
     setError("");
     let nextImage: string | null = keepImage ? (post.imageUrl ?? null) : null;
@@ -63,7 +70,7 @@ export function SquarePostEditForm({
     }
     const { error: updateError } = await createClient()
       .from("square_posts")
-      .update({ content: text, url: url.trim() || null, image_url: nextImage, category })
+      .update({ content: text, url: nextUrl, image_url: nextImage, category })
       .eq("id", post.id);
     if (updateError) {
       /* 回滚新图，避免孤儿文件 */

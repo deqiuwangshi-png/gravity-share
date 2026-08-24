@@ -39,7 +39,7 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录（单文件 ≤ 400 行）
 components/   组件柜 —— 访问区 + feature 双层，用到两次才抽
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具
-supabase/     迁移柜 —— 数据库唯一真相（001-011，幂等可重跑）
+supabase/     迁移柜 —— 数据库唯一真相（001-022，幂等可重跑）
 ```
 
 三条规则，就这些：
@@ -76,7 +76,7 @@ supabase/     迁移柜 —— 数据库唯一真相（001-011，幂等可重跑
 | 访问区 | 路由 | 说明 |
 |---|---|---|
 | 落地页 | `/` `/about` `/help` `/terms` `/privacy` | 公开 |
-| 认证 | `/login`（登录即注册：邮箱 / 手机号 OTP）`/forgot-password` `/reset-password`（`/register` → 重定向 `/login`） | 邮箱密码（保留验证）+ 手机号 OTP + GitHub / Google + 密码重置 |
+| 认证 | `/login`（登录即注册：邮箱；手机号 OTP 代码保留但临时下架，PHONE_AUTH_ENABLED 开关控制）`/forgot-password` `/reset-password`（`/register` → 重定向 `/login`） | 邮箱密码（保留验证）+ GitHub / Google + 密码重置 |
 | 应用 | `/home`（发现流 + 无限滚动）`/discover/[id]` `/categories(/[slug])` `/square(/[id])` `/profile(/[id])` | 需登录（proxy.ts 守卫） |
 
 ---
@@ -94,7 +94,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=你的publishable key
 SUPABASE_SERVICE_ROLE_KEY=你的service_role key   # 仅注销账号功能需要，server-only
 ```
 
-3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-012`（建表、RLS、触发器、种子数据，幂等可重跑）；
+3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-022`（建表、RLS、触发器、种子数据，幂等可重跑；执行后按迁移文件头部「✅ 已执行」标记登记）；
 4. 可选：Authentication → Providers 开启 GitHub / Google（回调地址见 `docs/THIRD-PARTY-LOGIN.md`）。
 
 ### 运行

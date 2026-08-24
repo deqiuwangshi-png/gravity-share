@@ -26,27 +26,29 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-021，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-022，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
 yinli/
 ├── app/                        页面柜：只做 URL → 页面组装
-│   ├── (marketing)/            落地页 / + 法律页
-│   ├── (auth)/                 认证 /login（登录即注册：邮箱/手机号 OTP，/register → /login）
+│   ├── (marketing)/            落地页 / + 法律页 + 公告页 /notice/[slug] + 治理总纲 /governance（均配置驱动）
+│   ├── (auth)/                 认证 /login（登录即注册：邮箱；手机号 OTP 代码保留但临时下架，PHONE_AUTH_ENABLED 开关控制，/register → /login）
 │   │                           /forgot-password /reset-password
 │   ├── (app)/                  应用区：/home（公告 + 三列卡片流 HomeFeed）
-│   │                           /discover/[id]（详情） /categories(+[slug])
+│   │                           /discover/[id]（退役重定向 → /square/[id]） /categories(+[slug])
 │   │                           /square(+[id]) /profile(+[id])
 │   ├── go/                     外链安全网关（/go?url=…，白/黑名单分级，防开放重定向）
 │   ├── auth/callback/          第三方登录 / 密码重置统一回调（code → session）
 │   ├── api/account/delete/     自助注销（service_role，server-only）
 │   ├── api/auth/devices/       登录设备管理（service_role 查 auth.sessions：GET 列表 / DELETE 撤销，绑定本人）
+│   ├── api/reports/feishu/     举报同步飞书多维表格（server：24h 去重 + token 换取 + 建记录，凭证缺失降级 501）
+│   ├── api/upload/             图片上传（server：鉴权 + 魔术字节嗅探 + 大小强制 + 限流配额 + upload_audit 审计）
 │   ├── error.tsx               根错误边界（含重试）
 │   └── layout.tsx              根布局
 ├── styles/                     样式柜：全部 CSS 统一管理（import 一律 @/styles/...）
 │   ├── globals.css             色板 + 全局基础（avatar-img / author-link / logo-mark / error-fallback）
-│   ├── marketing/              落地页区：site / sections / legal
+│   ├── marketing/              落地页区：site / sections / legal / notice
 │   ├── auth/                   认证区：shell / card
 │   └── app/                    应用区：shell / discovery / home / list / modal / publish-form /
 │                               announcement / user-menu / settings / settings-delete / feed /
@@ -68,11 +70,12 @@ yinli/
 │   ├── queries.ts              查询层：读（DTO 映射）+ 互动/通知操作 + bumpViews（注入双端 client）
 │   ├── storage.ts              图片上传 / 删除（removeImage）/ 公开 URL（纯函数，server/client 通用）
 │   ├── supabase/               client.ts（浏览器）/ server.ts（cookie 会话）/ admin.ts（service_role，仅 server）
-│   ├── types.ts                全局类型 + DTO（DiscoveryDTO / SquarePostDTO / CommentDTO / NotificationDTO）
-│   ├── data.ts                 静态配置（分类 / 公告 / 热词）
+│   ├── types.ts                全局类型 + DTO（SquarePostDTO / CommentDTO / NotificationDTO）
+│   ├── data.ts                 静态配置（分类 / 公告正文 NOTICE_ARTICLES / 热词）
 │   ├── config.ts               导航 / 发布类型（categories 派生）/ SITE_INFO / OAUTH_PROVIDERS
 │   ├── icons.ts                图标单一来源
 │   ├── text.ts                 文本工具（URL / #标签提取 / 形态识别 / 相对时间）
+│   ├── url-policy.ts           外链入库标准化（sanitizeUrl：协议白名单/拒内网 IP/localhost/非标端口）
 │   └── links.ts                外链安全分级（riskOf / safeHref，供 /go 网关）
 ├── supabase/migrations/        数据库唯一真相（001 users → 002 内容 → 003 互动 → 004 存储 →
 │                               005 公开读 → 006 分类对齐 → 007 views RPC → 008 points 收口 →
@@ -83,7 +86,8 @@ yinli/
 │                               019 公告走马灯数据化（announcements 表 + RLS）→
 │                               020 安全加固（link_domains 域名信誉库 / url_audit 跳转审计 /
 │                               reports 举报 / square_posts.url_status / 发布评论限频）→
-│                               021 认证标识（users.badge + verifications 申请表），全幂等；
+│                               021 认证标识（users.badge + verifications 申请表）→
+│                               022 上传审计与限流（upload_audit 表，/api/upload 限流配额），全幂等；
 │                               手动复制 SQL 到 Supabase Dashboard 执行，不引入 CLI）
 ├── vitest.config.ts            vitest 配置 + lib/*.test.ts（纯函数冒烟测试）
 ├── public/                     静态资源
@@ -190,11 +194,11 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 外链安全网关 `/go` | ✅ | 白/黑名单分级（lib/links.ts），白名单服务端直跳，未知需确认，高危拦截 |
 | 首页三列卡片 | ✅ | HomeFeed（读广场数据三列卡片），与广场单列列表分离；CSS 拆分回 ≤400 |
 | 内容池归一（016） | ✅ | discoveries 退役并入 square_posts：发布统一广场、分类页/个人主页改读 square、`/discover/[id]` 重定向到 `/square/[id]` |
-| vitest 冒烟 | ✅ | 纯函数测试（lib/text.test.ts / lib/links.test.ts）落地 |
+| vitest 冒烟 | ✅ | 纯函数测试（lib/text.test.ts / lib/links.test.ts / lib/url-policy.test.ts 等）落地 |
 | 规模化前置（CSP / 分页缓存 / 迁移 CLI 等） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七；迁移 CLI 经用户决策改用手动复制 |
 
 **防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；`lib/queries.ts` 超过 500 行或新增领域时拆 `lib/db/`；新增写操作必须先定「RLS / 列级权限 / 触发器 / Handler」归属。
 
 ---
 
-*本规范 v2.8 于 2026-08-23 修订（回填：/go 外链网关、home-feed 首页三列卡片、toast/post-menu/lib-links、迁移清单 001-015（补 014 广场分类 / 015 广场发布类型）、CSS 拆分（square-detail / profile-posts / publish-form / home）、vitest 冒烟；明确迁移 = 手动复制 SQL 执行、不引入 CLI）。v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*
+*本规范 v2.9 于 2026-08-24 修订（迁移 001-022 全部执行并补登标记；新增 022 上传审计与限流、api/upload 路由、lib/url-policy.ts；/discover/[id] 标注退役重定向；手机号 OTP 临时下架（PHONE_AUTH_ENABLED 开关）；安全边界修复落地（外链网关兜底/上传限流/公告图片，见 SECURITY-AUDIT §7.6）；文档一致性对齐）。v2.8 于 2026-08-23 修订（回填：/go 外链网关、home-feed 首页三列卡片、toast/post-menu/lib-links、迁移清单 001-015（补 014 广场分类 / 015 广场发布类型）、CSS 拆分（square-detail / profile-posts / publish-form / home）、vitest 冒烟；明确迁移 = 手动复制 SQL 执行、不引入 CLI）。v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*

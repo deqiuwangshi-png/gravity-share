@@ -27,8 +27,9 @@ function isPrivateLiteral(host: string): boolean {
   if (IPV4_RE.test(lower)) {
     return PRIVATE_V4.some((prefix) => lower.startsWith(prefix));
   }
-  /* IPv6：全部拒绝（::1 内网；公网 IPv6 字面量在 MVP 同样不鼓励直链） */
-  if (IPV6_RE.test(lower)) return true;
+  /* IPv6：URL.hostname 对字面量返回带方括号形态（如 [::1]），先去括号再判断；全部拒绝（内网/不鼓励直链） */
+  const unbracketed = lower.startsWith("[") && lower.endsWith("]") ? lower.slice(1, -1) : lower;
+  if (IPV6_RE.test(unbracketed)) return true;
   return false;
 }
 

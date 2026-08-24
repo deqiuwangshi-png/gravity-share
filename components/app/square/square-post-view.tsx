@@ -15,14 +15,18 @@ import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { LinkifiedText } from "@/components/app/common/linkified-text";
 import { publicImageUrl } from "@/lib/storage";
-import { normalizeUrl, safeHref } from "@/lib/links";
+import { sanitizeUrl } from "@/lib/url-policy";
+import { safeHref } from "@/lib/links";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner: boolean }) {
   const [editing, setEditing] = useState(false);
   const router = useRouter();
-  /* 修复「填了网址不显示」：url 字段入库但从未渲染；正文已含该链接时不重复展示 */
-  const linkUrl = post.url && !post.content.includes(post.url) ? normalizeUrl(post.url) : null;
+  /* 修复「填了网址不显示」：url 字段入库但从未渲染；正文已含该链接时不重复展示
+   * 2026-08-24 安全加固：sanitizeUrl 入库即标准化（协议白名单/拒内网），失败为 null 不渲染；
+   * linkHref 走 /go 网关，失败亦不渲染——不再回退原始值（防 javascript:/data: 绕过） */
+  const linkUrl = post.url && !post.content.includes(post.url) ? sanitizeUrl(post.url) : null;
+  const linkHref = linkUrl ? safeHref(linkUrl) : null;
 
   return (
     <>
@@ -59,8 +63,8 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
           {post.urlStatus === "blocked" ? (
             <p className="square-post-link-removed">该链接已被移除</p>
           ) : (
-            linkUrl && (
-              <a className="square-post-link" href={safeHref(linkUrl) ?? linkUrl} target="_blank" rel="noopener noreferrer">
+            linkHref && (
+              <a className="square-post-link" href={linkHref} target="_blank" rel="noopener noreferrer">
                 原文链接：{post.url}
               </a>
             )

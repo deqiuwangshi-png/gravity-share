@@ -1,0 +1,29 @@
+/* (marketing) 公告正文页（/notice/[slug]，2026-08-24）
+ * 复用 legal.css 排版（legal-page / legal-section / h2 / h3 / ul / li），本文件只补充公告特有样式 */
+
+/* 副标题（如「——引力平台上线公告 · 致每一位创作者」） */
+.notice-subtitle {
+  margin: -6px 0 0;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* 引用块（读者提问 / 强调语句，多段） */
+.notice-quote {
+  margin: 16px 0;
+  padding: 14px 18px;
+  border-left: 3px solid var(--primary);
+  background: var(--bg-hover);
+  border-radius: 8px;
+}
+
+.notice-quote p {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.notice-quote p:last-child {
+  margin-bottom: 0;
+}
