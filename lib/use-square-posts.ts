@@ -3,6 +3,7 @@
  * 统一「拉取 + loading/failed + 重试 + SQUARE_UPDATED_EVENT 监听」模式，
  * 供 HomeFeed / SquareFeed / categories[slug] 等 client 列表复用。
  * 过滤逻辑（分类/搜索）由调用方基于返回的 posts 自己做（各页语义不同）。
+ * 2026-08-25 SEO：支持 initialPosts 服务端预取作为首帧（SSR 爬虫可见），挂载后仍自动拉取最新。
  */
 "use client";
 
@@ -11,9 +12,10 @@ import { createClient } from "@/lib/supabase/client";
 import { fetchSquarePosts, SQUARE_UPDATED_EVENT } from "@/lib/queries";
 import type { SquarePostDTO } from "@/lib/types";
 
-export function useSquarePosts() {
-  const [posts, setPosts] = useState<SquarePostDTO[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useSquarePosts(initialPosts?: SquarePostDTO[]) {
+  const [posts, setPosts] = useState<SquarePostDTO[]>(initialPosts ?? []);
+  /* 有服务端预取首帧 → 不显示加载态；无预取（纯 client 调用方）保持原「加载中」行为 */
+  const [loading, setLoading] = useState(!initialPosts);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(() => {

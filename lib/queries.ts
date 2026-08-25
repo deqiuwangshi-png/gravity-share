@@ -72,6 +72,7 @@ export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
     comments: row.comments_count,
     views: row.views,
     time: formatRelativeTime(row.created_at),
+    createdAt: row.created_at,
     /* V8：外链处置（blocked 不渲染链接，内容保留） */
     url: row.url_status === "blocked" ? undefined : (row.url ?? undefined),
     urlStatus: (row.url_status as SquarePostDTO["urlStatus"]) ?? "normal",
@@ -173,6 +174,22 @@ export async function fetchSquarePostsByAuthor(supabase: SupabaseClient, userId:
     .eq("author_id", userId)
     .order("created_at", { ascending: false });
   return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
+}
+
+/** 用户主页 id 清单（2026-08-25 sitemap 用：/profile/[id] 动态条目，时间倒序限条数） */
+export async function fetchProfileIds(
+  supabase: SupabaseClient,
+  limit?: number,
+): Promise<Array<{ id: string; createdAt: string }>> {
+  const { data } = await supabase
+    .from("users")
+    .select("id, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit ?? 500);
+  return (data as Array<{ id: string; created_at: string }> | null)?.map((row) => ({
+    id: row.id,
+    createdAt: row.created_at,
+  })) ?? [];
 }
 
 /** 评论列表（square 帖子，时间正序；内容池归一后仅 square） */

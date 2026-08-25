@@ -44,6 +44,8 @@ export interface SquarePostDTO {
   comments: number;
   views: number;
   time: string;
+  /** 原始发布时间（ISO，2026-08-25 SEO 用：Article datePublished / sitemap lastModified） */
+  createdAt: string;
   url?: string;
   /** 外链处置状态（020：blocked = 不渲染外链，内容保留） */
   urlStatus?: "normal" | "reported" | "blocked";

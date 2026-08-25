@@ -43,6 +43,16 @@
   word-break: break-all;
 }
 
+/* 完整目标地址（2026-08-25 M5：确认页展示完整 URL 供用户核对，防域名伪装） */
+.go-url {
+  margin: -8px 0 18px;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+  user-select: text;
+}
+
 .go-desc {
   margin: 0;
   color: var(--text-muted);

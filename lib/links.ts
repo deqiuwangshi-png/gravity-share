@@ -40,6 +40,25 @@ export function safeHref(url: string): string | null {
   }
 }
 
+/**
+ * /go 目标 URL 严格校验（2026-08-25 M5 安全加固，防开放重定向伪装）：
+ * ① 原始串拒绝反斜杠（浏览器宽容解析 \ 为 /，与 new URL 严格解析不一致 → 展示与实际跳转可能分离）
+ * ② 协议白名单（仅 http/https）
+ * ③ 拒绝 userinfo（https://google.com@evil.com 会在地址栏伪装成 google.com）
+ * 通过后返回规范化 href（展示与跳转共用同一来源，天然保证 host 一致性）
+ */
+export function safeRedirectTarget(raw: string): { ok: true; href: string; host: string } | { ok: false } {
+  try {
+    if (raw.includes("\\")) return { ok: false };
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return { ok: false };
+    if (parsed.username || parsed.password) return { ok: false };
+    return { ok: true, href: parsed.href, host: parsed.hostname };
+  } catch {
+    return { ok: false };
+  }
+}
+
 /** 规范化 URL：补 https:// 前缀（用户可能填 www.xxx.com / xxx.com 无协议格式） */
 export function normalizeUrl(url: string): string {
   const trimmed = url.trim();

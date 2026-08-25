@@ -3,6 +3,7 @@
  * 分类是内容属性（square_posts.category），非兴趣标签；「全部」代表所有公开内容；
  * 导航一行横向排列，PC 单行可横向滚动
  * 2b 起数据读库（RLS 公开读）：挂载拉取；发布后监听 SQUARE_UPDATED_EVENT 重新拉取
+ * 2026-08-25 SEO：接收服务端预取 initialPosts 作为首帧（SSR 爬虫可见），交互与增量刷新不变
  */
 "use client";
 
@@ -17,14 +18,15 @@ import { AuthorLink } from "@/components/app/common/author-link";
 import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { MessageCircle, Heart, Eye } from "lucide-react";
+import type { SquarePostDTO } from "@/lib/types";
 
-export function SquareFeed() {
+export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) {
   /* 分类筛选：默认「全部」（所有公开内容），点击后仅展示对应分类 */
   const [category, setCategory] = useState<string>("全部");
   /* 最小搜索（D1）：读 URL ?q= 前端过滤（content/tags/作者名），Next useSearchParams 框架能力 */
   const searchParams = useSearchParams();
   const q = (searchParams.get("q") ?? "").trim().toLowerCase();
-  const { posts, loading, failed, retry } = useSquarePosts();
+  const { posts, loading, failed, retry } = useSquarePosts(initialPosts);
 
   const filtered = (category === "全部" ? posts : posts.filter((post) => post.category === category)).filter(
     (post) =>

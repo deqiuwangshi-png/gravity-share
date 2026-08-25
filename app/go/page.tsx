@@ -5,12 +5,14 @@
  * - 未知风险：全屏闸门卡「即将离开引力」→ 显示真实域名 → 大按钮 继续访问（新标签）/ 返回
  * - 高风险（黑名单 / 非法 URL）：全屏「已禁止访问」卡，无继续入口
  * - 020 阶段二：白/黑名单迁库（Table Editor 维护）；每次进入记录一条 url_audit（可审计）
+ * - 2026-08-25 M5 安全加固：safeRedirectTarget 严格校验（拒 userinfo @ 伪装 / 反斜杠混淆 / 非 http(s)），
+ *   确认页展示完整目标地址供核对；展示与跳转共用同一规范化 href，天然保证 host 一致性
  * 开放重定向缓解：仅白名单域名服务端直接跳；未知/高危必须用户确认且展示真实域名
  */
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import "@/styles/app/go.css";
-import { riskOf } from "@/lib/links";
+import { riskOf, safeRedirectTarget } from "@/lib/links";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchLinkDomains } from "@/lib/queries";
@@ -28,16 +30,11 @@ export default async function GoPage({
   const { url: raw } = await searchParams;
   if (!raw) notFound();
 
-  let target: URL;
-  try {
-    target = new URL(raw);
-    if (target.protocol !== "http:" && target.protocol !== "https:") notFound();
-  } catch {
-    notFound();
-  }
-
+  /* M5 严格校验：协议白名单 + 拒 userinfo/反斜杠，返回规范化 href + host（展示与跳转同源） */
+  const target = safeRedirectTarget(raw);
+  if (!target.ok) notFound();
   const href = target.href;
-  const host = target.hostname;
+  const host = target.host;
 
   /* 域名信誉库（link_domains，Table Editor 在线维护） */
   const supabase = await createClient();
@@ -71,6 +68,7 @@ export default async function GoPage({
           <p className="go-kicker">引力安全提示</p>
           <h1>已禁止访问</h1>
           <p className="go-domain">{host}</p>
+          <p className="go-url">{href}</p>
           <p className="go-desc">该网站被检测到存在安全风险，平台已阻止访问。</p>
           <Link className="go-continue go-home" href="/home">返回引力</Link>
         </div>
@@ -79,6 +77,7 @@ export default async function GoPage({
           <p className="go-kicker">引力安全提示</p>
           <h1>即将离开引力</h1>
           <p className="go-domain">{host}</p>
+          <p className="go-url">{href}</p>
           <p className="go-desc">您即将访问外部网站，引力无法保证其内容与安全，请确认目标网址。</p>
           <GoActions url={href} />
         </div>

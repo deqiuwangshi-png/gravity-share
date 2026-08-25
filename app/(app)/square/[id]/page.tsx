@@ -6,14 +6,21 @@ import { SquarePostView } from "@/components/app/square/square-post-view";
 import { CommentSection } from "@/components/app/square/comment-section";
 import { createClient } from "@/lib/supabase/server";
 import { bumpViews, fetchComments, fetchSquarePostById } from "@/lib/queries";
+import { SITE_URL, buildArticle, jsonLd } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
   const post = await fetchSquarePostById(supabase, id);
   return {
-    title: post ? `${post.authorName} 的话题 | 引力` : "话题不存在 | 引力",
+    title: post ? `${post.authorName} 的话题` : "话题不存在",
     description: post?.content.slice(0, 60),
+    alternates: { canonical: `/square/${id}` },
+    openGraph: {
+      title: post ? `${post.authorName} 的话题` : "话题不存在",
+      description: post?.content.slice(0, 120),
+      type: "article",
+    },
   };
 }
 
@@ -32,6 +39,20 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="app-content square-detail-wrap">
+      {/* Article 结构化数据（UGC 长尾词入口，2026-08-25 SEO） */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd(
+            buildArticle({
+              headline: post.content.slice(0, 60),
+              authorName: post.authorName,
+              url: `${SITE_URL}/square/${post.id}`,
+              datePublished: post.createdAt,
+            }),
+          ),
+        }}
+      />
       <article className="square-detail">
         <Link className="square-back" href="/square">← 返回广场</Link>
 

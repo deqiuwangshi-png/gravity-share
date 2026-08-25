@@ -1,11 +1,17 @@
 /**
  * 个人主页（/profile）——server 端读 Supabase 会话与用户资料
  * 未登录 → /login（proxy 已拦截，双保险）；用户资料传入 ProfileView（client）
+ * 2026-08-25 SEO：私人后台页，noindex（不进搜索结果）
  */
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchFollowingCount, fetchFollowerCount } from "@/lib/queries";
 import ProfileView from "@/components/app/shell/profile-view";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function ProfilePage() {
   const supabase = await createClient();

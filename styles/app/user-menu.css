@@ -97,3 +97,33 @@
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* 游客入口（2026-08-25 SEO 公开只读：未登录访问公开区显示登录/注册） */
+.guest-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guest-user-link {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.guest-user-link:hover {
+  background: var(--bg-hover);
+}
+
+.guest-user-link.primary {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.guest-user-link.primary:hover {
+  background: var(--primary-dark);
+}

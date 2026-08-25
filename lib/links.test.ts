@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { riskOf, safeHref, normalizeUrl, hostOf } from "@/lib/links";
+import { riskOf, safeHref, safeRedirectTarget, normalizeUrl, hostOf } from "@/lib/links";
 
 describe("riskOf（外链安全分级，库表数据由调用方传入）", () => {
   const trusted = new Set(["github.com", "zhihu.com"]);
@@ -41,6 +41,36 @@ describe("safeHref（外链中转）", () => {
 
   it("非法字符串 → null", () => {
     expect(safeHref("not a url")).toBeNull();
+  });
+});
+
+describe("safeRedirectTarget（/go 严格校验，2026-08-25 M5）", () => {
+  it("正常 https URL → 返回规范化 href + host", () => {
+    expect(safeRedirectTarget("https://example.com/a?b=1")).toEqual({
+      ok: true,
+      href: "https://example.com/a?b=1",
+      host: "example.com",
+    });
+  });
+
+  it("拒绝 userinfo（@ 地址栏伪装：https://google.com@evil.com）", () => {
+    expect(safeRedirectTarget("https://google.com@evil.com/x")).toEqual({ ok: false });
+  });
+
+  it("拒绝带密码的 userinfo", () => {
+    expect(safeRedirectTarget("https://user:pass@evil.com/x")).toEqual({ ok: false });
+  });
+
+  it("拒绝反斜杠混淆（浏览器与严格解析不一致）", () => {
+    expect(safeRedirectTarget("https://evil.com\\@google.com")).toEqual({ ok: false });
+  });
+
+  it("拒绝非 http/https 协议（javascript: 注入）", () => {
+    expect(safeRedirectTarget("javascript:alert(1)")).toEqual({ ok: false });
+  });
+
+  it("拒绝非法字符串", () => {
+    expect(safeRedirectTarget("not a url")).toEqual({ ok: false });
   });
 });
 
