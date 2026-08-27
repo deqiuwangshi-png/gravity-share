@@ -13,8 +13,8 @@ import { NextResponse, type NextRequest } from "next/server";
 /** 需登录的应用路由前缀（SEO 公开化后仅剩应用主页；/discover/[id] 已 301 到 /square/[id]，无需守卫） */
 const APP_PREFIXES = ["/home"];
 
-/** 精确路径需登录（2026-08-25 SEO：/profile 自己主页需登录，/profile/[id] 他人主页公开不受影响） */
-const APP_EXACT_PATHS = ["/profile"];
+/** 精确路径需登录（2026-08-25 SEO：/profile 自己主页需登录，/profile/[id] 他人主页公开不受影响；025 /promo 推广中心需登录） */
+const APP_EXACT_PATHS = ["/profile", "/promo"];
 
 /** 认证路由前缀（route group (auth)） */
 const AUTH_PREFIXES = ["/login", "/register", "/forgot-password"];

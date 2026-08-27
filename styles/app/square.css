@@ -1,6 +1,98 @@
-/* (app) 广场（/square）：内容分类导航 + 紧凑话题列表
+/* (app) 广场（/square）：全服通告横幅 + 内容分类导航 + 紧凑话题列表
  * 2026-08-21 列表+详情两级结构改造；2026-08-23 我的领域/探索领域合并为单层内容分类
+ * 2026-08-27 024 展示位：置顶帖全服通告横幅（分类导航之上）
  * 详情页样式已拆分至 square-detail.css（治理：单文件 ≤ 400 行） */
+
+/* ---------- 024 全服通告横幅（置顶帖轮播，付费展示位） ---------- */
+
+.square-banner {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  background: var(--accent-soft);
+}
+
+.square-banner-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.square-banner-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.square-banner-sub {
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.square-banner-dots {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.square-banner-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--border-primary);
+  cursor: pointer;
+  transition: background 180ms ease;
+}
+
+.square-banner-dot.active {
+  background: var(--accent);
+}
+
+.square-banner-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.square-banner-avatar {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.square-banner-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.square-banner-content {
+  margin: 0 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.square-banner-text small {
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.square-banner-arrow {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-size: 12px;
+}
 
 /* ---------- 内容分类导航（单层固定分类，一行横向排列，可横向滚动） ---------- */
 
@@ -92,6 +184,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+  white-space: pre-line;
   min-height: 41px;
   margin: 0;
   color: var(--text-muted);

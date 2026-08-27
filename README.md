@@ -39,7 +39,7 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录（单文件 ≤ 400 行）
 components/   组件柜 —— 访问区 + feature 双层，用到两次才抽
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具
-supabase/     迁移柜 —— 数据库唯一真相（001-022，幂等可重跑）
+supabase/     迁移柜 —— 数据库唯一真相（001-025，幂等可重跑）
 ```
 
 三条规则，就这些：
@@ -94,8 +94,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=你的publishable key
 SUPABASE_SERVICE_ROLE_KEY=你的service_role key   # 仅注销账号功能需要，server-only
 ```
 
-3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-022`（建表、RLS、触发器、种子数据，幂等可重跑；执行后按迁移文件头部「✅ 已执行」标记登记）；
-4. 可选：Authentication → Providers 开启 GitHub / Google（回调地址见 `docs/THIRD-PARTY-LOGIN.md`）。
+3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-025`（建表、RLS、触发器、种子数据，幂等可重跑；执行后按迁移文件头部「✅ 已执行」标记登记）；
+4. 可选：Authentication → Providers 开启 GitHub / Google（OAuth 配置说明见 `docs/DEVELOPER-HANDBOOK.md` §2.5）。
 
 ### 运行
 
@@ -114,11 +114,8 @@ pnpm build      # 生产构建（如遇 NODE_OPTIONS 干扰：env -u NODE_OPTION
 |---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 架构规范：四个柜子、三条规则、数据层纪律 |
 | [docs/SYSTEM-ARCHITECTURE.md](docs/SYSTEM-ARCHITECTURE.md) | 一页纸版 + 规模化前置清单（触发条件对照） |
-| [docs/ARCHITECTURE-GOVERNANCE.md](docs/ARCHITECTURE-GOVERNANCE.md) | 前端治理与演进进度 |
-| [docs/ARCHITECTURE-REVIEW-v4.md](docs/ARCHITECTURE-REVIEW-v4.md) | 架构评审 v4（问题清零基线） |
-| [docs/ARCHITECTURE-REVIEW-v5.md](docs/ARCHITECTURE-REVIEW-v5.md) | 架构评审 v5（最新） |
-| [docs/THIRD-PARTY-LOGIN.md](docs/THIRD-PARTY-LOGIN.md) | GitHub / Google 登录配置 |
-| [docs/AUTH-RECOVERY-DELETE.md](docs/AUTH-RECOVERY-DELETE.md) | 密码重置与账号注销设计 |
+| [docs/DEVELOPER-HANDBOOK.md](docs/DEVELOPER-HANDBOOK.md) | 开发与维护手册（事实源：关键决策、安全设计、操作手册） |
+| [docs/OPERATIONS-RUNBOOK.md](docs/OPERATIONS-RUNBOOK.md) | 运营操作手册（公告/处置/验证） |
 
 ---
 
@@ -143,7 +140,7 @@ pnpm build      # 生产构建（如遇 NODE_OPTIONS 干扰：env -u NODE_OPTION
 ### 从哪开始
 
 - 读一遍 [ARCHITECTURE.md](ARCHITECTURE.md)（十分钟）和 [docs/SYSTEM-ARCHITECTURE.md](docs/SYSTEM-ARCHITECTURE.md)（五分钟）；
-- 对照 `docs/ARCHITECTURE-REVIEW-v5.md` 的待办清单（规模化前置 S1-S9）认领任务；
+- 对照 [docs/SYSTEM-ARCHITECTURE.md](docs/SYSTEM-ARCHITECTURE.md) §七 的规模化前置清单（S1-S9）认领任务；
 - 有想法先聊再写：**先讨论「这个规则该在哪一层」，再动手写代码。**
 
 ### 已知边界

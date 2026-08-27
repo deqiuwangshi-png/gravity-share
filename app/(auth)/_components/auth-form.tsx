@@ -183,6 +183,8 @@ export default function AuthForm() {
     <div className="auth-card">
       <div className="auth-heading">
         <h2>欢迎来到引力</h2>
+        {/* 新用户注册引导（登录即注册：无独立注册页，2026-08-27 新增，命中 .auth-heading p:last-child 样式） */}
+        <p>没有账号？输入邮箱和密码即可注册。</p>
       </div>
 
       {PHONE_AUTH_ENABLED && (
@@ -201,7 +203,7 @@ export default function AuthForm() {
           <div className="auth-form-options"><label className="checkbox-label"><input type="checkbox" name="remember" /> <span>记住我</span></label><Link href="/forgot-password">忘记密码？</Link></div>
           {error && <p className="auth-mock-note auth-error" role="alert">{error}</p>}
           {info && <p className="auth-mock-note auth-info" role="status">{info}</p>}
-          <button className="auth-submit" type="submit" disabled={submitting}>{submitting ? "登录中…" : "继续"}<span aria-hidden="true">→</span></button>
+          <button className="auth-submit" type="submit" disabled={submitting}>{submitting ? "登录中…" : "登录 / 注册"}<span aria-hidden="true">→</span></button>
         </form>
       ) : (
         <form key="phone" className="auth-form" onSubmit={submitPhone}>
@@ -209,7 +211,7 @@ export default function AuthForm() {
           <label><span>验证码</span><span className="otp-field"><input name="otp" type="text" inputMode="numeric" autoComplete="one-time-code" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="6 位验证码" required /><button type="button" className="otp-send" onClick={() => void sendOtp()} disabled={submitting || otpCooldown > 0}>{otpCooldown > 0 ? `${otpCooldown}s 后重发` : "获取验证码"}</button></span></label>
           {error && <p className="auth-mock-note auth-error" role="alert">{error}</p>}
           {info && <p className="auth-mock-note auth-info" role="status">{info}</p>}
-          <button className="auth-submit" type="submit" disabled={submitting || !otpSent}>{submitting ? "验证中…" : "继续"}<span aria-hidden="true">→</span></button>
+          <button className="auth-submit" type="submit" disabled={submitting || !otpSent}>{submitting ? "验证中…" : "登录 / 注册"}<span aria-hidden="true">→</span></button>
         </form>
       )}
 

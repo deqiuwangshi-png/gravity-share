@@ -26,7 +26,7 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-022，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-025，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
@@ -87,7 +87,10 @@ yinli/
 │                               020 安全加固（link_domains 域名信誉库 / url_audit 跳转审计 /
 │                               reports 举报 / square_posts.url_status / 发布评论限频）→
 │                               021 认证标识（users.badge + verifications 申请表）→
-│                               022 上传审计与限流（upload_audit 表，/api/upload 限流配额），全幂等；
+│                               022 上传审计与限流（upload_audit 表，/api/upload 限流配额）→
+│                               023 浏览计数 v2（游客 IP 24h 去重，user_id=NULL 不绑定身份，仅帖子维度计数）→
+│                               024 展示位（square_posts.featured_until 置顶，UGC 大喇叭，人工置值起步）→
+│                               025 推广中心（promo_orders 申请单，/promo 页 + 头像菜单入口，申请制人工开通），全幂等；
 │                               手动复制 SQL 到 Supabase Dashboard 执行，不引入 CLI）
 ├── vitest.config.ts            vitest 配置 + lib/*.test.ts（纯函数冒烟测试）
 ├── public/                     静态资源
@@ -165,9 +168,9 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 
 ### 7.5 维护方案（治理护栏）
 
-架构防腐化策略见 [`docs/ARCHITECTURE-STEWARDSHIP.md`](docs/ARCHITECTURE-STEWARDSHIP.md)：
+架构防腐化策略见 [`docs/DEVELOPER-HANDBOOK.md`](docs/DEVELOPER-HANDBOOK.md) §2.4（治理体系）：
 - **日常改动后跑 `pnpm check`**（eslint + 测试 + 治理脚本 + 死代码检测），新死代码当场清理；
-- **债务台账** `docs/ARCHITECTURE-DEBT-INVENTORY.md` 持续登记，经确认后分批清理；
+- **债务登记**：剩余已知债见 `docs/DEVELOPER-HANDBOOK.md` §4，经确认后分批清理；
 - **迁移手动执行**（用户决策，不引入 CLI）：执行后迁移文件头加 `-- ✅ 已执行 YYYY-MM-DD` 标记；
 - AI 改动遵守 AGENTS.md「维护与完成定义（DoD）」。
 
@@ -201,4 +204,4 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 
 ---
 
-*本规范 v2.9 于 2026-08-24 修订（迁移 001-022 全部执行并补登标记；新增 022 上传审计与限流、api/upload 路由、lib/url-policy.ts；/discover/[id] 标注退役重定向；手机号 OTP 临时下架（PHONE_AUTH_ENABLED 开关）；安全边界修复落地（外链网关兜底/上传限流/公告图片，见 SECURITY-AUDIT §7.6）；文档一致性对齐）。v2.8 于 2026-08-23 修订（回填：/go 外链网关、home-feed 首页三列卡片、toast/post-menu/lib-links、迁移清单 001-015（补 014 广场分类 / 015 广场发布类型）、CSS 拆分（square-detail / profile-posts / publish-form / home）、vitest 冒烟；明确迁移 = 手动复制 SQL 执行、不引入 CLI）。v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*
+*本规范 v3.2 于 2026-08-27 修订（迁移 001-025：新增 025 推广中心 promo_orders 申请单 + /promo 独立页 + 头像菜单入口，商业化阶段 1 申请制；商业化蓝图见 docs/DEVELOPER-HANDBOOK.md §2.6 及 /promo 页）。v3.1 于 2026-08-27 修订（迁移 001-024：新增 024 展示位 featured_until 置顶字段 + 侧栏广告位复用 announcements kind=ad；展示位/广告位商业化架构落地）。v3.0 于 2026-08-27 修订（迁移 001-023：新增 023 浏览计数 v2（游客 IP 24h 去重、user_id=NULL 不绑定身份）；发布三入口合并为单一表单 + 可选标注；登录页新用户注册引导；正文/评论换行 pre-line 修复；ARCHITECTURE.md 迁移声明同步 001-023）。v2.9 于 2026-08-24 修订（迁移 001-022 全部执行并补登标记；新增 022 上传审计与限流、api/upload 路由、lib/url-policy.ts；/discover/[id] 标注退役重定向；手机号 OTP 临时下架（PHONE_AUTH_ENABLED 开关）；安全边界修复落地（外链网关兜底/上传限流/公告图片，见 DEVELOPER-HANDBOOK §2.5）；文档一致性对齐）。v2.8 于 2026-08-23 修订（回填：/go 外链网关、home-feed 首页三列卡片、toast/post-menu/lib-links、迁移清单 001-015（补 014 广场分类 / 015 广场发布类型）、CSS 拆分（square-detail / profile-posts / publish-form / home）、vitest 冒烟；明确迁移 = 手动复制 SQL 执行、不引入 CLI）。v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*

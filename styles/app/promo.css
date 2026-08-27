@@ -1,0 +1,302 @@
+/* (app) 订阅计划页（2026-08-27 推广中心 → 订阅计划，/promo 需登录）
+ * 四卡一行（免费 + 三付费，选中高亮）+ 支付区（二维码占位，随选中版本变化） */
+
+.promo-page {
+  max-width: 720px;
+}
+
+/* ---------- 四卡一行 ---------- */
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.plans-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.plans-card:hover {
+  border-color: var(--border-primary);
+}
+
+.plans-card.active {
+  border: 2px solid var(--primary);
+  box-shadow: var(--shadow-card);
+}
+
+.plans-card.highlight {
+  background: var(--primary-soft);
+}
+
+.plans-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.plans-card-head b {
+  font-size: 14px;
+}
+
+.plans-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.plans-price {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.plans-price small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.plans-features {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ---------- 支付入口（随选中版本变化） ---------- */
+
+.plans-pay {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.plans-pay-free {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* 二维码占位（未接支付；真实二维码由支付服务生成） */
+.plans-qr {
+  flex-shrink: 0;
+}
+
+.plans-qr-box {
+  display: grid;
+  width: 148px;
+  height: 148px;
+  place-items: center;
+  border: 1px dashed var(--border-primary);
+  border-radius: 12px;
+  background: var(--bg-hover);
+  text-align: center;
+}
+
+.plans-qr-mark {
+  display: block;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.plans-qr-sub {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+
+.plans-pay-info {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.plans-pay-price {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.plans-pay-desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.plans-agreements {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.plans-agreements a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.plans-agreements a:hover {
+  text-decoration: underline;
+}
+
+.plans-submit {
+  width: 160px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: default;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.plans-submit:disabled {
+  opacity: 0.7;
+}
+
+/* ---------- 单次投放（自定义金额 ¥2-100，2026-08-27） ---------- */
+
+.boost-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 14px;
+}
+
+.boost-divider::before,
+.boost-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.boost-divider span {
+  color: var(--text-soft);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.boost-card {
+  border-style: dashed;
+}
+
+.boost-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.boost-currency {
+  color: var(--text-muted);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.boost-input-row input {
+  width: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.boost-input-row input:focus {
+  border-color: var(--border-primary);
+}
+
+.boost-hint {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+/* 实时效果预览条 */
+.boost-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 10px 14px;
+  border: 1px dashed var(--border-primary);
+  border-radius: 10px;
+  background: var(--primary-soft);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.boost-preview b {
+  margin-left: auto;
+  font-size: 16px;
+}
+
+.boost-pay {
+  margin-top: 14px;
+}
+
+.promo-share-note {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* 响应式：窄屏两列 → 单列，支付区纵向 */
+@media (max-width: 860px) {
+  .plans-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .plans-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plans-pay {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

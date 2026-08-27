@@ -17,6 +17,7 @@ import { hasUrl } from "@/components/app/common/linkified-text";
 import { AuthorLink } from "@/components/app/common/author-link";
 import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
+import { FeaturedBanner } from "./featured-banner";
 import { MessageCircle, Heart, Eye } from "lucide-react";
 import type { SquarePostDTO } from "@/lib/types";
 
@@ -28,7 +29,11 @@ export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) 
   const q = (searchParams.get("q") ?? "").trim().toLowerCase();
   const { posts, loading, failed, retry } = useSquarePosts(initialPosts);
 
-  const filtered = (category === "全部" ? posts : posts.filter((post) => post.category === category)).filter(
+  /* 024 展示位：置顶帖进「全服通告」横幅（全部置顶，不分分类），自然流排除置顶避免重复 */
+  const featuredPosts = posts.filter((post) => post.featured);
+  const normalPosts = posts.filter((post) => !post.featured);
+
+  const filtered = (category === "全部" ? normalPosts : normalPosts.filter((post) => post.category === category)).filter(
     (post) =>
       !q ||
       post.content.toLowerCase().includes(q) ||
@@ -38,6 +43,9 @@ export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) 
 
   return (
     <>
+      {/* 024 全服通告：分类导航之上（顶部通告）；搜索时隐藏（搜索结果聚焦） */}
+      {!q && featuredPosts.length > 0 && <FeaturedBanner posts={featuredPosts} />}
+
       <div className="square-cats" role="tablist" aria-label="按内容分类筛选">
         {(["全部", ...SQUARE_CATEGORIES] as const).map((name) => (
           <button

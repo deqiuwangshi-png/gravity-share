@@ -18,6 +18,7 @@ import "@/styles/app/profile.css";
 import "@/styles/app/profile-posts.css";
 import "@/styles/app/relation.css";
 import "@/styles/app/publish-form.css";
+import "@/styles/app/promo.css";
 import "@/styles/app/toast.css";
 import AppShell from "@/components/app/shell/app-shell";
 import { ToastProvider } from "@/components/app/common/toast";

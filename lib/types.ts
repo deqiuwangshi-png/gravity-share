@@ -51,6 +51,10 @@ export interface SquarePostDTO {
   urlStatus?: "normal" | "reported" | "blocked";
   /** 原创配图存储 path（S-1 起，广场详情展示） */
   imageUrl?: string;
+  /** 展示位置顶中（024：featured_until > now()；置顶帖列表排最前 + 卡片「展示」角标） */
+  featured: boolean;
+  /** 置顶到期时间（ISO，024；undefined = 未置顶/已过期） */
+  featuredUntil?: string;
 }
 
 /* ---------- 公告正文（marketing 区 /notice/[slug]，lib/data.ts 配置渲染） ---------- */

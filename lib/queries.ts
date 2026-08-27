@@ -28,6 +28,8 @@ export type SquarePostRow = {
   comments_count: number;
   created_at: string;
   url_status: string;
+  /* 024 展示位：置顶到期时间（NULL = 未置顶） */
+  featured_until: string | null;
   users: { id: string; name: string; avatar_url: string | null; badge: string | null } | null;
 };
 
@@ -77,6 +79,9 @@ export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
     url: row.url_status === "blocked" ? undefined : (row.url ?? undefined),
     urlStatus: (row.url_status as SquarePostDTO["urlStatus"]) ?? "normal",
     imageUrl: row.image_url ?? undefined,
+    /* 024 展示位：置顶中 = 到期时间 > 当前时刻（过期自动回落自然流） */
+    featured: !!row.featured_until && new Date(row.featured_until).getTime() > Date.now(),
+    featuredUntil: row.featured_until ?? undefined,
   };
 }
 
@@ -146,14 +151,29 @@ export async function fetchLinkDomains(supabase: SupabaseClient): Promise<{ trus
   return { trusted, blocked };
 }
 
-/** 广场话题流（时间倒序；limit 供详情页相关区控制拉取量） */
+/** 广场话题流（时间倒序；limit 供详情页相关区控制拉取量）
+ * 024 展示位：置顶中（featured_until > now()）排最前，置顶内部按到期升序（快到期排前）；
+ * 已过期帖视同普通帖（回落自然流，不占置顶位） */
 export async function fetchSquarePosts(supabase: SupabaseClient, limit?: number): Promise<SquarePostDTO[]> {
-  const { data } = await supabase
+  const now = new Date().toISOString();
+  /* 置顶中（数量少，单独轻量查询） */
+  const { data: featured } = await supabase
     .from(SQUARE)
     .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
+    .gt("featured_until", now)
+    .order("featured_until", { ascending: true })
+    .limit(limit ?? 100);
+  /* 普通帖（未置顶 + 已过期） */
+  const { data: normal } = await supabase
+    .from(SQUARE)
+    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
+    .or(`featured_until.is.null,featured_until.lte.${now}`)
     .order("created_at", { ascending: false })
     .limit(limit ?? 100);
-  return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
+  return [
+    ...((featured as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? []),
+    ...((normal as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? []),
+  ];
 }
 
 /** 广场帖子详情（按 id） */
@@ -476,8 +496,9 @@ export async function fetchVerifications(supabase: SupabaseClient): Promise<Veri
 }
 
 /* ---------- BUG-4 浏览计数（RPC：security definer 只 +views，不放开表 update） ---------- */
-
-/** 浏览 +1（square 详情页进入调用；失败静默不影响展示） */
-export async function bumpViews(supabase: SupabaseClient, targetId: string): Promise<void> {
-  await supabase.rpc("bump_views", { target_type: "square", target_id: targetId });
+/** 浏览 +1（square 详情页进入调用；失败静默不影响展示）
+ * 2026-08-27 v2（迁移 023）：ip = 游客防刷键（x-forwarded-for 首段），
+ * 游客 user_id 不绑定身份（NULL），仅帖子维度计数；登录用户保留作者不计 + 30 分钟去重 */
+export async function bumpViews(supabase: SupabaseClient, targetId: string, ip?: string | null): Promise<void> {
+  await supabase.rpc("bump_views", { target_type: "square", target_id: targetId, visitor_ip: ip ?? null });
 }

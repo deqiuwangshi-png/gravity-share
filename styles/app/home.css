@@ -64,12 +64,24 @@
   font-size: 10px;
 }
 
+/* 024 展示位（大喇叭置顶）：卡片右上角金色角标，与「机会/来源」标识区分 */
+.home-card-featured {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-weight: 600;
+}
+
 /* 正文：最多 3 行，超出省略 */
 .home-card-body {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   overflow: hidden;
+  white-space: pre-line;
   margin: 0;
   color: var(--foreground);
   font-size: 13px;

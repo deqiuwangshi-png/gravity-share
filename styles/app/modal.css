@@ -1,7 +1,7 @@
-/* (app) 弹窗（发布弹窗 / 设置面板共用遮罩）+ 发布双入口
+/* (app) 弹窗（发布弹窗 / 设置面板共用遮罩）
  * 自原 app.css 拆分（2026-08-21 治理：单文件 ≤ 400 行）
- * 发布弹窗 2026-08-21 改造：双入口（内容 / 推广外链）
- * 发布表单（Step 2a/2b）样式已拆分至 publish-form.css */
+ * 2026-08-27：三入口（分享/机会/内容）合并为单一表单，publish-entry 选择界面样式已删除；
+ * 发布表单样式在 publish-form.css */
 
 .app-modal {
   position: fixed;
@@ -44,102 +44,4 @@
   color: var(--text-muted);
   cursor: pointer;
   font-size: 20px;
-}
-
-/* ---------- Step 1：双入口选择 ---------- */
-
-.publish-entry {
-  display: grid;
-  gap: 12px;
-}
-
-.publish-entry-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 18px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 180ms ease, background 180ms ease;
-}
-
-.publish-entry-card:hover {
-  border-color: var(--border-primary);
-  background: var(--primary-subtle);
-}
-
-.publish-entry-card.promo {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.publish-entry-card.promo:hover {
-  border-color: var(--accent);
-}
-
-.publish-entry-icon {
-  flex-shrink: 0;
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-size: 19px;
-}
-
-.publish-entry-card.promo .publish-entry-icon {
-  background: var(--surface);
-  color: var(--on-accent);
-}
-
-.publish-entry-text {
-  min-width: 0;
-  flex: 1;
-}
-
-.publish-entry-text strong,
-.publish-entry-text small,
-.publish-entry-text em {
-  display: block;
-}
-
-.publish-entry-text strong {
-  font-size: 15px;
-}
-
-.publish-entry-text small {
-  margin-top: 3px;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.publish-entry-text em {
-  margin-top: 4px;
-  color: var(--text-soft);
-  font-size: 11px;
-  font-style: normal;
-}
-
-.publish-entry-arrow {
-  color: var(--text-soft);
-  font-size: 16px;
-}
-
-/* 金色「推广」角标 */
-.publish-tag-promo {
-  margin-left: 6px;
-  padding: 2px 7px;
-  border-radius: 5px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 10px;
-  font-style: normal;
-  font-weight: 600;
-  vertical-align: 2px;
 }

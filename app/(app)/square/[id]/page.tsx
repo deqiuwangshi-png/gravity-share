@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { SquareActions } from "@/components/app/square/square-actions";
 import { SquarePostView } from "@/components/app/square/square-post-view";
 import { CommentSection } from "@/components/app/square/comment-section";
@@ -29,8 +30,12 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
   const supabase = await createClient();
   const post = await fetchSquarePostById(supabase, id);
   if (!post) notFound();
-  /* BUG-4：进入详情 +1 浏览（RPC security definer，失败静默；013 起作者本人不计、30 分钟去重） */
-  await bumpViews(supabase, id).catch(() => {});
+  /* BUG-4：进入详情 +1 浏览（RPC security definer，失败静默）
+   * 023 起：游客传 IP（x-forwarded-for 首段，防刷键，不绑定用户身份）→ 帖子维度计数；
+   * 登录用户保留 013 规则（作者不计 + 30 分钟去重）；本地 dev 无代理头 IP 为空 → 游客不计 */
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || null;
+  await bumpViews(supabase, id, ip).catch(() => {});
   const comments = await fetchComments(supabase, id);
   const {
     data: { user },

@@ -109,6 +109,7 @@
 }
 
 .square-comment-body p {
+  white-space: pre-line;
   margin: 4px 0 0;
   color: var(--text-muted);
   font-size: 13px;

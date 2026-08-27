@@ -20,6 +20,8 @@ export function SquareCard({ post }: { post: SquarePostDTO }) {
           <b><AuthorLink authorId={post.authorId} name={post.authorName} /><AuthorBadge badge={post.authorBadge} /></b>
           <small>{post.time}</small>
         </span>
+        {/* 024 展示位（大喇叭置顶）：置顶中卡片右上角金色「展示」标 */}
+        {post.featured && <span className="home-card-featured">展示</span>}
       </div>
 
       <p className="home-card-body">{post.content}</p>

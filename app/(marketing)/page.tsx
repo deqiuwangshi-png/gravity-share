@@ -95,9 +95,31 @@ export default function Home() {
 
         <section className="section container" id="pricing">
           <div className="section-head">
-            <div><h2 className="section-title">现在免费。</h2><p className="section-desc">引力本身不收费：发现与分享完全开放，未来的增值服务会提前公示。</p></div>
+            <div><h2 className="section-title">选择一个计划，解锁更多分发与增长能力。</h2><p className="section-desc">发现与分享永远免费；订阅解锁高级分发与增长能力。</p></div>
             <Link className="more" href="/register">加入引力 <span aria-hidden="true">→</span></Link>
           </div>
+
+          {/* 订阅计划四卡（与 /promo 订阅计划价格一致，2026-08-27 对齐；占位未接支付） */}
+          <div className="pricing-grid">
+            {[
+              { name: "免费版", price: "¥0", tag: "永久免费", features: ["发布 / 发现 / 分享", "广场参与", "基础统计"] },
+              { name: "基础版", price: "¥45", tag: "首月 ¥9.9/月", features: ["含免费版全部", "投放 9 折", "浏览数据报表"] },
+              { name: "专业版", price: "¥68", tag: "首月 ¥19.9/月", featured: true, features: ["含基础版全部", "展示位 8 折", "高级筛选", "优先客服"] },
+              { name: "团队版", price: "¥128", tag: "首月 ¥45/月", features: ["含专业版全部", "多账号管理", "团队报表", "专属支持"] },
+            ].map((tier) => (
+              <article className={`pricing-card${tier.featured ? " featured" : ""}`} key={tier.name}>
+                <div className="pricing-card-head">
+                  <h3>{tier.name}</h3>
+                  {tier.featured && <span className="pricing-badge">推荐</span>}
+                </div>
+                <p className="pricing-price">{tier.price}<small>/ 月 · {tier.tag}</small></p>
+                <ul className="pricing-features">{tier.features.map((f) => <li key={f}>{f}</li>)}</ul>
+                <button className="pricing-cta" type="button" disabled data-placeholder>即将开放</button>
+              </article>
+            ))}
+          </div>
+
+          <p className="pricing-note">订阅价格与方案详情以应用内「订阅计划」为准；价格为占位锚点，上线前公示确认。</p>
         </section>
 
         <section className="principle container" id="about"><p className="principle-kicker">引力的原则</p><h2>互联网不缺好东西，缺的是让它们相遇的地方。</h2><p>我们相信，真正有价值的内容不应该被平台和算法隔开。引力把发现和分享连接在一起，让每一个好东西都有机会抵达真正需要它的人。</p></section>
@@ -107,7 +129,7 @@ export default function Home() {
           <div className="faq-list">
             <div className="faq-item"><h3>引力和原平台是什么关系？</h3><p>引力只做展示与连接。内容在哪里发布、交易与交付，仍由原平台负责。</p></div>
             <div className="faq-item"><h3>发布需要什么条件？</h3><p>注册后即可发布，提供一条链接和一段介绍就够了。</p></div>
-            <div className="faq-item"><h3>有收费计划吗？</h3><p>当前完全免费。如果未来推出增值服务，会提前公示。</p></div>
+            <div className="faq-item"><h3>有收费计划吗？</h3><p>发现与分享永久免费；增值分发服务（投放 / 展示位 / 会员）见上方定价区，上线前会提前公示。</p></div>
           </div>
         </section>
 

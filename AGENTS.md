@@ -43,11 +43,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## 优先级
 成熟生态 > 自己实现；已有组件 > 新建组件；组合 > 重写；简单实现 > 过度抽象；明确依赖 > 隐藏实现；少量业务代码 > 大量基础设施代码。
 
-## 维护与完成定义（DoD，2026-08-23 治理方案，见 docs/ARCHITECTURE-STEWARDSHIP.md）
+## 维护与完成定义（DoD，2026-08-23 治理方案，见 docs/DEVELOPER-HANDBOOK.md §2.4）
 1. **"完成" = 四件事全做到**：① 新功能可用（lint + build 过）；② 被取代的代码已删除，或已在债务台账登记（不允许"留着以后用"）；③ 文档已同步（ARCHITECTURE.md / SYSTEM-ARCHITECTURE.md 随改随更）；④ `pnpm check` 全绿
 2. **迁移执行登记**：手动复制 SQL 到 Supabase Dashboard 执行后，在迁移文件头部加 `-- ✅ 已执行 YYYY-MM-DD` 标记（防漏跑/防重跑）
 3. **AI 交付模板**：每次功能交付必须列出 新增 / 修改 / 删除 文件清单 + 是否引入债务 + 文档同步情况
 4. **AI 禁令**：不顺手改无关代码；不跨目录移动文件而不说明；不删除功能而不清理旧代码；不新增依赖而不报告（见上方"新增依赖流程"）
-5. **死代码护栏**：`pnpm check`（含 knip）检出的零引用导出/文件，新代码必须当场清理；存量债务见 docs/ARCHITECTURE-DEBT-INVENTORY.md，经确认后分批清理
+5. **死代码护栏**：`pnpm check`（含 knip）检出的零引用导出/文件，新代码必须当场清理；存量债务登记见 docs/DEVELOPER-HANDBOOK.md §4（剩余已知债），经确认后分批清理
 
 <!-- END:project-dev-discipline -->

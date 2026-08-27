@@ -17,7 +17,8 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
     likes_count: 3,
     comments_count: 0,
     created_at: "2026-08-23T00:00:00.000Z",
-    users: { id: "u2", name: "张三", avatar_url: "a.png" },
+    featured_until: null,
+    users: { id: "u2", name: "张三", avatar_url: "a.png", badge: null },
   };
 
   it("字段映射正确", () => {
@@ -27,6 +28,17 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
     expect(dto.commission).toBe("分佣 10%");
     expect(dto.category).toBe("工具");
     expect(dto.authorName).toBe("张三");
+  });
+
+  it("024 展示位：未置顶 featured=false", () => {
+    expect(toSquarePostDTO(row).featured).toBe(false);
+  });
+
+  it("024 展示位：置顶中 featured=true，过期回落 false", () => {
+    const future = new Date(Date.now() + 3600_000).toISOString();
+    const past = new Date(Date.now() - 3600_000).toISOString();
+    expect(toSquarePostDTO({ ...row, featured_until: future }).featured).toBe(true);
+    expect(toSquarePostDTO({ ...row, featured_until: past }).featured).toBe(false);
   });
 });
 

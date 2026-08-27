@@ -1,8 +1,8 @@
-/* (app) 发布表单（Step 2a 沉浸式 / Step 2b 推广表单）
+/* (app) 发布表单（2026-08-27 三入口合并后单一沉浸式表单）
  * 自 modal.css 拆分（2026-08-23 治理：单文件 ≤ 400 行）
- * 弹窗遮罩 / 头部 / 双入口选择仍在 modal.css */
+ * 弹窗遮罩 / 头部在 modal.css；可选标注（推广披露 / 原创来源）样式见文末 */
 
-/* ---------- Step 2a：入口 A 沉浸式（随手写） ---------- */
+/* ---------- 发布沉浸式表单 ---------- */
 
 .publish-immersive {
   display: grid;
@@ -43,27 +43,7 @@
   background: var(--primary-dark);
 }
 
-/* ---------- Step 2b：发布表单（推广） ---------- */
-
-.publish-form {
-  display: grid;
-  gap: 14px;
-}
-
-.publish-back {
-  justify-self: start;
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  transition: color 180ms ease;
-}
-
-.publish-back:hover {
-  color: var(--primary);
-}
+/* ---------- 发布通用字段（合并后共用） ---------- */
 
 .publish-field {
   display: grid;
@@ -218,12 +198,13 @@
   align-items: center;
   padding: 7px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--surface);
   color: var(--text-muted);
   cursor: pointer;
   font: inherit;
   font-size: 12px;
+  white-space: nowrap;
   transition: border-color 180ms ease, color 180ms ease;
 }
 
@@ -235,4 +216,48 @@
 .publish-topic-image-btn.remove {
   border-color: transparent;
   color: var(--text-soft);
+}
+
+/* 可选标注（2026-08-27 三入口合并；视觉减负：并排单行胶囊 + 精简文案 + title 悬浮说明） */
+.publish-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.publish-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
+}
+
+.publish-toggle:hover {
+  border-color: var(--border-primary);
+  color: var(--primary);
+}
+
+.publish-toggle.on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.publish-toggle input {
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+/* 勾选后展开区（披露输入 / 来源平台） */
+.publish-toggle-sub {
+  display: grid;
+  gap: 10px;
 }

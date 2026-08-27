@@ -108,6 +108,9 @@ export function UserMenu({
           <Link className="user-menu-item" href="/profile" role="menuitem" onClick={() => setOpen(false)}>
             <span>{ICONS.design}</span>个人主页
           </Link>
+          <Link className="user-menu-item" href="/promo" role="menuitem" onClick={() => setOpen(false)}>
+            <span>{ICONS.opportunity}</span>订阅计划
+          </Link>
           <button
             type="button"
             className="user-menu-item"
