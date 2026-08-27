@@ -3,11 +3,10 @@
  */
 import { ICONS } from "@/lib/icons";
 
-/** 侧边栏主导航：[图标, 名称, 路由]（首页 / 分类 / 广场；发现流已并入首页，2026-08-22） */
+/** 侧边栏主导航：[图标, 名称, 路由]（首页 / 分类；广场已合并进首页，2026-08-27 方案A） */
 export const MAIN_NAV = [
   [ICONS.home, "首页", "/home"],
   [ICONS.categories, "分类", "/categories"],
-  [ICONS.plaza, "广场", "/square"],
 ] as const satisfies ReadonlyArray<readonly [string, string, string]>;
 
 /**

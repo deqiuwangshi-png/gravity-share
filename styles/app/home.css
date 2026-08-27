@@ -1,10 +1,28 @@
-/* (app) 首页内容流三列卡片（HomeFeed：读广场数据，2026-08-23）
- * 与广场页单列列表（square-list / square-card）分离——首页用三列卡片布局 */
+/* (app) 首页内容流四列卡片（2026-08-27 方案A：原三列 HomeFeed 与广场 SquareFeed 合并为统一四列流）
+ * 复用 .home-card（SquareCard）；响应式降级：平板 3 列 / 手机 2 列 / 小屏 1 列 */
 
 .home-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+
+@media (max-width: 960px) {
+  .home-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .home-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .home-card {

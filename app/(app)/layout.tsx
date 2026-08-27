@@ -1,5 +1,4 @@
 import "@/styles/app/shell.css";
-import "@/styles/app/list.css";
 import "@/styles/app/modal.css";
 import "@/styles/app/announcement.css";
 import "@/styles/app/user-menu.css";

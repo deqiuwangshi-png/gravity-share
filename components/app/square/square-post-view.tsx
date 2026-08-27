@@ -2,7 +2,7 @@
  * 广场详情页帖子主体（client）：发帖头（头像/昵称/时间 + 三点菜单）→ 正文（可内联编辑）
  * → 配图（可编辑）→ 标签
  * 菜单：统一 PostMenu（本人 删除/修改/复制/分享；他人 举报/复制/分享）
- * 修改：内联编辑表单（正文 + 链接 + 配图，SquarePostEditForm）；删除成功跳回广场列表
+ * 修改：内联编辑表单（正文 + 链接 + 配图，SquarePostEditForm）；删除成功跳回首页（2026-08-27 广场并入首页）
  */
 "use client";
 
@@ -44,7 +44,7 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
           shareUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/square/${post.id}`}
           imagePath={post.imageUrl}
           onEdit={() => setEditing(true)}
-          onDeleted={() => router.replace("/square")}
+          onDeleted={() => router.replace("/home")}
         />
       </div>
 

@@ -140,68 +140,7 @@
   font-weight: 600;
 }
 
-/* ---------- 列表：紧凑话题卡（整卡可点 → 详情） ---------- */
-
-.square-list {
-  display: grid;
-  gap: 10px;
-}
-
-.square-card {
-  display: block;
-  padding: 13px 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  transition: border-color 180ms ease, background 180ms ease;
-}
-
-.square-card:hover {
-  border-color: var(--border-primary);
-  background: var(--primary-subtle);
-}
-
-.square-card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.square-card-head strong {
-  font-size: 13px;
-}
-
-.square-card-head small {
-  margin-left: auto;
-  color: var(--text-soft);
-  font-size: 11px;
-}
-
-/* 内容摘要：最多 2 行，超出省略 */
-.square-card-content {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  white-space: pre-line;
-  min-height: 41px;
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.square-card-meta {
-  display: flex;
-  gap: 14px;
-  margin-top: 8px;
-  color: var(--text-soft);
-  font-size: 12px;
-}
-
-/* 发布类型标识（2026-08-23 三入口：机会披露 / 内容来源平台，合规警示） */
-.square-card-notice,
+/* 发布类型标识（2026-08-23 三入口：机会披露 / 内容来源平台，合规警示；2026-08-27 去单列列表残留 .square-card-notice，仅详情页用） */
 .square-post-notice {
   margin: 8px 0 0;
   padding-top: 8px;
@@ -210,39 +149,23 @@
   line-height: 1.6;
 }
 
-.square-card-notice b,
 .square-post-notice b {
   font-weight: 600;
 }
 
-.square-card-notice.opportunity,
 .square-post-notice.opportunity {
   color: var(--text-muted);
 }
 
-.square-card-notice.opportunity b,
 .square-post-notice.opportunity b {
   color: #a32d2d;
 }
 
-.square-card-notice.source,
 .square-post-notice.source {
   color: var(--text-soft);
 }
 
-/* 列表卡统计：图标 + 数字对齐（2026-08-22 图标化） */
-.square-card-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* 含外链标记（列表卡） */
-.square-card-link-mark {
-  color: var(--primary);
-}
-
-/* ---------- 通用：头像 / 标签（列表与详情共用） ---------- */
+/* ---------- 通用：头像 / 标签（详情页共用） ---------- */
 
 .square-avatar {
   display: grid;

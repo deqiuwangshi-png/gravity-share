@@ -1,6 +1,6 @@
 /**
- * 广场帖子三列卡片（纯展示，2026-08-23 内容池归一后 HomeFeed / 分类详情共用）
- * 头像/昵称/时间 → 正文（3 行截断）→ 机会/来源标识 → 赞/评论/浏览统计；整卡可点 → /square/[id]
+ * 广场帖子卡片（纯展示，2026-08-23 内容池归一后首页 / 分类详情 / 广场统一复用）
+ * 四列内容流 (.home-grid) 承载；头像/昵称/时间 → 正文（3 行截断）→ 机会/来源标识 → 赞/评论/浏览统计；整卡可点 → /square/[id]
  */
 import Link from "next/link";
 import { MessageCircle, Heart, Eye } from "lucide-react";

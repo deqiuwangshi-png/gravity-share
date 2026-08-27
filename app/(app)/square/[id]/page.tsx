@@ -59,7 +59,8 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
         }}
       />
       <article className="square-detail">
-        <Link className="square-back" href="/square">← 返回广场</Link>
+        {/* 2026-08-27 方案A：广场并入首页，返回目标 /square → /home，文案同步 */}
+        <Link className="square-back" href="/home">← 返回首页</Link>
 
         {/* 帖子主体：发帖头 + 三点菜单（本人 删/改/复/享，他人 举报/复/享）+ 正文（可编辑）+ 配图 */}
         <SquarePostView post={post} isOwner={post.authorId === myId} />

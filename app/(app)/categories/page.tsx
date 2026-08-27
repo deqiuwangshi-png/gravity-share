@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { AppAside } from "@/components/app/shell/app-aside";
 import { SQUARE_CATEGORIES, SQUARE_CATEGORY_META } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
 import { fetchSquarePosts } from "@/lib/queries";
@@ -38,9 +37,7 @@ export default async function CategoriesPage() {
             <span className="category-arrow" aria-hidden="true">→</span>
           </Link>
         );
-      })}</div>
-    </div>
-
-    <AppAside />
+      })}        </div>
+      </div>
   </div>;
 }

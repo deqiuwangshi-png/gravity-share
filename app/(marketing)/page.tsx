@@ -102,7 +102,7 @@ export default function Home() {
           {/* 订阅计划四卡（与 /promo 订阅计划价格一致，2026-08-27 对齐；占位未接支付） */}
           <div className="pricing-grid">
             {[
-              { name: "免费版", price: "¥0", tag: "永久免费", features: ["发布 / 发现 / 分享", "广场参与", "基础统计"] },
+              { name: "免费版", price: "¥0", tag: "永久免费", features: ["发布 / 发现 / 分享", "内容参与", "基础统计"] },
               { name: "基础版", price: "¥45", tag: "首月 ¥9.9/月", features: ["含免费版全部", "投放 9 折", "浏览数据报表"] },
               { name: "专业版", price: "¥68", tag: "首月 ¥19.9/月", featured: true, features: ["含基础版全部", "展示位 8 折", "高级筛选", "优先客服"] },
               { name: "团队版", price: "¥128", tag: "首月 ¥45/月", features: ["含专业版全部", "多账号管理", "团队报表", "专属支持"] },

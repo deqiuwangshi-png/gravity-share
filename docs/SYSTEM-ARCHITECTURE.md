@@ -33,7 +33,7 @@ styles/
 components/
 ├── common/       logo / linkified-text / author-link / avatar-box / load-error / toast / post-menu
 ├── marketing/    legal-layout
-└── app/          shell/（11）· discovery/（4：home-feed 首页三列卡片 / discovery-card 等）· square/（6）
+└── app/          shell/（9）· discovery/（2：announcement-carousel / profile-post）· square/（6：square-feed 四列内容流等）
 lib/
 ├── queries.ts    查询层：读 + 互动/通知操作 + bumpViews（DTO 映射，注入双端 client）
 ├── storage.ts    图片上传 / 删除 / 公开 URL（纯函数，双端通用）
@@ -72,10 +72,10 @@ supabase/migrations/   001-025（users → 内容 → 互动 → 存储 → 公�
 
 | 模块（路由） | 说明 |
 |---|---|
-| 首页 `/home` | 公告走马灯 + 三列卡片流（HomeFeed 读广场数据，与广场单列列表分离）；原推荐位下线 |
+| 首页 `/home` | 公告走马灯（含广告海报卡）+ 四列内容流 SquareFeed（与广场合并，2026-08-27）；承接分类筛选 / ?q= 搜索 / 024 全服通告；原推荐位下线 |
 | 发现详情 `/discover/[id]` | 已退役（2026-08-23 内容池归一）：重定向到 `/square/[id]`，旧链接不 404 |
 | 分类 `/categories` | 入口页动态计数 + 分类详情 `/categories/[slug]` |
-| 广场 `/square` | 领域胶囊 + 话题流；详情 `/square/[id]`（点赞/评论/配图） |
+| 广场 `/square` | 永久重定向到 `/home`（2026-08-27 方案A 合并）；详情 `/square/[id]`（点赞/评论/配图）保留 |
 | 个人 `/profile` | 我的主页（资料/发布/评论）+ 他人主页 `/profile/[id]`（关注按钮/粉丝数） |
 | 发布 | 弹窗三入口：分享 / 机会 / 内容（分类必选，可配图），写库后列表实时刷新 |
 | 通知 | 顶栏铃铛 + 预览抽屉：互动（赞/评/关）自动触发，点条目已读跳转 |

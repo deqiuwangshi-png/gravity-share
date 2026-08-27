@@ -23,11 +23,11 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
   const [hasUnread, setHasUnread] = useState(false);
   const router = useRouter();
 
-  /** 最小搜索（D1）：回车跳 /square?q=…，由 SquareFeed 用 useSearchParams 过滤（零新依赖） */
+  /** 最小搜索：回车跳 /home?q=…，由 SquareFeed 用 useSearchParams 过滤（零新依赖，2026-08-27 方案A 广场合并首页后目标改为 /home） */
   function onSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const q = search.trim();
-    router.push(q ? `/square?q=${encodeURIComponent(q)}` : "/square");
+    router.push(q ? `/home?q=${encodeURIComponent(q)}` : "/home");
   }
 
   /* 未读红点：查库（2c）；抽屉内已读后监听事件刷新 */

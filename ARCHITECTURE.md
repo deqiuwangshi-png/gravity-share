@@ -35,9 +35,9 @@ yinli/
 │   ├── (marketing)/            落地页 / + 法律页 + 公告页 /notice/[slug] + 治理总纲 /governance（均配置驱动）
 │   ├── (auth)/                 认证 /login（登录即注册：邮箱；手机号 OTP 代码保留但临时下架，PHONE_AUTH_ENABLED 开关控制，/register → /login）
 │   │                           /forgot-password /reset-password
-│   ├── (app)/                  应用区：/home（公告 + 三列卡片流 HomeFeed）
+│   ├── (app)/                  应用区：/home（公告走马灯 + 四列内容流 SquareFeed，广场已合并进首页）
 │   │                           /discover/[id]（退役重定向 → /square/[id]） /categories(+[slug])
-│   │                           /square(+[id]) /profile(+[id])
+│   │                           /square（永久重定向 → /home）+ /square/[id] /profile(+[id])
 │   ├── go/                     外链安全网关（/go?url=…，白/黑名单分级，防开放重定向）
 │   ├── auth/callback/          第三方登录 / 密码重置统一回调（code → session）
 │   ├── api/account/delete/     自助注销（service_role，server-only）
@@ -50,7 +50,7 @@ yinli/
 │   ├── globals.css             色板 + 全局基础（avatar-img / author-link / logo-mark / error-fallback）
 │   ├── marketing/              落地页区：site / sections / legal / notice
 │   ├── auth/                   认证区：shell / card
-│   └── app/                    应用区：shell / discovery / home / list / modal / publish-form /
+│   └── app/                    应用区：shell / discovery / home / modal / publish-form /
 │                               announcement / user-menu / settings / settings-delete / feed /
 │                               square / square-detail / detail / detail-comments / profile /
 │                               profile-posts / notification / toast / go
@@ -59,13 +59,12 @@ yinli/
 │   │                           toast（ToastProvider）/ post-menu（三点操作菜单）
 │   ├── marketing/              落地页区：legal-layout
 │   └── app/                    应用区（feature 分层）
-│       ├── shell/              应用壳：app-shell / app-aside / app-section / list-column /
-│       │                       settings-panel / user-menu / publish-modal / notification-drawer /
-│       │                       profile-view / profile-tabs / profile-comment
-│       ├── discovery/          首页内容流：home-feed（三列卡片，读广场数据）/ discovery-card /
-│       │                       announcement-carousel / profile-post
-│       └── square/             广场：square-feed（单列列表）/ square-actions / square-comment-box /
-│                               square-post-view / square-post-edit-form / square-profile-post
+│       ├── shell/              应用壳：app-shell / settings-panel / user-menu / publish-modal /
+│       │                       notification-drawer / profile-view / profile-tabs / profile-comment
+│       ├── discovery/          首页内容流：announcement-carousel / profile-post
+│       └── square/             广场：square-feed（四列内容流，与首页统一）/ square-actions /
+│                               square-comment-box / square-post-view / square-post-edit-form /
+│                               square-profile-post
 ├── lib/                        数据柜：纯 TS，禁止 import 组件
 │   ├── queries.ts              查询层：读（DTO 映射）+ 互动/通知操作 + bumpViews（注入双端 client）
 │   ├── storage.ts              图片上传 / 删除（removeImage）/ 公开 URL（纯函数，server/client 通用）
@@ -143,7 +142,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 ### 5.1 Server / Client 边界
 
 - 默认 Server Component；需要交互状态 / 浏览器 API 时才加 `"use client"`
-- 查库的 Server 页面加 `export const dynamic = "force-dynamic"`（防 build 时固化数据）；列表由 client 组件（HomeFeed / SquareFeed 等）拉取则无需
+- 查库的 Server 页面加 `export const dynamic = "force-dynamic"`（防 build 时固化数据）；列表由 client 组件（SquareFeed 等）拉取则无需
 - Client 组件尽量下沉到叶子节点，避免客户端化整棵子树
 
 ## 6. 色板（全站 15 个颜色变量，定义在 `globals.css`）
@@ -195,7 +194,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 架构评审 v4 / v5 / v6 | ✅ | 问题清零基线（v4）→ 9.0/10（v5，2026-08-22）→ 8.4/10（v6，2026-08-23） |
 | 广场分类 / 发布类型（014/015） | ✅ | 内容分类（SQUARE_CATEGORIES）+ 发布类型三入口（share/opportunity/content）；手动复制 SQL 已入库 |
 | 外链安全网关 `/go` | ✅ | 白/黑名单分级（lib/links.ts），白名单服务端直跳，未知需确认，高危拦截 |
-| 首页三列卡片 | ✅ | HomeFeed（读广场数据三列卡片），与广场单列列表分离；CSS 拆分回 ≤400 |
+| 首页四列内容流（方案A） | ✅ | 广场合并进首页（/square 永久重定向 /home）；统一内容流 SquareFeed（四列 .home-grid + SquareCard），承接分类 + ?q= 搜索 + 024 全服通告；右栏 AppAside 下线，广告并入顶部公告轮播；零迁移零新依赖（2026-08-27） |
 | 内容池归一（016） | ✅ | discoveries 退役并入 square_posts：发布统一广场、分类页/个人主页改读 square、`/discover/[id]` 重定向到 `/square/[id]` |
 | vitest 冒烟 | ✅ | 纯函数测试（lib/text.test.ts / lib/links.test.ts / lib/url-policy.test.ts 等）落地 |
 | 规模化前置（CSP / 分页缓存 / 迁移 CLI 等） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七；迁移 CLI 经用户决策改用手动复制 |

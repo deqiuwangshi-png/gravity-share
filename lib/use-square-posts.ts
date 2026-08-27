@@ -1,7 +1,7 @@
 /**
  * useSquarePosts —— 广场帖子列表的加载 hook（2026-08-23 抽取，消除 4 处重复）
  * 统一「拉取 + loading/failed + 重试 + SQUARE_UPDATED_EVENT 监听」模式，
- * 供 HomeFeed / SquareFeed / categories[slug] 等 client 列表复用。
+ * 供 SquareFeed / categories[slug] 等 client 列表复用。
  * 过滤逻辑（分类/搜索）由调用方基于返回的 posts 自己做（各页语义不同）。
  * 2026-08-25 SEO：支持 initialPosts 服务端预取作为首帧（SSR 爬虫可见），挂载后仍自动拉取最新。
  */

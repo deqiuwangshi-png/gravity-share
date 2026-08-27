@@ -4,21 +4,18 @@
  * 导航一行横向排列，PC 单行可横向滚动
  * 2b 起数据读库（RLS 公开读）：挂载拉取；发布后监听 SQUARE_UPDATED_EVENT 重新拉取
  * 2026-08-25 SEO：接收服务端预取 initialPosts 作为首帧（SSR 爬虫可见），交互与增量刷新不变
+ * 2026-08-27 方案A：列表区由单列 .square-list 改为四列 .home-grid（复用 SquareCard），
+ * 与首页统一内容流布局；分类/搜索/置顶横幅(FeaturedBanner)逻辑不变
  */
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SQUARE_CATEGORIES } from "@/lib/config";
 import { LoadError } from "@/components/app/common/load-error";
+import { SquareCard } from "@/components/app/common/square-card";
 import { useSquarePosts } from "@/lib/use-square-posts";
-import { hasUrl } from "@/components/app/common/linkified-text";
-import { AuthorLink } from "@/components/app/common/author-link";
-import { AuthorBadge } from "@/components/app/common/author-badge";
-import { AvatarBox } from "@/components/app/common/avatar-box";
 import { FeaturedBanner } from "./featured-banner";
-import { MessageCircle, Heart, Eye } from "lucide-react";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) {
@@ -66,29 +63,8 @@ export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) 
       ) : filtered.length === 0 ? (
         <p className="feed-empty">{q ? `未找到与「${q}」相关的内容。` : "该分类暂无内容，去「+ 发布」分享第一份好东西。"}</p>
       ) : (
-        <div className="square-list">
-          {filtered.map((post) => (
-            <Link className="square-card" href={`/square/${post.id}`} key={post.id}>
-              <div className="square-card-head">
-                <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-avatar" badge={post.authorBadge} />
-                <strong><AuthorLink authorId={post.authorId} name={post.authorName} /><AuthorBadge badge={post.authorBadge} /></strong>
-                <small>{post.time}</small>
-              </div>
-              <p className="square-card-content">{post.content}</p>
-              {post.postType === "opportunity" && (
-                <p className="square-card-notice opportunity"><b>⚠ 机会</b>{post.commission ? ` · ${post.commission}` : ""}</p>
-              )}
-              {post.postType === "content" && post.sourcePlatform && (
-                <p className="square-card-notice source">来源：{post.sourcePlatform}</p>
-              )}
-              <div className="square-card-meta">
-                <span><Heart size={15} />{post.likes} 赞</span>
-                <span><MessageCircle size={15} />{post.comments} 评论</span>
-                <span><Eye size={15} />{post.views} 浏览</span>
-                {(hasUrl(post.content) || post.url) && <span className="square-card-link-mark">含链接</span>}
-              </div>
-            </Link>
-          ))}
+        <div className="home-grid">
+          {filtered.map((post) => <SquareCard post={post} key={post.id} />)}
         </div>
       )}
     </>
