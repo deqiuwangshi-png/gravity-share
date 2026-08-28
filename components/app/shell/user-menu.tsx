@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ICONS } from "@/lib/icons";
+import { User, Gem, Settings, HelpCircle, LogOut } from "lucide-react";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 
 /**
@@ -106,10 +106,10 @@ export function UserMenu({
       {open && (
         <div className="user-menu-panel" role="menu">
           <Link className="user-menu-item" href="/profile" role="menuitem" onClick={() => setOpen(false)}>
-            <span>{ICONS.design}</span>个人主页
+            <span><User size={13} /></span>个人主页
           </Link>
           <Link className="user-menu-item" href="/promo" role="menuitem" onClick={() => setOpen(false)}>
-            <span>{ICONS.opportunity}</span>订阅计划
+            <span><Gem size={13} /></span>订阅计划
           </Link>
           <button
             type="button"
@@ -120,7 +120,7 @@ export function UserMenu({
               onOpenSettings();
             }}
           >
-            <span>{ICONS.service}</span>用户设置
+            <span><Settings size={13} /></span>用户设置
           </button>
           <button
             type="button"
@@ -131,7 +131,7 @@ export function UserMenu({
               onOpenHelp();
             }}
           >
-            <span>{ICONS.help}</span>帮助与反馈
+            <span><HelpCircle size={13} /></span>帮助与反馈
           </button>
           <div className="user-menu-divider" />
           <button
@@ -141,7 +141,7 @@ export function UserMenu({
             disabled={signingOut}
             onClick={handleSignOut}
           >
-            <span>{ICONS.logout}</span>{signingOut ? "退出中…" : "退出登录"}
+            <span><LogOut size={13} /></span>{signingOut ? "退出中…" : "退出登录"}
           </button>
         </div>
       )}

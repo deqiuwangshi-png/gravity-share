@@ -12,7 +12,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ICONS } from "@/lib/icons";
+import { X } from "lucide-react";
 import { SQUARE_CATEGORIES, SOURCE_PLATFORMS, SQUARE_POST_TYPES } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { SQUARE_UPDATED_EVENT } from "@/lib/queries";
@@ -143,7 +143,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       <div className="modal-box publish-box" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <h2 id="publish-title">发布</h2>
-          <button type="button" onClick={onClose} aria-label="关闭">{ICONS.close}</button>
+          <button type="button" onClick={onClose} aria-label="关闭"><X size={16} /></button>
         </div>
 
         {submitted ? (

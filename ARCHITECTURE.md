@@ -26,7 +26,7 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-025，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-026，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
@@ -89,7 +89,8 @@ yinli/
 │                               022 上传审计与限流（upload_audit 表，/api/upload 限流配额）→
 │                               023 浏览计数 v2（游客 IP 24h 去重，user_id=NULL 不绑定身份，仅帖子维度计数）→
 │                               024 展示位（square_posts.featured_until 置顶，UGC 大喇叭，人工置值起步）→
-│                               025 推广中心（promo_orders 申请单，/promo 页 + 头像菜单入口，申请制人工开通），全幂等；
+│                               025 推广中心（promo_orders 申请单，/promo 页 + 头像菜单入口，申请制人工开通）→
+│                               026 square_posts 查询索引（created_at / category / author，L1 规模化前置），全幂等；
 │                               手动复制 SQL 到 Supabase Dashboard 执行，不引入 CLI）
 ├── vitest.config.ts            vitest 配置 + lib/*.test.ts（纯函数冒烟测试）
 ├── public/                     静态资源
@@ -134,7 +135,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 页面文件 | 固定名 `page.tsx` / `layout.tsx` | `app/(app)/home/page.tsx` |
 | 组件文件 | PascalCase，一个文件一个组件；按「访问区 → feature」两层归入 `components/<区>/<feature>/`，跨区共享放 `common/` | `components/app/square/square-actions.tsx` |
 | 私有文件 | `_` 前缀（不参与路由） | `(auth)/_components/auth-form.tsx` |
-| 类型 | 组件 Props 用 `XxxProps` 命名；展示模型用 `XxxDTO`（queries.ts 统一映射） | `type AppSectionProps` / `DiscoveryDTO` |
+| 类型 | 组件 Props 用 `XxxProps` 命名（简单组件可内联）；展示模型用 `XxxDTO`（queries.ts 统一映射，集中在 lib/types.ts） | `SquarePostDTO` / `Announcement`（均在 lib/types.ts） |
 | 常量 | UPPER_SNAKE_CASE | `MARKETING_CATEGORIES` |
 | 样式文件 | 按访问区归入 `styles/<区>/`，文件名 = 组件/区块维度，单文件 ≤ 400 行 | `styles/app/settings.css` |
 | 数据库 | 迁移文件 `supabase/migrations/NNN-*.sql`，幂等可重跑，头部注释动机；**手动复制 SQL 到 Supabase Dashboard 执行（不引入 CLI）** | `002-content-seed.sql` |
@@ -199,7 +200,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | vitest 冒烟 | ✅ | 纯函数测试（lib/text.test.ts / lib/links.test.ts / lib/url-policy.test.ts 等）落地 |
 | 规模化前置（CSP / 分页缓存 / 迁移 CLI 等） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七；迁移 CLI 经用户决策改用手动复制 |
 
-**防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；`lib/queries.ts` 超过 500 行或新增领域时拆 `lib/db/`；新增写操作必须先定「RLS / 列级权限 / 触发器 / Handler」归属。
+**防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；**图标边界（2026-08-28 P2-3 收口）**：组件 UI 层图标一律 `lucide-react`，配置/数据层（可序列化静态配置，如 config.ts 导航/分类枚举）用 `lib/icons.ts` 字符串表，禁止混层；`lib/queries.ts` 超过 500 行或新增领域时按需拆分（平层文件取向，不留 re-export 桶，调用方直接改 import）；新增写操作必须先定「RLS / 列级权限 / 触发器 / Handler」归属。
 
 ---
 

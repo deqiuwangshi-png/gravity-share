@@ -36,6 +36,7 @@ export function AvatarBox({
       className={`${className ?? ""} avatar-img${frameClass}`.trim()}
       src={publicImageUrl("avatar", path)}
       alt={name}
+      loading="lazy"
       onError={() => setFailed(true)}
       /* V6：OAuth 外链头像不向第三方图床泄露 Referer */
       referrerPolicy="no-referrer"

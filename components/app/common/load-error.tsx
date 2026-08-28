@@ -1,6 +1,6 @@
 /**
  * 列表加载失败态（P1-2：加载兜底）：错误提示 + 重试按钮
- * 使用于各 client 列表组件（discover-filter / square-feed / notification-drawer / 详情页）
+ * 使用于各 client 列表组件（square-feed / notification-drawer / 详情页评论区）
  */
 export function LoadError({ onRetry }: { onRetry: () => void }) {
   return (

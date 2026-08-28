@@ -38,11 +38,14 @@ export function useSquarePosts(initialPosts?: SquarePostDTO[]) {
   }
 
   useEffect(() => {
-    load();
+    /* L1（2026-08-28）：有 SSR 首帧（initialPosts）时挂载不重拉，消除「服务端预取 + 挂载再拉」双重查询；
+     * 仅发布事件（SQUARE_UPDATED_EVENT）触发全量刷新；纯 client 调用方（无首帧）保持挂载即拉。
+     * initialPosts 只影响挂载时是否立即拉取，纳入依赖重跑无副作用（有首帧时永不执行 load）。 */
+    if (!initialPosts) load();
     const onUpdate = () => load();
     window.addEventListener(SQUARE_UPDATED_EVENT, onUpdate);
     return () => window.removeEventListener(SQUARE_UPDATED_EVENT, onUpdate);
-  }, [load]);
+  }, [load, initialPosts]);
 
   return { posts, loading, failed, retry };
 }

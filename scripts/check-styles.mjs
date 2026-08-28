@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 引力项目专属治理检查（零依赖 Node 脚本）
- * 见 docs/ARCHITECTURE-STEWARDSHIP.md L1：作为 pnpm check 的一部分
+ * 作为 pnpm check 的一部分（校验规则见 AGENTS.md「维护与完成定义」）
  * 1) 每个 CSS 文件 ≤400 行（硬失败）
  * 2) 迁移文件数（001-0NN）与 ARCHITECTURE.md 声明一致（硬失败）
  * 3) CSS 孤儿类（styles 定义但 app/components 的 tsx 未引用）→ 提示级（动态类名易误报）
@@ -79,7 +79,7 @@ for (const cls of cssClasses) {
     if (orphanCount <= 15) warn(`CSS 孤儿类 .${cls}（无 TSX 引用，疑似清理候选）`);
   }
 }
-if (orphanCount > 15) warn(`另有 ${orphanCount - 15} 个 CSS 孤儿类（已省略，详见 docs/ARCHITECTURE-DEBT-INVENTORY.md）`);
+if (orphanCount > 15) warn(`另有 ${orphanCount - 15} 个 CSS 孤儿类（已省略；建议按 AGENTS.md「死代码护栏」当场清理）`);
 console.log(`✅ CSS 引用检查：孤儿 ${orphanCount} 个（提示级）`);
 
 console.log(

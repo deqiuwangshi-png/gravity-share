@@ -9,7 +9,7 @@ import { UserMenu } from "./user-menu";
 import { NotificationDrawer, NotificationTrigger } from "./notification-drawer";
 import PublishModal from "./publish-modal";
 import { MAIN_NAV } from "@/lib/config";
-import { ICONS } from "@/lib/icons";
+import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { fetchNotifications, NOTIFICATION_UPDATED_EVENT } from "@/lib/queries";
 
@@ -50,7 +50,7 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
     </aside>
     <main className="app-main">
       <header className="app-topbar">
-        <form className="global-search" onSubmit={onSearchSubmit}><span className="app-search-icon">{ICONS.search}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索你需要的东西……（回车搜索）" aria-label="全局搜索" /><kbd>/</kbd></form>
+        <form className="global-search" onSubmit={onSearchSubmit}><span className="app-search-icon"><Search size={16} /></span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索你需要的东西……（回车搜索）" aria-label="全局搜索" /><kbd>/</kbd></form>
         <div className="topbar-actions">
           <NotificationTrigger
             open={notifyOpen}
