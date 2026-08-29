@@ -15,7 +15,7 @@
 | 样式 | Tailwind CSS 4 + 全局 CSS | 颜色只用 `styles/globals.css` 里的变量，不写色号；CSS 统一放 `styles/`，单文件 ≤ 400 行 |
 | 包管理 | pnpm 11 | 禁止混用 npm/yarn，锁定提交 `pnpm-lock.yaml` |
 | 路径别名 | `@/*` → 项目根 | 所有 import 用 `@/` 开头，禁止相对路径跨目录引用 |
-| 数据边界 | **Supabase BaaS（Auth + Postgres RLS + Storage）** | 读走 `lib/queries.ts`（双端 client 注入）；写靠 RLS + 列级权限；一致性靠触发器；服务端操作走 `lib/supabase/admin.ts`（service_role，**仅 route handler，严禁客户端 import**）；**不引入自建后端** |
+| 数据边界 | **Supabase BaaS（Auth + Postgres RLS + Storage）** | 读走 `lib/queries-*.ts`（S3 拆分 2026-08-29，双端 client 注入）；写靠 RLS + 列级权限；一致性靠触发器；服务端操作走 `lib/supabase/admin.ts`（service_role，**仅 route handler，严禁客户端 import**）；**不引入自建后端** |
 | 第三方登录 | GitHub + Google（Supabase OAuth，PKCE） | 回调统一走 `/auth/callback`（code → session）；provider 清单在 `lib/config.ts` 的 `OAUTH_PROVIDERS` |
 | 测试 | vitest（纯函数冒烟） | `pnpm test`；测试文件 `lib/*.test.ts`（已 exclude 出 tsconfig，不影响 build） |
 
@@ -55,18 +55,27 @@ yinli/
 │                               square / square-detail / detail / detail-comments / profile /
 │                               profile-posts / notification / toast / go
 ├── components/                 组件柜：访问区 + feature 双层
-│   ├── common/                 跨区共享：logo / linkified-text / author-link / avatar-box / load-error /
-│   │                           toast（ToastProvider）/ post-menu（三点操作菜单）
+│   ├── common/                 跨区共享：logo
 │   ├── marketing/              落地页区：legal-layout
 │   └── app/                    应用区（feature 分层）
-│       ├── shell/              应用壳：app-shell / settings-panel / user-menu / publish-modal /
-│       │                       notification-drawer / profile-view / profile-tabs / profile-comment
-│       ├── discovery/          首页内容流：announcement-carousel / profile-post
-│       └── square/             广场：square-feed（四列内容流，与首页统一）/ square-actions /
+│       ├── common/             应用区共享（12）：avatar-box / author-link / author-badge / linkified-text /
+│       │                       toast（ToastProvider）/ post-menu / load-error / square-card /
+│       │                       square-refresh-watcher / rich-editor / rich-content / account-action-modal
+│       ├── shell/              应用壳（13）：app-shell / settings-panel / user-menu / publish-modal /
+│       │                       notification-drawer / profile-view / profile-tabs / profile-comment /
+│       │                       profile-edit-modal / profile-square-post / devices-panel / verify-panel /
+│       │                       relation-list
+│       ├── discovery/          首页组件：announcement-carousel（discover 已退役，目录名过时待归并）
+│       └── square/             广场/内容流（8）：square-feed（四列内容流，与首页统一）/ square-actions /
 │                               square-comment-box / square-post-view / square-post-edit-form /
-│                               square-profile-post
+│                               square-profile-post / featured-banner / comment-section
 ├── lib/                        数据柜：纯 TS，禁止 import 组件
-│   ├── queries.ts              查询层：读（DTO 映射）+ 互动/通知操作 + bumpViews（注入双端 client）
+│   ├── queries-posts.ts        查询层·帖子域（DTO 映射 / 列表/详情/作者/sitemap / bumpViews）
+│   ├── queries-comments.ts     查询层·评论域（评论读写 + 评论点赞批量态）
+│   ├── queries-notifications.ts 查询层·通知域（我的通知 / 已读操作）
+│   ├── queries-social.ts       查询层·互动域（帖子点赞 / 关注家族 / 关注粉丝列表）
+│   ├── queries-misc.ts         查询层·杂项域（公告 / 域名信誉库 / 认证申请 / re-auth）
+│   ├── events.ts               数据变更事件（SQUARE_UPDATED / NOTIFICATION_UPDATED）
 │   ├── storage.ts              图片上传 / 删除（removeImage）/ 公开 URL（纯函数，server/client 通用）
 │   ├── supabase/               client.ts（浏览器）/ server.ts（cookie 会话）/ admin.ts（service_role，仅 server）
 │   ├── types.ts                全局类型 + DTO（SquarePostDTO / CommentDTO / NotificationDTO）
@@ -90,19 +99,22 @@ yinli/
 │                               023 浏览计数 v2（游客 IP 24h 去重，user_id=NULL 不绑定身份，仅帖子维度计数）→
 │                               024 展示位（square_posts.featured_until 置顶，UGC 大喇叭，人工置值起步）→
 │                               025 推广中心（promo_orders 申请单，/promo 页 + 头像菜单入口，申请制人工开通）→
-│                               026 square_posts 查询索引（created_at / category / author，L1 规模化前置），全幂等；
-│                               手动复制 SQL 到 Supabase Dashboard 执行，不引入 CLI）
+│                               026 square_posts 查询索引（created_at / category / author，L1 规模化前置）→
+│                               027 安全收口（users.badge 列级收写 / promo_orders 加固 / 举报与认证限频 / 内容长度 CHECK）→
+│                               028 内容升级（square_posts.content 放宽至 20000，富文本内容能力）；
+│                               029 title 列遗留（2026-08-29 长文功能删除：迁移文件已删、列已落库保留、前端不再写入，去留待定）；
+│                               全幂等；手动复制 SQL 到 Supabase Dashboard 执行，不引入 CLI）
 ├── vitest.config.ts            vitest 配置 + lib/*.test.ts（纯函数冒烟测试）
 ├── public/                     静态资源
 ├── docs/                       架构规范 / 评审 / 方案 / 配置文档
 └── 配置文件
 ```
 
-> 分层现状：访问区层（common / marketing / app）+ feature 层（app 下 shell / discovery / square）。何时再细分：某 feature 目录超过 10 个文件再继续分；页面超过 8 个再模块化。**不提前设计。**
+> 分层现状：访问区层（common / marketing / app）+ 应用区共享层（app/common）+ feature 层（app 下 shell / discovery / square）。何时再细分：某 feature 目录超过 10 个文件再继续分；页面超过 8 个再模块化。**不提前设计。**
 
 ## 3. 三条规则（就这些）
 
-1. **数据只在 `lib/` 里拿** —— 页面与组件不手写 mock 数组；内容/评论/互动/通知全部读 `lib/queries.ts`（Supabase），`lib/data.ts` 仅存静态配置
+1. **数据只在 `lib/` 里拿** —— 页面与组件不手写 mock 数组；内容/评论/互动/通知全部读 `lib/queries-*.ts`（Supabase），`lib/data.ts` 仅存静态配置
 2. **重复第二次才抽组件** —— 第一次内联，出现第二次再抽到 `components/`
 3. **颜色只用变量** —— 全站色值集中在 `styles/globals.css` 色板，组件不写 `#hex`
 
@@ -135,7 +147,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 页面文件 | 固定名 `page.tsx` / `layout.tsx` | `app/(app)/home/page.tsx` |
 | 组件文件 | PascalCase，一个文件一个组件；按「访问区 → feature」两层归入 `components/<区>/<feature>/`，跨区共享放 `common/` | `components/app/square/square-actions.tsx` |
 | 私有文件 | `_` 前缀（不参与路由） | `(auth)/_components/auth-form.tsx` |
-| 类型 | 组件 Props 用 `XxxProps` 命名（简单组件可内联）；展示模型用 `XxxDTO`（queries.ts 统一映射，集中在 lib/types.ts） | `SquarePostDTO` / `Announcement`（均在 lib/types.ts） |
+| 类型 | 组件 Props 用 `XxxProps` 命名（简单组件可内联）；展示模型用 `XxxDTO`（queries-*.ts 统一映射，集中在 lib/types.ts） | `SquarePostDTO` / `Announcement`（均在 lib/types.ts） |
 | 常量 | UPPER_SNAKE_CASE | `MARKETING_CATEGORIES` |
 | 样式文件 | 按访问区归入 `styles/<区>/`，文件名 = 组件/区块维度，单文件 ≤ 400 行 | `styles/app/settings.css` |
 | 数据库 | 迁移文件 `supabase/migrations/NNN-*.sql`，幂等可重跑，头部注释动机；**手动复制 SQL 到 Supabase Dashboard 执行（不引入 CLI）** | `002-content-seed.sql` |
@@ -163,7 +175,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 1. **新增文件先定位**：页面 → `app/`；共享组件 → `components/`；数据/类型/配置 → `lib/`；表结构/触发器 → `supabase/migrations/`
 2. **提交前自检**：`pnpm lint` + `pnpm build` 通过；不新建目录（除非触发 §2 的分层条件）
 3. **重复第二次就抽象**，第一次允许内联
-4. **数据只从 `lib/queries.ts` / `lib/data.ts` 拿**，颜色只从色板取
+4. **数据只从 `lib/queries-*.ts` / `lib/data.ts` 拿**，颜色只从色板取
 5. **文档同步**：结构有重大调整时更新本文档与一页纸版（R4 提交自检）
 
 ### 7.5 维护方案（治理护栏）
@@ -198,10 +210,12 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 首页四列内容流（方案A） | ✅ | 广场合并进首页（/square 永久重定向 /home）；统一内容流 SquareFeed（四列 .home-grid + SquareCard），承接分类 + ?q= 搜索 + 024 全服通告；右栏 AppAside 下线，广告并入顶部公告轮播；零迁移零新依赖（2026-08-27） |
 | 内容池归一（016） | ✅ | discoveries 退役并入 square_posts：发布统一广场、分类页/个人主页改读 square、`/discover/[id]` 重定向到 `/square/[id]` |
 | vitest 冒烟 | ✅ | 纯函数测试（lib/text.test.ts / lib/links.test.ts / lib/url-policy.test.ts 等）落地 |
+| 安全收口（027） | ✅ | users.badge 列级收写 / promo_orders 加固（状态/定价/归属）/ 举报与认证限频 / 内容长度 CHECK（2026-08-29） |
+| 富文本内容（028） | ✅ | content 放宽至 20000 + TipTap 编辑器（B/斜体/列表/链接 4 按钮）+ DOMPurify 双防线 + 富文本链接走 /go 网关（2026-08-29） |
 | 规模化前置（CSP / 分页缓存 / 迁移 CLI 等） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七；迁移 CLI 经用户决策改用手动复制 |
 
-**防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；**图标边界（2026-08-28 P2-3 收口）**：组件 UI 层图标一律 `lucide-react`，配置/数据层（可序列化静态配置，如 config.ts 导航/分类枚举）用 `lib/icons.ts` 字符串表，禁止混层；`lib/queries.ts` 超过 500 行或新增领域时按需拆分（平层文件取向，不留 re-export 桶，调用方直接改 import）；新增写操作必须先定「RLS / 列级权限 / 触发器 / Handler」归属。
+**防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；**图标边界（2026-08-28 P2-3 收口）**：组件 UI 层图标一律 `lucide-react`，配置/数据层（可序列化静态配置，如 config.ts 导航/分类枚举）用 `lib/icons.ts` 字符串表，禁止混层；`lib/queries-*.ts` 任一超过 500 行或新增领域时按需拆分（平层文件取向，不留 re-export 桶，调用方直接改 import）；新增写操作必须先定「RLS / 列级权限 / 触发器 / Handler」归属。
 
 ---
 
-*本规范 v3.2 于 2026-08-27 修订（迁移 001-025：新增 025 推广中心 promo_orders 申请单 + /promo 独立页 + 头像菜单入口，商业化阶段 1 申请制；商业化蓝图见 docs/DEVELOPER-HANDBOOK.md §2.6 及 /promo 页）。v3.1 于 2026-08-27 修订（迁移 001-024：新增 024 展示位 featured_until 置顶字段 + 侧栏广告位复用 announcements kind=ad；展示位/广告位商业化架构落地）。v3.0 于 2026-08-27 修订（迁移 001-023：新增 023 浏览计数 v2（游客 IP 24h 去重、user_id=NULL 不绑定身份）；发布三入口合并为单一表单 + 可选标注；登录页新用户注册引导；正文/评论换行 pre-line 修复；ARCHITECTURE.md 迁移声明同步 001-023）。v2.9 于 2026-08-24 修订（迁移 001-022 全部执行并补登标记；新增 022 上传审计与限流、api/upload 路由、lib/url-policy.ts；/discover/[id] 标注退役重定向；手机号 OTP 临时下架（PHONE_AUTH_ENABLED 开关）；安全边界修复落地（外链网关兜底/上传限流/公告图片，见 DEVELOPER-HANDBOOK §2.5）；文档一致性对齐）。v2.8 于 2026-08-23 修订（回填：/go 外链网关、home-feed 首页三列卡片、toast/post-menu/lib-links、迁移清单 001-015（补 014 广场分类 / 015 广场发布类型）、CSS 拆分（square-detail / profile-posts / publish-form / home）、vitest 冒烟；明确迁移 = 手动复制 SQL 执行、不引入 CLI）。v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*
+*本规范 v3.4 于 2026-08-29 修订（S3 拆分：`lib/queries.ts` → `queries-{posts,comments,notifications,social,misc}.ts` + `events.ts`，平层文件不留 re-export 桶，全部引用方改 import；数据边界/三条规则/lib 目录树/命名规范/防膨胀红线同步）。v3.3 于 2026-08-29 修订（迁移 001-028 补登 027 安全收口 / 028 内容升级 + 029 title 列遗留说明；组件树对齐实际目录；§8 演进表补 027/028；README/一页纸版/手册同步四列内容流与组件归属）。v3.2 于 2026-08-27 修订（迁移 001-025：新增 025 推广中心 promo_orders 申请单 + /promo 独立页 + 头像菜单入口，商业化阶段 1 申请制；商业化蓝图见 docs/DEVELOPER-HANDBOOK.md §2.6 及 /promo 页）。v3.1 于 2026-08-27 修订（迁移 001-024：新增 024 展示位 featured_until 置顶字段 + 侧栏广告位复用 announcements kind=ad；展示位/广告位商业化架构落地）。v3.0 于 2026-08-27 修订（迁移 001-023：新增 023 浏览计数 v2（游客 IP 24h 去重、user_id=NULL 不绑定身份）；发布三入口合并为单一表单 + 可选标注；登录页新用户注册引导；正文/评论换行 pre-line 修复；ARCHITECTURE.md 迁移声明同步 001-023）。v2.9 于 2026-08-24 修订（迁移 001-022 全部执行并补登标记；新增 022 上传审计与限流、api/upload 路由、lib/url-policy.ts；/discover/[id] 标注退役重定向；手机号 OTP 临时下架（PHONE_AUTH_ENABLED 开关）；安全边界修复落地（外链网关兜底/上传限流/公告图片，见 DEVELOPER-HANDBOOK §2.5）；文档一致性对齐）。v2.8 于 2026-08-23 修订（回填：/go 外链网关、home-feed 首页三列卡片、toast/post-menu/lib-links、迁移清单 001-015（补 014 广场分类 / 015 广场发布类型）、CSS 拆分（square-detail / profile-posts / publish-form / home）、vitest 冒烟；明确迁移 = 手动复制 SQL 执行、不引入 CLI）。v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*

@@ -8,7 +8,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { fetchVerifications, NOTIFICATION_UPDATED_EVENT, type VerificationRow } from "@/lib/queries";
+import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
+import { fetchVerifications, type VerificationRow } from "@/lib/queries-misc";
 import { useToast } from "@/components/app/common/toast";
 
 const VTYPES = [

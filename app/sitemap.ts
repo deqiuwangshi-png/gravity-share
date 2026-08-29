@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { SITE_URL } from "@/lib/seo";
 import { SQUARE_CATEGORY_META } from "@/lib/config";
-import { fetchProfileIds, fetchSquarePosts } from "@/lib/queries";
+import { fetchProfileIds, fetchSquarePosts } from "@/lib/queries-posts";
 
 /**
  * sitemap.xml（2026-08-25 SEO 方案 M1）：

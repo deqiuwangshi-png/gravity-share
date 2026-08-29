@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { fetchSquarePosts } from "@/lib/queries";
+import { fetchSquarePosts } from "@/lib/queries-posts";
 import { SQUARE_CATEGORIES, SQUARE_CATEGORY_META } from "@/lib/config";
 import { SITE_URL, buildCollectionPage, jsonLd } from "@/lib/seo";
 import { SquareCard } from "@/components/app/common/square-card";

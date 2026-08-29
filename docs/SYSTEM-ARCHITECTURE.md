@@ -19,7 +19,7 @@ supabase/     迁移柜 —— 数据库唯一真相（001-028，幂等可重跑
 app/
 ├── (marketing)/  落地页 / + 法律页
 ├── (auth)/       登录 / 注册 / 忘记密码 / 重置密码
-├── (app)/        home（公告 + 三列卡片流）/ discover(+[id] 退役重定向 → /square/[id]) / categories(+[slug]) /
+├── (app)/        home（公告 + 四列内容流）/ discover(+[id] 退役重定向 → /square/[id]) / categories(+[slug]) /
 │                 square(+[id]) / profile(+[id] 他人主页)
 ├── go/           外链安全网关（/go?url=…，白/黑名单分级）
 ├── auth/callback/  第三方登录 / 密码重置统一回调
@@ -31,11 +31,13 @@ styles/
 ├── globals.css   色板 + 全局基础
 ├── marketing/ · auth/ · app/（单文件 ≤400 行；含 square-detail / profile-posts / publish-form / home 等拆分文件）
 components/
-├── common/       logo / linkified-text / author-link / avatar-box / load-error / toast / post-menu
+├── common/       logo（跨区共享）
 ├── marketing/    legal-layout
-└── app/          shell/（9）· discovery/（2：announcement-carousel / profile-post）· square/（6：square-feed 四列内容流等）
+└── app/          common/（12：avatar-box / author-link / linkified-text / toast / post-menu / square-card / rich-editor 等）·
+                  shell/（13）· discovery/（1：announcement-carousel）· square/（8：square-feed 四列内容流等）
 lib/
-├── queries.ts    查询层：读 + 互动/通知操作 + bumpViews（DTO 映射，注入双端 client）
+├── queries-posts.ts · queries-comments.ts · queries-notifications.ts · queries-social.ts · queries-misc.ts
+│   查询层按域拆分（S3 2026-08-29；DTO 映射，注入双端 client）+ events.ts（数据变更事件）
 ├── storage.ts    图片上传 / 删除 / 公开 URL（纯函数，双端通用）
 ├── supabase/     client.ts（浏览器）/ server.ts（cookie 会话）/ admin.ts（service_role，仅 server）
 ├── data.ts       静态配置（分类 / 公告正文 / 热词）
@@ -53,7 +55,7 @@ supabase/migrations/   001-028（users → 内容 → 互动 → 存储 → 公�
                        全幂等；手动复制 SQL 执行）
 ```
 
-> 数据：**全部在 Supabase**（业务表 / 存储桶 / RLS / 列级权限 / 触发器见迁移 001-028；计数列只读由触发器维护）。页面不写死数据，读走 `lib/queries.ts`，写靠 RLS + 触发器保护，管理操作走 service_role 服务端路由。
+> 数据：**全部在 Supabase**（业务表 / 存储桶 / RLS / 列级权限 / 触发器见迁移 001-028；计数列只读由触发器维护）。页面不写死数据，读走 `lib/queries-*.ts`，写靠 RLS + 触发器保护，管理操作走 service_role 服务端路由。
 
 ## 二、三条规则（就这些，多了没人遵守）
 
@@ -116,7 +118,7 @@ supabase/migrations/   001-028（users → 内容 → 互动 → 存储 → 公�
 
 ```
 1. app/ 建页面文件（先能打开）
-2. lib/queries.ts 加查询 / 或 supabase/migrations 加表（先有数据）
+2. lib/queries-*.ts 对应域加查询 / 或 supabase/migrations 加表（先有数据）
 3. 页面里直接写代码（先跑起来）
 4. 出现重复 → 抽组件 / 换变量 / 加触发器
 ```
@@ -129,7 +131,7 @@ supabase/migrations/   001-028（users → 内容 → 互动 → 存储 → 公�
 |---|---|---|---|
 | S1 | **CSP 安全头** | 上线前（部署域名定稿后） | 四项基础头已上线（C4）；CSP 需 nonce/hash 方案处理 inline style 与 next/font，单独专项 |
 | S2 | **分页 / 缓存** | `discoveries` > 200 条 **或** 任一列表接口响应 > 300ms | queries 层加 `limit/offset` + 游标（created_at 倒序）；**顺带解决**列表卡片收藏/点赞态 N+1（`isFavorited`/`isLiked` 每卡一查 → 批量取） |
-| S3 | **queries.ts 拆分** | `lib/queries.ts` > 500 行 **或** 新增第三个领域操作 | 拆 `lib/db/{discoveries,square,interactions,notifications}.ts`，queries.ts 变 re-export |
+| S3 | **查询层拆分** | ✅ 已触发并完成（2026-08-29：queries.ts 521 行超线） | 按域拆 `queries-{posts,comments,notifications,social,misc}.ts` + `events.ts`（平层，不留 re-export 桶，调用方直接改 import）；任一文件再超 500 行按同规则继续拆 |
 | S4 | **测试 / CI** | 页面 > 20 **或** 组件 > 30 | 纯函数冒烟已落地（`pnpm test`，覆盖 lib/text、lib/links）；**RLS 读/写、触发器计数等集成测试 + GitHub Actions CI 仍待**（需 Supabase local 栈） |
 | S5 | **迁移执行方式** | — | **用户决策（2026-08-23）：不引入 CLI**，迁移由手动复制 SQL 到 Supabase Dashboard 执行；迁移文件仍走 git 版本管理 |
 | S6 | **通知中心完整页** | 通知 > 20 条（抽屉预览放不下） | 新建 `/notifications` 完整页（分页 + 全部已读 + 筛选），抽屉只留预览 |

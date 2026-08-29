@@ -6,7 +6,8 @@ import { SquareActions } from "@/components/app/square/square-actions";
 import { SquarePostView } from "@/components/app/square/square-post-view";
 import { CommentSection } from "@/components/app/square/comment-section";
 import { createClient } from "@/lib/supabase/server";
-import { bumpViews, fetchComments, fetchSquarePostById } from "@/lib/queries";
+import { fetchComments } from "@/lib/queries-comments";
+import { bumpViews, fetchSquarePostById } from "@/lib/queries-posts";
 import { stripHtml } from "@/lib/text";
 import { SITE_URL, buildArticle, jsonLd } from "@/lib/seo";
 

@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { fetchFollowers, fetchFollowingIds } from "@/lib/queries";
+import { fetchFollowers, fetchFollowingIds } from "@/lib/queries-social";
 import { RelationList } from "@/components/app/shell/relation-list";
 
 export const dynamic = "force-dynamic";

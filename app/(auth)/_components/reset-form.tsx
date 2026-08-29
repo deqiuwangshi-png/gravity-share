@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { verifyCurrentPassword } from "@/lib/queries";
+import { verifyCurrentPassword } from "@/lib/queries-misc";
 
 type FormState = "checking" | "ready" | "invalid";
 

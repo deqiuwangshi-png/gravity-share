@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { SQUARE_UPDATED_EVENT } from "@/lib/queries";
+import { SQUARE_UPDATED_EVENT } from "@/lib/events";
 
 /**
  * 发布实时联动 watcher（2026-08-25 SEO：列表/分类页 SSR 化后保留原 client 增量刷新体验）

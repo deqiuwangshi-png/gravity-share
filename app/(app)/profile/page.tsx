@@ -6,7 +6,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { fetchFollowingCount, fetchFollowerCount } from "@/lib/queries";
+import { fetchFollowingCount, fetchFollowerCount } from "@/lib/queries-social";
 import ProfileView from "@/components/app/shell/profile-view";
 
 export const metadata: Metadata = {

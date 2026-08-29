@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import { AnnouncementCarousel } from "@/components/app/discovery/announcement-carousel";
 import { SquareFeed } from "@/components/app/square/square-feed";
 import { createClient } from "@/lib/supabase/server";
-import { fetchAnnouncements, fetchSquarePosts } from "@/lib/queries";
+import { fetchAnnouncements } from "@/lib/queries-misc";
+import { fetchSquarePosts } from "@/lib/queries-posts";
 
 export const dynamic = "force-dynamic";
 

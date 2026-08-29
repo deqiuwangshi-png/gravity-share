@@ -13,6 +13,11 @@ export function extractTags(text: string): string[] {
   return [...text.matchAll(/#([^\s#，。！？；、]+)/g)].map((match) => match[1]);
 }
 
+/** 用户昵称回退（queries 域共用）：空名一律回退「引力推荐」，避免头像空圈/空名展示 */
+export function safeName(name: string | null | undefined): string {
+  return (name ?? "").trim() || "引力推荐";
+}
+
 /** 富文本 HTML → 纯文本（列表卡片截断预览用；标签替换为空格避免词粘连，实体解码最小集） */
 export function stripHtml(html: string): string {
   return html

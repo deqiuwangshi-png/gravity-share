@@ -18,13 +18,10 @@ import { AuthorBadge } from "@/components/app/common/author-badge";
 import { createClient } from "@/lib/supabase/client";
 import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
 import { SITE_INFO } from "@/lib/config";
-import {
-  SQUARE_UPDATED_EVENT,
-  fetchCommentsByAuthor,
-  fetchSquarePostsByAuthor,
-  isFollowing,
-  toggleFollow,
-} from "@/lib/queries";
+import { SQUARE_UPDATED_EVENT } from "@/lib/events";
+import { fetchCommentsByAuthor } from "@/lib/queries-comments";
+import { fetchSquarePostsByAuthor } from "@/lib/queries-posts";
+import { isFollowing, toggleFollow } from "@/lib/queries-social";
 import type { CommentDTO, SquarePostDTO } from "@/lib/types";
 
 export default function ProfileView({

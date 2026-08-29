@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { isLiked, toggleLike } from "@/lib/queries";
+import { isLiked, toggleLike } from "@/lib/queries-social";
 import { Heart, Eye } from "lucide-react";
 
 export function SquareActions({ postId, likes, views }: { postId: string; likes: number; views: number }) {

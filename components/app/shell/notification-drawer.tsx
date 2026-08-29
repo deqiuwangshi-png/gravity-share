@@ -4,12 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoadError } from "@/components/app/common/load-error";
 import { createClient } from "@/lib/supabase/client";
+import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
 import {
   fetchNotifications,
   markAllNotificationsRead,
   markNotificationRead,
-  NOTIFICATION_UPDATED_EVENT,
-} from "@/lib/queries";
+} from "@/lib/queries-notifications";
 import type { NotificationDTO } from "@/lib/types";
 
 /**

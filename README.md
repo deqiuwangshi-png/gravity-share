@@ -77,7 +77,7 @@ supabase/     迁移柜 —— 数据库唯一真相（001-028，幂等可重跑
 |---|---|---|
 | 落地页 | `/` `/about` `/help` `/terms` `/privacy` | 公开 |
 | 认证 | `/login`（登录即注册：邮箱；手机号 OTP 代码保留但临时下架，PHONE_AUTH_ENABLED 开关控制）`/forgot-password` `/reset-password`（`/register` → 重定向 `/login`） | 邮箱密码（保留验证）+ GitHub / Google + 密码重置 |
-| 应用 | `/home`（发现流 + 无限滚动）`/discover/[id]` `/categories(/[slug])` `/square(/[id])` `/profile(/[id])` | 需登录（proxy.ts 守卫） |
+| 应用 | `/home`（内容流）`/discover/[id]` `/categories(/[slug])` `/square(/[id])` `/profile(/[id])` `/promo`（订阅计划） | 需登录（proxy.ts 守卫） |
 
 ---
 

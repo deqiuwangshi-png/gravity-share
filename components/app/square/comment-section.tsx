@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MessageCircle, Heart } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { fetchCommentLikeMap, fetchComments, toggleCommentLike } from "@/lib/queries";
+import { fetchCommentLikeMap, fetchComments, toggleCommentLike } from "@/lib/queries-comments";
 import { SquareCommentBox } from "./square-comment-box";
 import { PostMenu } from "@/components/app/common/post-menu";
 import { AvatarBox } from "@/components/app/common/avatar-box";

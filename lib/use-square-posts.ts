@@ -9,7 +9,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { fetchSquarePosts, SQUARE_UPDATED_EVENT } from "@/lib/queries";
+import { SQUARE_UPDATED_EVENT } from "@/lib/events";
+import { fetchSquarePosts } from "@/lib/queries-posts";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function useSquarePosts(initialPosts?: SquarePostDTO[]) {

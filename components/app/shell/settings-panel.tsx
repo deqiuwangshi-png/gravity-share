@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { verifyCurrentPassword } from "@/lib/queries";
+import { verifyCurrentPassword } from "@/lib/queries-misc";
 import { FEISHU_FEEDBACK_URL } from "@/lib/config";
 import { useToast } from "@/components/app/common/toast";
 import { AccountActionModal } from "@/components/app/common/account-action-modal";

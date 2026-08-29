@@ -11,7 +11,8 @@ import PublishModal from "./publish-modal";
 import { MAIN_NAV } from "@/lib/config";
 import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { fetchNotifications, NOTIFICATION_UPDATED_EVENT } from "@/lib/queries";
+import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
+import { fetchNotifications } from "@/lib/queries-notifications";
 
 type NavItem = readonly [string, string, string];
 

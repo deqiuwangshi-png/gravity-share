@@ -6,7 +6,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { fetchFollowingCount, fetchFollowerCount } from "@/lib/queries";
+import { fetchFollowingCount, fetchFollowerCount } from "@/lib/queries-social";
 import { SITE_URL, buildPerson, jsonLd } from "@/lib/seo";
 import ProfileView from "@/components/app/shell/profile-view";
 

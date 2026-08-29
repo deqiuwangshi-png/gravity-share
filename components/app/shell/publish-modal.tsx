@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { SQUARE_CATEGORIES, SOURCE_PLATFORMS, SQUARE_POST_TYPES } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
-import { SQUARE_UPDATED_EVENT } from "@/lib/queries";
+import { SQUARE_UPDATED_EVENT } from "@/lib/events";
 import { extractTags, stripHtml } from "@/lib/text";
 import { sanitizeHtml } from "@/lib/rich-content";
 import { RichEditor } from "@/components/app/common/rich-editor";
