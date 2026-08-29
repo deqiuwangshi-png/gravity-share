@@ -140,13 +140,27 @@
   position: absolute;
   top: 50%;
   right: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   border: 0;
   padding: 0;
   transform: translateY(-50%);
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
-  font-size: 12px;
+}
+
+.password-field button:hover {
+  color: var(--foreground);
+}
+
+/* 屏蔽 Chromium/Edge 原生密码眼睛与清理按钮，避免与自定义眼睛重复 */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
 }
 
 .auth-form-options {
@@ -156,17 +170,6 @@
   margin-top: -3px;
   color: var(--text-muted);
   font-size: 12px;
-}
-
-.checkbox-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-}
-
-.checkbox-label input {
-  accent-color: var(--primary);
 }
 
 .auth-form-options a,
@@ -261,6 +264,79 @@
   color: var(--text-muted);
   font-size: 12px;
   text-align: center;
+}
+
+/* 注册验证轻量弹窗（替代行内 setInfo，轻量优雅） */
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 25, 22, 0.42);
+  backdrop-filter: blur(3px);
+}
+
+.auth-modal-box {
+  width: min(380px, 100%);
+  padding: 30px 26px 26px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  text-align: center;
+  animation: auth-modal-in 160ms ease;
+}
+
+@keyframes auth-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.auth-modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.auth-modal-icon svg { display: block; }
+
+.auth-modal-box h2 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  letter-spacing: -0.3px;
+}
+
+.auth-modal-box p {
+  margin: 0 0 22px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.auth-modal-box .auth-submit {
+  margin-top: 0;
+  justify-content: center;
+}
+
+/* 忘记密码页「返回登录」入口（此前 .auth-switch-copy 无样式，导致可点性极差、像失效） */
+.auth-switch-copy {
+  margin: 18px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.auth-switch-copy a {
+  color: var(--primary);
+  font-weight: 600;
 }
 
 @media (max-width: 820px) {

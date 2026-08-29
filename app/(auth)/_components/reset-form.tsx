@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type FormState = "checking" | "ready" | "invalid";
@@ -18,6 +19,8 @@ export default function ResetForm() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -84,29 +87,35 @@ export default function ResetForm() {
       <form className="auth-form" onSubmit={handleSubmit}>
         <label>
           <span>新密码</span>
-          <input
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="至少 8 位字符"
-            minLength={8}
-            required
-          />
+          <span className="password-field">
+            <input
+              name="password"
+              type={showNew ? "text" : "password"}
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="至少 8 位字符"
+              minLength={8}
+              required
+            />
+            <button type="button" onClick={() => setShowNew(!showNew)} aria-label={showNew ? "隐藏新密码" : "显示新密码"} aria-pressed={showNew}>{showNew ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button>
+          </span>
         </label>
         <label>
           <span>确认新密码</span>
-          <input
-            name="confirm"
-            type="password"
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(event) => setConfirm(event.target.value)}
-            placeholder="再次输入新密码"
-            minLength={8}
-            required
-          />
+          <span className="password-field">
+            <input
+              name="confirm"
+              type={showConfirm ? "text" : "password"}
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(event) => setConfirm(event.target.value)}
+              placeholder="再次输入新密码"
+              minLength={8}
+              required
+            />
+            <button type="button" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? "隐藏确认密码" : "显示确认密码"} aria-pressed={showConfirm}>{showConfirm ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button>
+          </span>
         </label>
         {error && <p className="auth-mock-note auth-error" role="alert">{error}</p>}
         <button className="auth-submit" type="submit" disabled={saving}>

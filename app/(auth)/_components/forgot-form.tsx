@@ -46,9 +46,8 @@ export default function ForgotForm() {
   return (
     <div className="auth-card">
       <div className="auth-heading">
-        <p className="auth-kicker">找回密码</p>
         <h2>重置密码</h2>
-        <p>输入注册邮箱，我们将发送密码重置链接。</p>
+        <p>请输入你的注册邮箱，我们会发送一封密码重置链接（30 分钟内有效）。</p>
       </div>
       <form className="auth-form" onSubmit={handleSubmit}>
         <label><span>邮箱</span><input name="email" type="email" autoComplete="email" placeholder="name@example.com" required /></label>

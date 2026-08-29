@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { OAUTH_PROVIDERS } from "@/lib/config";
@@ -47,6 +48,8 @@ export default function AuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [verifyModal, setVerifyModal] = useState<{ open: boolean; email: string }>({ open: false, email: "" });
+  const closeVerifyModal = () => setVerifyModal({ open: false, email: "" });
   const [submitting, setSubmitting] = useState(false);
   /* 手机号 OTP */
   const [phone, setPhone] = useState("");
@@ -114,7 +117,7 @@ export default function AuthForm() {
     const { error: signUpError } = await supabase.auth.signUp({ email, password });
     setSubmitting(false);
     if (!signUpError) {
-      setInfo("验证邮件已发送，请查收邮箱完成激活后再登录。");
+      setVerifyModal({ open: true, email });
       return;
     }
     /* 邮箱已存在 → 是密码错（Supabase 登录与注册对同一邮箱的错误码可区分此分支） */
@@ -180,8 +183,9 @@ export default function AuthForm() {
   }
 
   return (
-    <div className="auth-card">
-      <div className="auth-heading">
+    <>
+      <div className="auth-card">
+        <div className="auth-heading">
         <h2>欢迎来到引力</h2>
         {/* 新用户注册引导（登录即注册：无独立注册页，2026-08-27 新增，命中 .auth-heading p:last-child 样式） */}
         <p>没有账号？输入邮箱和密码即可注册。</p>
@@ -199,10 +203,9 @@ export default function AuthForm() {
          * 否则 React 复用 DOM 触发「非受控 → 受控」冲突警告 */
         <form key="email" className="auth-form" onSubmit={submitEmail}>
           <label><span>邮箱</span><input name="email" type="email" autoComplete="email" placeholder="name@example.com" required /></label>
-          <label><span>密码</span><span className="password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="至少 8 位字符" minLength={8} required /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "隐藏密码" : "显示密码"}>{showPassword ? "隐藏" : "显示"}</button></span></label>
-          <div className="auth-form-options"><label className="checkbox-label"><input type="checkbox" name="remember" /> <span>记住我</span></label><Link href="/forgot-password">忘记密码？</Link></div>
+          <label><span>密码</span><span className="password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="至少 8 位字符" minLength={8} required /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "隐藏密码" : "显示密码"} aria-pressed={showPassword}>{showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button></span></label>
+          <div className="auth-form-options"><Link href="/forgot-password">忘记密码？</Link></div>
           {error && <p className="auth-mock-note auth-error" role="alert">{error}</p>}
-          {info && <p className="auth-mock-note auth-info" role="status">{info}</p>}
           <button className="auth-submit" type="submit" disabled={submitting}>{submitting ? "登录中…" : "登录 / 注册"}<span aria-hidden="true">→</span></button>
         </form>
       ) : (
@@ -229,5 +232,21 @@ export default function AuthForm() {
         ))}
       </div>
     </div>
+      {verifyModal.open && (
+        <div className="auth-modal-backdrop" onClick={closeVerifyModal} role="presentation">
+          <div className="auth-modal-box" role="dialog" aria-modal="true" aria-labelledby="verify-title" onClick={(event) => event.stopPropagation()}>
+            <div className="auth-modal-icon" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="M3 7l9 6 9-6" />
+              </svg>
+            </div>
+            <h2 id="verify-title">验证邮件已发送</h2>
+            <p>我们已向 <strong>{verifyModal.email}</strong> 发送了一封验证邮件，请查收并点击邮件中的链接激活账号。激活后即可使用邮箱登录。</p>
+            <button type="button" className="auth-submit" onClick={closeVerifyModal}>我知道了</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
