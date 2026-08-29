@@ -15,6 +15,8 @@ export const NOTIFICATION_UPDATED_EVENT = "notification-updated";
 /** square_posts 行 + 关联作者名——导出供 DTO 映射测试构造 */
 export type SquarePostRow = {
   id: string;
+  /* 029 帖子标题（短帖空串） */
+  title: string;
   content: string;
   post_type: string;
   commission: string | null;
@@ -64,6 +66,7 @@ export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
     authorName: safeName(row.users?.name),
     authorAvatar: row.users?.avatar_url ?? undefined,
     authorBadge: (row.users?.badge as SquarePostDTO["authorBadge"]) ?? "none",
+    title: row.title ?? "",
     content: row.content,
     postType: (row.post_type as "share" | "opportunity" | "content") ?? "share",
     commission: row.commission ?? undefined,
@@ -501,4 +504,18 @@ export async function fetchVerifications(supabase: SupabaseClient): Promise<Veri
  * 游客 user_id 不绑定身份（NULL），仅帖子维度计数；登录用户保留作者不计 + 30 分钟去重 */
 export async function bumpViews(supabase: SupabaseClient, targetId: string, ip?: string | null): Promise<void> {
   await supabase.rpc("bump_views", { target_type: "square", target_id: targetId, visitor_ip: ip ?? null });
+}
+
+/* ---------- 敏感操作 re-auth（2026-08-29，账号劫持防线） ---------- */
+
+/** 用当前密码验证身份（注销 / 修改密码 / 修改邮箱共用）：
+ * signInWithPassword 仅作校验，失败返回 false，成功顺带刷新会话。
+ * 若 session 无邮箱（异常态）一律拒绝，宁可不放行。 */
+export async function verifyCurrentPassword(supabase: SupabaseClient, password: string): Promise<boolean> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return false;
+  const { error } = await supabase.auth.signInWithPassword({ email: user.email, password });
+  return !error;
 }

@@ -9,9 +9,13 @@ import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { hasUrl } from "@/components/app/common/linkified-text";
 import { hostOf } from "@/lib/links";
+import { stripHtml } from "@/lib/text";
+import { isRichText } from "@/lib/rich-content";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquareCard({ post }: { post: SquarePostDTO }) {
+  /* 富文本帖卡片预览：去标签纯文本截断；短帖纯文本原样（3 行截断由 CSS 承担） */
+  const preview = isRichText(post.content) ? stripHtml(post.content) : post.content;
   return (
     <Link className="home-card" href={`/square/${post.id}`}>
       <div className="home-card-head">
@@ -24,7 +28,10 @@ export function SquareCard({ post }: { post: SquarePostDTO }) {
         {post.featured && <span className="home-card-featured">展示</span>}
       </div>
 
-      <p className="home-card-body">{post.content}</p>
+      {/* 帖子标题（029：卡片首行显示；短帖空串不渲染） */}
+      {post.title && <h3 className="home-card-title">{post.title}</h3>}
+
+      <p className="home-card-body">{preview}</p>
 
       {post.postType === "opportunity" && (
         <p className="home-card-notice opportunity"><b>⚠ 机会</b>{post.commission ? ` · ${post.commission}` : ""}</p>

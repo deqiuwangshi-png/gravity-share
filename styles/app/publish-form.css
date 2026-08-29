@@ -123,43 +123,6 @@
   line-height: 1.6;
 }
 
-.publish-submit {
-  height: 44px;
-  margin-top: 4px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--primary);
-  color: var(--on-primary);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: background 180ms ease;
-}
-
-.publish-submit:hover {
-  background: var(--primary-dark);
-}
-
-/* 提交成功态 */
-.publish-success {
-  display: grid;
-  gap: 14px;
-  padding: 22px 0 6px;
-  text-align: center;
-}
-
-.publish-success p {
-  margin: 0;
-  color: var(--primary);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.publish-success .publish-submit {
-  width: 120px;
-  margin: 0 auto;
-}
-
 /* 发布失败提示（2b 写库后） */
 .publish-error {
   margin: -6px 0 10px;
@@ -261,3 +224,4 @@
   display: grid;
   gap: 10px;
 }
+

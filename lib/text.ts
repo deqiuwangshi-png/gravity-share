@@ -1,21 +1,31 @@
 /**
- * 文本工具：外链提取 / #标签提取（发布随手写模式用）
+ * 文本工具：#标签提取 / 富文本转纯文本（发布与渲染共用）
  */
 /**
  * URL 匹配（排除中文与常见标点）
  * 注意：不带 g 标志——`.test()` 在全局正则上有 lastIndex 状态，会污染循环调用（P1-1 修复）；
- * `extractUrl` 用 match、`LinkifiedText` 用 split，均不受影响。
+ * `LinkifiedText` 用 split，不受影响。
  */
 export const URL_PATTERN = /(https?:\/\/[^\s，。！？；、）】"'”]+)/;
-
-/** 从文本中提取第一个外链 URL */
-export function extractUrl(text: string): string | undefined {
-  return text.match(URL_PATTERN)?.[0];
-}
 
 /** 从文本中提取 #标签（不含 # 前缀） */
 export function extractTags(text: string): string[] {
   return [...text.matchAll(/#([^\s#，。！？；、]+)/g)].map((match) => match[1]);
+}
+
+/** 富文本 HTML → 纯文本（列表卡片截断预览用；标签替换为空格避免词粘连，实体解码最小集） */
+export function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** 相对时间（库 created_at → 展示文案：刚刚 / X 分钟前 / X 小时前 / X 天前 / 日期）

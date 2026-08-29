@@ -14,6 +14,8 @@ import { AuthorLink } from "@/components/app/common/author-link";
 import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { LinkifiedText } from "@/components/app/common/linkified-text";
+import { RichContent } from "@/components/app/common/rich-content";
+import { isRichText } from "@/lib/rich-content";
 import { publicImageUrl } from "@/lib/storage";
 import { sanitizeUrl } from "@/lib/url-policy";
 import { safeHref } from "@/lib/links";
@@ -59,7 +61,14 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
         />
       ) : (
         <>
-          <p className="square-content"><LinkifiedText text={post.content} /></p>
+          {/* 帖子标题（029：title 非空渲染大字；短帖空串无标题，零影响） */}
+          {post.title && <h1 className="square-title">{post.title}</h1>}
+          {/* 正文：富文本（sanitize 渲染）/ 纯文本（存量或短帖） */}
+          {isRichText(post.content) ? (
+            <RichContent content={post.content} />
+          ) : (
+            <p className="square-content"><LinkifiedText text={post.content} /></p>
+          )}
           {post.urlStatus === "blocked" ? (
             <p className="square-post-link-removed">该链接已被移除</p>
           ) : (

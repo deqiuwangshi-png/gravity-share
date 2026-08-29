@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { verifyCurrentPassword } from "@/lib/queries";
 import { FEISHU_FEEDBACK_URL } from "@/lib/config";
 import { useToast } from "@/components/app/common/toast";
+import { AccountActionModal } from "@/components/app/common/account-action-modal";
 import { DevicesPanel } from "./devices-panel";
 import { VerifyPanel } from "./verify-panel";
 
@@ -50,10 +53,39 @@ function SettingRow({
   );
 }
 
+/** 密码输入框（复用 .password-field + lucide 眼睛；每个实例独立显隐 state） */
+function PwdInput({
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  autoComplete: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <span className="password-field">
+      <input
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        required
+      />
+      <button type="button" onClick={() => setShow(!show)} aria-label={show ? "隐藏密码" : "显示密码"} aria-pressed={show}>
+        {show ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+      </button>
+    </span>
+  );
+}
+
 /**
- * 设置面板（下拉菜单弹出）：用户设置 / 帮助与反馈
- * 用户设置数据源：public.users（2a 起为权威）+ session.user（邮箱）
- * 昵称/简介行内编辑 → update public.users（RLS 自写）
+ * 设置面板（下拉菜单弹出）：用户设置 / 账户安全 / 登录设备 / 官方认证 / 帮助
+ * 2026-08-29 统一：改密码 / 改邮箱 / 注销 全部收敛为 AccountActionModal 弹窗（re-auth 校验当前密码）
  */
 export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; onClose: () => void }) {
   const [tab, setTab] = useState<PanelId>(initialTab);
@@ -62,19 +94,30 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
   const [joined, setJoined] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
-  /* 简介行内编辑（头像/昵称已迁移到主页「编辑个人资料」弹窗） */
+  /* 简介行内编辑 */
   const [editing, setEditing] = useState<"bio" | null>(null);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  /* 注销账号（输入「删除」确认，防误触） */
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  /* 敏感操作统一弹窗：password / email / delete */
+  const [modal, setModal] = useState<"password" | "email" | "delete" | null>(null);
+  /* 修改密码 */
+  const [curPassword, setCurPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  /* 修改邮箱 */
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  /* 注销 */
   const [deleteText, setDeleteText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  /* 修改密码（重置邮件发送中） */
-  const [passwordSending, setPasswordSending] = useState(false);
   const router = useRouter();
   const { show } = useToast();
 
@@ -103,6 +146,13 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  function closeModal() {
+    setModal(null);
+    setCurPassword(""); setNewPassword(""); setConfirmPassword(""); setPasswordError("");
+    setNewEmail(""); setEmailPassword(""); setEmailError("");
+    setDeleteText(""); setDeletePassword(""); setDeleteError("");
+  }
+
   function startEdit(field: "bio") {
     setEditing(field);
     setDraft(bio);
@@ -123,43 +173,102 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
     setEditing(null);
   }
 
-  /**
-   * 修改密码（复用忘记密码链路）：发送重置邮件 → 邮件链接经 /auth/callback 建 recovery session
-   * → /reset-password 设置新密码。与 forgot-form 同款 redirectTo，链路已跑通。
-   */
-  async function handleChangePassword() {
-    if (passwordSending) return;
-    if (!email) {
-      show("未绑定邮箱，无法重置密码", "danger");
+  /** 修改密码（弹窗，2026-08-29）：re-auth 当前密码 → updateUser → 撤销其他设备会话 */
+  async function submitPasswordChange() {
+    if (passwordBusy) return;
+    if (newPassword.length < 8) {
+      setPasswordError("新密码至少 8 位");
       return;
     }
-    setPasswordSending(true);
-    const { error } = await createClient().auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
-    });
-    setPasswordSending(false);
-    if (error) {
-      show("邮件发送失败，请稍后重试", "danger");
+    if (newPassword !== confirmPassword) {
+      setPasswordError("两次输入的新密码不一致");
       return;
     }
-    show("重置邮件已发送，请查收邮箱");
+    if (!curPassword) {
+      setPasswordError("请输入当前密码以确认身份");
+      return;
+    }
+    setPasswordBusy(true);
+    setPasswordError("");
+    const supabase = createClient();
+    const ok = await verifyCurrentPassword(supabase, curPassword);
+    if (!ok) {
+      setPasswordBusy(false);
+      setPasswordError("当前密码不正确");
+      return;
+    }
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordBusy(false);
+    if (updateError) {
+      setPasswordError("修改失败，请稍后重试");
+      return;
+    }
+    /* 改密成功：撤销其他设备会话（兜底防旧会话残留），保持当前登录 */
+    await fetch("/api/auth/devices", { method: "DELETE" }).catch(() => {});
+    show("密码已更新");
+    closeModal();
   }
 
-  /** 注销账号（服务端删 auth.users + storage，级联清互动/通知；内容保留但作者置空） */
-  async function handleDeleteAccount() {
+  /** 修改邮箱（弹窗，2026-08-29）：re-auth → updateUser({email})；新邮箱确认 + 旧邮箱通知由 Supabase 托管 */
+  async function submitEmailChange() {
+    if (emailBusy) return;
+    const target = newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) {
+      setEmailError("请输入正确的邮箱地址");
+      return;
+    }
+    if (target === email) {
+      setEmailError("新邮箱与当前邮箱相同");
+      return;
+    }
+    if (!emailPassword) {
+      setEmailError("请输入当前密码以确认身份");
+      return;
+    }
+    setEmailBusy(true);
+    setEmailError("");
+    const supabase = createClient();
+    const ok = await verifyCurrentPassword(supabase, emailPassword);
+    if (!ok) {
+      setEmailBusy(false);
+      setEmailError("当前密码不正确");
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ email: target });
+    setEmailBusy(false);
+    if (error) {
+      setEmailError("修改失败，请稍后重试");
+      return;
+    }
+    show("验证邮件已发送至新邮箱，请点击确认完成变更（旧邮箱会收到通知）");
+    closeModal();
+  }
+
+  /** 注销账号（弹窗，2026-08-29）：re-auth 当前密码 → 服务端删 auth.users + storage */
+  async function submitDeleteAccount() {
     if (deleteText !== "删除" || deleting) return;
+    if (!deletePassword) {
+      setDeleteError("请输入当前密码以确认身份");
+      return;
+    }
     setDeleting(true);
     setDeleteError("");
+    const supabase = createClient();
+    const ok = await verifyCurrentPassword(supabase, deletePassword);
+    if (!ok) {
+      setDeleting(false);
+      setDeleteError("当前密码不正确");
+      return;
+    }
     try {
       const res = await fetch("/api/account/delete", { method: "POST" });
       if (!res.ok) throw new Error();
-      const supabase = createClient();
       await supabase.auth.signOut();
       router.push("/");
       router.refresh();
     } catch {
-      setDeleteError("删除失败，请稍后重试");
       setDeleting(false);
+      setDeleteError("删除失败，请稍后重试");
     }
   }
 
@@ -187,7 +296,7 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
             {tab === "settings" && (
               <>
                 <h3 className="settings-group">个人资料</h3>
-                <SettingRow label="邮箱" value={email || "未设置"} action="修改" />
+                <SettingRow label="邮箱" value={email || "未设置"} action="修改" onAction={() => setModal("email")} />
                 {editing === "bio" ? (
                   <div className="settings-edit">
                     <div className="settings-row">
@@ -221,30 +330,11 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
             {tab === "security" && (
               <>
                 <h3 className="settings-group">账户安全</h3>
-                <SettingRow label="修改密码" value="通过验证邮件重置" action={passwordSending ? "发送中…" : "发送邮件"} onAction={() => void handleChangePassword()} />
+                <SettingRow label="修改密码" value="输入当前密码直接修改" action="修改" onAction={() => setModal("password")} />
                 <div className="settings-row danger">
                   <span className="settings-row-label">永久删除账号</span>
-                  {deleteConfirm ? (
-                    <span className="settings-delete-confirm">
-                      <input
-                        className="settings-input"
-                        value={deleteText}
-                        onChange={(event) => setDeleteText(event.target.value)}
-                        placeholder="输入「删除」"
-                        maxLength={2}
-                        aria-label="输入删除确认"
-                      />
-                      <button type="button" onClick={() => { setDeleteConfirm(false); setDeleteText(""); }} disabled={deleting}>取消</button>
-                      <button type="button" className="save" onClick={() => void handleDeleteAccount()} disabled={deleting || deleteText !== "删除"}>
-                        {deleting ? "删除中…" : "确认删除"}
-                      </button>
-                    </span>
-                  ) : (
-                    <button type="button" className="settings-row-action danger-action" onClick={() => setDeleteConfirm(true)}>删除</button>
-                  )}
+                  <button type="button" className="settings-row-action danger-action" onClick={() => setModal("delete")}>删除</button>
                 </div>
-                {deleteConfirm && !deleting && <p className="settings-edit-error">此操作不可恢复：账号、互动与通知将被删除，发布内容保留但不再归属你。</p>}
-                {deleteError && <p className="settings-edit-error" role="alert">{deleteError}</p>}
               </>
             )}
             {tab === "devices" && (
@@ -274,6 +364,53 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
           </div>
         </section>
       </div>
+
+      {/* 敏感操作统一弹窗（2026-08-29）：同一套壳 + re-auth，视觉流程一致 */}
+      {modal === "password" && (
+        <AccountActionModal
+          title="修改密码"
+          description="请输入当前密码确认身份，再设置新密码（至少 8 位）。"
+          busy={passwordBusy}
+          error={passwordError}
+          submitLabel="更新密码"
+          onSubmit={() => void submitPasswordChange()}
+          onClose={closeModal}
+        >
+          <label className="field"><span>当前密码</span><PwdInput value={curPassword} onChange={setCurPassword} placeholder="验证身份" autoComplete="current-password" /></label>
+          <label className="field"><span>新密码</span><PwdInput value={newPassword} onChange={setNewPassword} placeholder="至少 8 位字符" autoComplete="new-password" /></label>
+          <label className="field"><span>确认新密码</span><PwdInput value={confirmPassword} onChange={setConfirmPassword} placeholder="再次输入新密码" autoComplete="new-password" /></label>
+        </AccountActionModal>
+      )}
+      {modal === "email" && (
+        <AccountActionModal
+          title="修改邮箱"
+          description="新邮箱需点击确认邮件后生效，旧邮箱会收到变更通知。"
+          busy={emailBusy}
+          error={emailError}
+          submitLabel="发送验证邮件"
+          onSubmit={() => void submitEmailChange()}
+          onClose={closeModal}
+        >
+          <label className="field"><span>新邮箱</span><input type="email" value={newEmail} onChange={(event) => setNewEmail(event.target.value)} placeholder="新邮箱地址" maxLength={64} autoFocus /></label>
+          <label className="field"><span>当前密码</span><PwdInput value={emailPassword} onChange={setEmailPassword} placeholder="验证身份" autoComplete="current-password" /></label>
+        </AccountActionModal>
+      )}
+      {modal === "delete" && (
+        <AccountActionModal
+          title="永久删除账号"
+          description="此操作不可恢复：账号、互动与通知将被删除，发布内容保留但不再归属你。"
+          danger
+          busy={deleting}
+          error={deleteError}
+          submitLabel="确认删除"
+          submitDisabled={deleteText !== "删除"}
+          onSubmit={() => void submitDeleteAccount()}
+          onClose={closeModal}
+        >
+          <label className="field"><span>输入「删除」确认</span><input value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="删除" maxLength={2} autoFocus /></label>
+          <label className="field"><span>当前密码</span><PwdInput value={deletePassword} onChange={setDeletePassword} placeholder="验证身份" autoComplete="current-password" /></label>
+        </AccountActionModal>
+      )}
     </div>
   );
 }

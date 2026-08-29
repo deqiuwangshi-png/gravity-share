@@ -7,19 +7,23 @@ import { SquarePostView } from "@/components/app/square/square-post-view";
 import { CommentSection } from "@/components/app/square/comment-section";
 import { createClient } from "@/lib/supabase/server";
 import { bumpViews, fetchComments, fetchSquarePostById } from "@/lib/queries";
+import { stripHtml } from "@/lib/text";
 import { SITE_URL, buildArticle, jsonLd } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
   const post = await fetchSquarePostById(supabase, id);
+  /* 029 帖子标题：title 非空时用标题（SEO 语义化）；短帖回落「作者 的话题」 */
+  const pageTitle = post ? (post.title || `${post.authorName} 的话题`) : "话题不存在";
+  const desc = post ? (post.title || stripHtml(post.content)) : "";
   return {
-    title: post ? `${post.authorName} 的话题` : "话题不存在",
-    description: post?.content.slice(0, 60),
+    title: pageTitle,
+    description: desc.slice(0, 120),
     alternates: { canonical: `/square/${id}` },
     openGraph: {
-      title: post ? `${post.authorName} 的话题` : "话题不存在",
-      description: post?.content.slice(0, 120),
+      title: pageTitle,
+      description: desc.slice(0, 120),
       type: "article",
     },
   };
@@ -50,7 +54,7 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
         dangerouslySetInnerHTML={{
           __html: jsonLd(
             buildArticle({
-              headline: post.content.slice(0, 60),
+              headline: post.title || stripHtml(post.content).slice(0, 60),
               authorName: post.authorName,
               url: `${SITE_URL}/square/${post.id}`,
               datePublished: post.createdAt,

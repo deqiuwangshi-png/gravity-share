@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { publicImageUrl } from "@/lib/storage";
+import { safeAvatarUrl } from "@/lib/storage";
 
 export function AvatarBox({
   path,
@@ -34,7 +34,7 @@ export function AvatarBox({
     // eslint-disable-next-line @next/next/no-img-element -- 用户上传图，走公开 URL
     <img
       className={`${className ?? ""} avatar-img${frameClass}`.trim()}
-      src={publicImageUrl("avatar", path)}
+      src={safeAvatarUrl(path)}
       alt={name}
       loading="lazy"
       onError={() => setFailed(true)}

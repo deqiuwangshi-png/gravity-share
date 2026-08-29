@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import ResetForm from "../_components/reset-form";
 
 export const metadata: Metadata = {
@@ -8,8 +9,12 @@ export const metadata: Metadata = {
 
 /**
  * 重置密码落地页（忘记密码最后一环）
- * 邮件链接 → /auth/callback（换 recovery session）→ 本页 → updateUser({ password })
+ * 邮件链接 → /auth/callback（换 recovery session + 种 yinli_recovery cookie）→ 本页
+ * isRecovery=true：recovery 会话免验旧密码（邮件即第二因素）；
+ * isRecovery=false：普通登录会话直访 → 表单要求当前密码（堵账号接管）
  */
-export default function ResetPasswordPage() {
-  return <ResetForm />;
+export default async function ResetPasswordPage() {
+  const cookieStore = await cookies();
+  const isRecovery = cookieStore.get("yinli_recovery")?.value === "1";
+  return <ResetForm isRecovery={isRecovery} />;
 }

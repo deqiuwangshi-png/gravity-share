@@ -1,19 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractUrl, extractTags, formatRelativeTime } from "@/lib/text";
-
-describe("extractUrl", () => {
-  it("提取 http/https 外链", () => {
-    expect(extractUrl("看这个 https://example.com/a?b=1 有用")).toBe("https://example.com/a?b=1");
-  });
-
-  it("中文字符/标点中断 URL", () => {
-    expect(extractUrl("链接 https://a.com/1，后面")).toBe("https://a.com/1");
-  });
-
-  it("无 URL 返回 undefined", () => {
-    expect(extractUrl("这里没有链接")).toBeUndefined();
-  });
-});
+import { extractTags, formatRelativeTime, stripHtml } from "@/lib/text";
 
 describe("extractTags", () => {
   it("提取 #标签（不含 # 前缀）", () => {
@@ -40,5 +26,19 @@ describe("formatRelativeTime", () => {
 
   it("天前", () => {
     expect(formatRelativeTime(new Date(Date.now() - 2 * 86_400_000).toISOString())).toBe("2 天前");
+  });
+});
+
+describe("stripHtml（富文本 → 纯文本预览）", () => {
+  it("剥离标签并规整空白", () => {
+    expect(stripHtml("<h2>标题</h2><p>正文 <b>加粗</b> 内容</p>")).toBe("标题 正文 加粗 内容");
+  });
+
+  it("换行与实体解码", () => {
+    expect(stripHtml("<p>第一行<br>第二行</p><p>&amp; &lt;tag&gt;</p>")).toBe("第一行 第二行 & <tag>");
+  });
+
+  it("纯文本原样", () => {
+    expect(stripHtml("没有标签")).toBe("没有标签");
   });
 });

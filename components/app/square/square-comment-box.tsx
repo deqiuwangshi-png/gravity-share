@@ -61,6 +61,7 @@ export function SquareCommentBox({ postId, onCreated }: { postId: string; onCrea
           onKeyDown={onKeyDown}
           placeholder="说点什么…（Enter 发送，Shift+Enter 换行）"
           aria-label="评论内容"
+          maxLength={1000}
         />
         <button className="square-comment-submit" type="submit" disabled={sending || !text.trim()}>
           {sending ? "发送中…" : "发布"}

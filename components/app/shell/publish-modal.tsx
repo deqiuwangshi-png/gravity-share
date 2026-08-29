@@ -1,36 +1,39 @@
 /**
- * 发布弹窗（client，2026-08-27 三入口合并改版）
+ * 发布弹窗（client，2026-08-27 三入口合并改版；2026-08-29 正文升级轻量富文本）
  * 分享 / 机会 / 内容 三入口 → 单一表单 + 两个可选标注（产品决策：发布性质从「必选入口」降级为「可选标注」）
  * 统一发布到广场（square_posts）——广场 = 全量供给池，首页从广场精选推荐
- * 表单字段：正文（必填）+ 外链（选填，正文含链接自动提取）+ 内容分类（12 选 1 默认「其他」）+ 配图（选填）
+ * 表单字段：正文（必填，RichEditor compact：B/斜体/列表/链接，聚焦时浮出工具栏）+ 内容分类（12 选 1 默认「其他」）+ 配图（选填）
+ * 链接（2026-08-29 收口）：移除独立「链接」字段——链接统一由富文本正文 <a> 承载（url 字段新帖恒 null）
  * 可选标注（默认都不勾，post_type 由标注映射，库结构不变，015 CHECK 不破）：
  *   ① 推广/有利益关系 → 勾选后必填利益披露 → 帖子标记「机会」（post_type=opportunity，合规必需）
  *   ② 我的原创内容 → 勾选后选来源平台 → 帖子标记「内容」（post_type=content）
  *   都不勾 → 普通分享（post_type=share）
+ * 安全：正文 HTML 入库前 sanitizeHtml（DOMPurify 白名单主防线），字数按纯文本（stripHtml）≤2000 校验
  * 提交成功后 dispatch SQUARE_UPDATED_EVENT，广场重新拉取（刷新不丢）
  */
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { SQUARE_CATEGORIES, SOURCE_PLATFORMS, SQUARE_POST_TYPES } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { SQUARE_UPDATED_EVENT } from "@/lib/queries";
-import { extractTags, extractUrl } from "@/lib/text";
-import { sanitizeUrl } from "@/lib/url-policy";
+import { extractTags, stripHtml } from "@/lib/text";
+import { sanitizeHtml } from "@/lib/rich-content";
+import { RichEditor } from "@/components/app/common/rich-editor";
 import { removeImage, uploadImage, validateImage } from "@/lib/storage";
 
 /* A2 修复（2026-08-23）：post_type 由 SQUARE_POST_TYPES 枚举驱动（与迁移 015 CHECK 同源），不再写死字面量 */
 const [PT_SHARE, PT_OPPORTUNITY, PT_CONTENT] = SQUARE_POST_TYPES;
 
 export default function PublishModal({ onClose }: { onClose: () => void }) {
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
   /* 提交错误文案（空 = 无错误） */
   const [submitError, setSubmitError] = useState("");
 
-  /* 共用字段 */
-  const [text, setText] = useState("");
-  const [url, setUrl] = useState("");
+  /* 共用字段：正文 = 富文本 HTML（轻量格式：B/斜体/列表/链接） */
+  const [html, setHtml] = useState("");
   const [category, setCategory] = useState<string>("其他");
   /* 可选标注 ①：推广 / 有利益关系（勾选后披露必填，合规必需） */
   const [isPromo, setIsPromo] = useState(false);
@@ -67,10 +70,13 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
 
   async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
-    const body = text.trim();
-    if (!body) return;
-    /* V4：外链入库前标准化（不信任用户输入）——非法 URL 返回 null（合并后统一选填，无效忽略） */
-    const link = sanitizeUrl(url);
+    /* 富文本：剥标签取纯文本做校验与提取（HTML 标签不计入 2000 字感知） */
+    const plain = stripHtml(html);
+    if (!plain) return;
+    if (plain.length > 2000) {
+      setSubmitError("内容过长（最多 2000 字）");
+      return;
+    }
     const supabase = createClient();
     const {
       data: { user },
@@ -92,14 +98,15 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
         return;
       }
     }
-    const bodyUrl = extractUrl(body);
     const base = {
       id,
       author_id: user.id,
-      content: body,
+      /* 主防线：入库前 DOMPurify 白名单清洗（渲染端另有二次清洗纵深） */
+      content: sanitizeHtml(html),
       category,
-      tags: extractTags(body),
-      url: link ?? (bodyUrl ? sanitizeUrl(bodyUrl) : null) ?? null,
+      tags: extractTags(plain),
+      /* 2026-08-29 收口：独立链接字段已移除，新帖 url 恒 null（链接统一由正文 <a> 承载） */
+      url: null,
       image_url: imageUrl ?? null,
     };
     /* 标注映射 post_type（015 CHECK 约束三值，库结构不变） */
@@ -116,7 +123,10 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       return;
     }
     window.dispatchEvent(new Event(SQUARE_UPDATED_EVENT));
-    finish();
+    /* 方案 B（2026-08-29）：发布成功即关弹窗并跳到新帖详情页——省掉"已发布/完成"冗余确认态 */
+    onClose();
+    router.push(`/square/${id}`);
+    router.refresh();
   }
 
   /** 配图选择（选填）：前端校验 + 本地预览 */
@@ -134,10 +144,6 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     setImagePreview(URL.createObjectURL(file));
   }
 
-  function finish() {
-    setSubmitted(true);
-  }
-
   return (
     <div className="app-modal" role="dialog" aria-modal="true" aria-labelledby="publish-title" onClick={onClose}>
       <div className="modal-box publish-box" onClick={(event) => event.stopPropagation()}>
@@ -146,26 +152,9 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
           <button type="button" onClick={onClose} aria-label="关闭"><X size={16} /></button>
         </div>
 
-        {submitted ? (
-          <div className="publish-success">
-            <p role="status">已发布</p>
-            <button className="publish-submit" type="button" onClick={onClose}>完成</button>
-          </div>
-        ) : (
-          <form className="publish-immersive" onSubmit={handleSubmit}>
-            <textarea
-              autoFocus
-              rows={6}
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder="分享你发现的好东西，或介绍你的内容…（可加 #标签）"
-              aria-label="发布正文"
-            />
-
-            <label className="publish-field">
-              <span>链接 <i className="publish-optional">选填</i></span>
-              <input type="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://…" aria-label="链接" />
-            </label>
+        <form className="publish-immersive" onSubmit={handleSubmit}>
+            {/* 轻量富文本正文（compact：聚焦时浮出 B/斜体/列表/链接 工具栏；空态显示占位文案） */}
+            <RichEditor compact value={html} onChange={setHtml} />
 
             {/* 可选标注（并排单行胶囊，悬浮 title 详细说明；勾选后展开披露/来源） */}
             <div className="publish-toggles">
@@ -252,7 +241,6 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
             {submitError && <p className="publish-error" role="alert">{submitError}</p>}
             <button className="publish-immersive-submit" type="submit">发布</button>
           </form>
-        )}
       </div>
     </div>
   );

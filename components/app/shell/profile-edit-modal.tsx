@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
+import { removeImage, safeAvatarUrl, uploadImage, validateImage } from "@/lib/storage";
 import { useToast } from "@/components/app/common/toast";
 
 export function ProfileEditModal({
@@ -103,7 +103,7 @@ export function ProfileEditModal({
             <span className="settings-row-label">头像</span>
             {avatar ? (
               // eslint-disable-next-line @next/next/no-img-element -- 用户上传图
-              <img className="settings-avatar-img" src={publicImageUrl("avatar", avatar)} alt="头像" />
+              <img className="settings-avatar-img" src={safeAvatarUrl(avatar)} alt="头像" />
             ) : (
               <span className="settings-avatar-fallback">{displayName.charAt(0).toUpperCase()}</span>
             )}

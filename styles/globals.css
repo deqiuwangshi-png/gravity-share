@@ -108,6 +108,45 @@ a {
 }
 
 /*
+ * 跨区共享：密码可见性切换（auth 登录/重置 + app 设置弹窗共用；2026-08-29 自 auth/card.css 迁入全局，
+ * 否则 app 区域弹窗内密码眼睛失去 absolute 定位会溢出输入框）
+ */
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 58px !important;
+}
+
+.password-field button {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  transform: translateY(-50%);
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.password-field button:hover {
+  color: var(--foreground);
+}
+
+/* 屏蔽 Chromium/Edge 原生密码眼睛与清理按钮，避免与自定义眼睛重复 */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+/*
  * 跨区共享：品牌 Logo 标记（marketing .logo / app .app-logo / auth .auth-brand-logo 三处共用）。
  * 路由区专属样式见 (marketing)/marketing.css、(app)/app.css、(auth)/auth.css。
  */

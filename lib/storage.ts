@@ -55,6 +55,26 @@ export function publicImageUrl(target: UploadTarget, path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketOf(target)}/${path}`;
 }
 
+/* 头像外部 URL 白名单（OAuth provider 图床域名）——防第三方用头像追踪浏览者 IP（审计 P1）
+ * users.avatar_url 用户可自改为任意 http URL，非白名单一律回退首字母渲染 */
+const AVATAR_TRUSTED_HOSTS = ["githubusercontent.com", "googleusercontent.com", "gravatar.com"];
+
+function isTrustedAvatarHost(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return AVATAR_TRUSTED_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+  } catch {
+    return false;
+  }
+}
+
+/** 头像安全 URL：storage path 正常拼接；OAuth 外链仅白名单图床直出，其余返回空串（渲染层回退首字母） */
+export function safeAvatarUrl(path: string): string {
+  if (!path) return "";
+  if (path.startsWith("http")) return isTrustedAvatarHost(path) ? path : "";
+  return publicImageUrl("avatar", path);
+}
+
 /** 删除存储对象（BUG-14：孤儿文件回滚 / 换图后旧图清理） */
 export async function removeImage(target: UploadTarget, path: string): Promise<void> {
   const supabase = createClient();

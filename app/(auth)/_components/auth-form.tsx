@@ -7,6 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { OAUTH_PROVIDERS } from "@/lib/config";
+import { safeNextPath } from "@/lib/links";
 
 type Channel = "email" | "phone";
 
@@ -74,12 +75,10 @@ export default function AuthForm() {
     return () => clearInterval(timer);
   }, [otpCooldown]);
 
-  /** 回源地址白名单（防开放重定向，登录 / OAuth 共用） */
+  /** 回源地址白名单（防开放重定向，登录 / OAuth 共用；规则收敛到 lib/links.ts safeNextPath） */
   function safeNext(): string {
     const nextParam = new URLSearchParams(window.location.search).get("next") ?? "";
-    return nextParam.startsWith("/") && !nextParam.startsWith("//") && !nextParam.includes("\\")
-      ? nextParam
-      : "/home";
+    return safeNextPath(nextParam);
   }
 
   /** 第三方登录（GitHub / Google；由 OAUTH_PROVIDERS 驱动） */
@@ -120,9 +119,10 @@ export default function AuthForm() {
       setVerifyModal({ open: true, email });
       return;
     }
-    /* 邮箱已存在 → 是密码错（Supabase 登录与注册对同一邮箱的错误码可区分此分支） */
+    /* 邮箱已存在 → 是密码错（Supabase 登录与注册对同一邮箱的错误码可区分此分支）
+     * 文案中性化（审计 P1）：不直接点出「密码不正确」，降低邮箱存在性的直接信号 */
     if (signUpError.message.includes("already registered")) {
-      setError("密码不正确，请重试，或使用忘记密码。");
+      setError("邮箱或密码不正确，请重试，或使用「忘记密码」找回。");
       return;
     }
     setError(signUpError.message.includes("Invalid login credentials") ? "邮箱或密码不正确。" : signUpError.message);

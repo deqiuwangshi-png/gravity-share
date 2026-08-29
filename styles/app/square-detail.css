@@ -67,6 +67,22 @@
   box-sizing: border-box;
 }
 
+/* 帖子标题输入（029 编辑态） */
+.square-post-edit-title {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
 .square-post-edit textarea {
   resize: vertical;
   min-height: 88px;
@@ -174,6 +190,16 @@
   color: var(--foreground);
   font-size: 15px;
   line-height: 1.85;
+}
+
+/* 帖子标题（029：详情页大字，标题后与正文留距） */
+.square-title {
+  margin: 16px 0 12px;
+  color: var(--foreground);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 /* 帖子外链（url 字段展示，走 /go 网关；2026-08-23 修复「填了链接不显示」） */

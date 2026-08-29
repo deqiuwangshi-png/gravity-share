@@ -73,3 +73,11 @@ export function hostOf(url: string): string {
     return url;
   }
 }
+
+/**
+ * 站内回源地址白名单（防开放重定向，登录 / OAuth 回调 / 守卫共用，审计 P2 抽公共函数）：
+ * 仅放行 / 开头、非 //（防协议相对跳转）、无反斜杠（防混淆）的站内路径，否则回退默认页
+ */
+export function safeNextPath(next: string, fallback = "/home"): string {
+  return next.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : fallback;
+}

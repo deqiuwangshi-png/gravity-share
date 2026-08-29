@@ -1,0 +1,269 @@
+/* 富文本编辑器 + 渲染排版（2026-08-29，TipTap） */
+
+/* --- 编辑器容器 --- */
+.rich-editor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.rich-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.rich-tool-btn:hover {
+  background: var(--bg-hover);
+  color: var(--foreground);
+}
+
+.rich-tool-btn.on {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.rich-editor-content {
+  min-height: 180px;
+  padding: 12px 14px;
+  outline: 0;
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.rich-editor-content p {
+  margin: 0 0 10px;
+}
+
+.rich-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-editor-content h2,
+.rich-editor-content h3 {
+  margin: 18px 0 8px;
+  line-height: 1.4;
+}
+
+.rich-editor-content h2 {
+  font-size: 19px;
+}
+
+.rich-editor-content h3 {
+  font-size: 16px;
+}
+
+.rich-editor-content ul,
+.rich-editor-content ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+.rich-editor-content li {
+  margin-bottom: 3px;
+}
+
+.rich-editor-content blockquote {
+  margin: 0 0 10px;
+  padding: 6px 14px;
+  border-left: 3px solid var(--border-primary);
+  color: var(--text-muted);
+}
+
+.rich-editor-content pre {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  overflow-x: auto;
+  font-size: 13px;
+}
+
+.rich-editor-content code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--bg-hover);
+  font-size: 0.92em;
+}
+
+.rich-editor-content pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.rich-editor-content hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.rich-editor-content a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.rich-editor-content img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+/* --- 渲染端排版（与编辑区同款，详情页正文） --- */
+.rich-content {
+  font-size: 14px;
+  line-height: 1.8;
+  word-break: break-word;
+}
+
+.rich-content p {
+  margin: 0 0 10px;
+}
+
+.rich-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-content h2 {
+  margin: 18px 0 8px;
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.rich-content h3 {
+  margin: 16px 0 8px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.rich-content ul,
+.rich-content ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+.rich-content li {
+  margin-bottom: 3px;
+}
+
+.rich-content blockquote {
+  margin: 0 0 10px;
+  padding: 6px 14px;
+  border-left: 3px solid var(--border-primary);
+  color: var(--text-muted);
+}
+
+.rich-content pre {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  overflow-x: auto;
+  font-size: 13px;
+}
+
+.rich-content code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--bg-hover);
+  font-size: 0.92em;
+}
+
+.rich-content pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.rich-content hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.rich-content a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.rich-content img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+/* --- compact 轻量模式（短帖发布，2026-08-29）---
+ * 透明无边框，与发布弹窗输入区视觉融合；工具栏仅聚焦时右上角浮出；空态占位文案 */
+
+.rich-editor.compact {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+/* 编辑区对齐原 textarea 的视觉（15px/1.9，透明底）；
+ * max-height + overflow：输入超限后在区域内滚动，弹窗高度稳定（contenteditable 默认随内容长高） */
+.rich-editor.compact .rich-editor-content {
+  min-height: 180px;
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 4px 2px;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+/* 空态占位文案（零依赖：editor.isEmpty 控制显隐） */
+.rich-placeholder {
+  position: absolute;
+  top: 8px;
+  left: 2px;
+  z-index: 0;
+  color: var(--text-soft);
+  font-size: 15px;
+  line-height: 1.9;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 聚焦浮出工具栏：右上角气泡 */
+.rich-toolbar-compact {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  animation: rich-toolbar-pop 140ms ease;
+}
+
+@keyframes rich-toolbar-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

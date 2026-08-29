@@ -128,41 +128,6 @@
   box-shadow: 0 0 0 3px rgba(0, 104, 85, 0.1);
 }
 
-.password-field {
-  position: relative;
-}
-
-.password-field input {
-  padding-right: 58px !important;
-}
-
-.password-field button {
-  position: absolute;
-  top: 50%;
-  right: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 0;
-  padding: 0;
-  transform: translateY(-50%);
-  background: transparent;
-  color: var(--text-soft);
-  cursor: pointer;
-}
-
-.password-field button:hover {
-  color: var(--foreground);
-}
-
-/* 屏蔽 Chromium/Edge 原生密码眼睛与清理按钮，避免与自定义眼睛重复 */
-input[type="password"]::-ms-reveal,
-input[type="password"]::-ms-clear {
-  display: none;
-}
-
 .auth-form-options {
   display: flex;
   align-items: center;

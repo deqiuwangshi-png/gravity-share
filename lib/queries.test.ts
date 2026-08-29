@@ -5,6 +5,7 @@ import type { CommentRow, SquarePostRow } from "@/lib/queries";
 describe("toSquarePostDTO（广场帖子映射）", () => {
   const row: SquarePostRow = {
     id: "s1",
+    title: "",
     content: "推荐一个好用的 AI 工具",
     post_type: "opportunity",
     commission: "分佣 10%",
@@ -24,6 +25,7 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
   it("字段映射正确", () => {
     const dto = toSquarePostDTO(row);
     expect(dto.content).toBe("推荐一个好用的 AI 工具");
+    expect(dto.title).toBe("");
     expect(dto.postType).toBe("opportunity");
     expect(dto.commission).toBe("分佣 10%");
     expect(dto.category).toBe("工具");
