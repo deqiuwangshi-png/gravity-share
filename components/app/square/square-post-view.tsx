@@ -61,8 +61,6 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
         />
       ) : (
         <>
-          {/* 帖子标题（029：title 非空渲染大字；短帖空串无标题，零影响） */}
-          {post.title && <h1 className="square-title">{post.title}</h1>}
           {/* 正文：富文本（sanitize 渲染）/ 纯文本（存量或短帖） */}
           {isRichText(post.content) ? (
             <RichContent content={post.content} />

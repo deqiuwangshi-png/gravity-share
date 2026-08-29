@@ -30,8 +30,6 @@ export interface SquarePostDTO {
   authorAvatar?: string;
   /** 作者标识（021：official 蓝V / discoverer 发现者 / none 无） */
   authorBadge?: UserBadge;
-  /** 帖子标题（029 可选；短帖为空串不渲染，零影响） */
-  title: string;
   content: string;
   /** 发布类型（2026-08-23 三入口：share 分享 / opportunity 机会 / content 内容） */
   postType: "share" | "opportunity" | "content";

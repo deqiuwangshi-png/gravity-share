@@ -28,9 +28,6 @@ export function SquareCard({ post }: { post: SquarePostDTO }) {
         {post.featured && <span className="home-card-featured">展示</span>}
       </div>
 
-      {/* 帖子标题（029：卡片首行显示；短帖空串不渲染） */}
-      {post.title && <h3 className="home-card-title">{post.title}</h3>}
-
       <p className="home-card-body">{preview}</p>
 
       {post.postType === "opportunity" && (

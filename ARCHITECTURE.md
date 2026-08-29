@@ -26,7 +26,7 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-028，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-029，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
@@ -102,7 +102,7 @@ yinli/
 │                               026 square_posts 查询索引（created_at / category / author，L1 规模化前置）→
 │                               027 安全收口（users.badge 列级收写 / promo_orders 加固 / 举报与认证限频 / 内容长度 CHECK）→
 │                               028 内容升级（square_posts.content 放宽至 20000，富文本内容能力）；
-│                               029 title 列遗留（2026-08-29 长文功能删除：迁移文件已删、列已落库保留、前端不再写入，去留待定）；
+│                               029 title 列回收（2026-08-29 长文功能清理：drop square_posts.title，列已移除）；
 │                               全幂等；手动复制 SQL 到 Supabase Dashboard 执行，不引入 CLI）
 ├── vitest.config.ts            vitest 配置 + lib/*.test.ts（纯函数冒烟测试）
 ├── public/                     静态资源
@@ -218,4 +218,4 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 
 ---
 
-*本规范 v3.4 于 2026-08-29 修订（S3 拆分：`lib/queries.ts` → `queries-{posts,comments,notifications,social,misc}.ts` + `events.ts`，平层文件不留 re-export 桶，全部引用方改 import；数据边界/三条规则/lib 目录树/命名规范/防膨胀红线同步）。v3.3 于 2026-08-29 修订（迁移 001-028 补登 027 安全收口 / 028 内容升级 + 029 title 列遗留说明；组件树对齐实际目录；§8 演进表补 027/028；README/一页纸版/手册同步四列内容流与组件归属）。v3.2 于 2026-08-27 修订（迁移 001-025：新增 025 推广中心 promo_orders 申请单 + /promo 独立页 + 头像菜单入口，商业化阶段 1 申请制；商业化蓝图见 docs/DEVELOPER-HANDBOOK.md §2.6 及 /promo 页）。v3.1 于 2026-08-27 修订（迁移 001-024：新增 024 展示位 featured_until 置顶字段 + 侧栏广告位复用 announcements kind=ad；展示位/广告位商业化架构落地）。v3.0 于 2026-08-27 修订（迁移 001-023：新增 023 浏览计数 v2（游客 IP 24h 去重、user_id=NULL 不绑定身份）；发布三入口合并为单一表单 + 可选标注；登录页新用户注册引导；正文/评论换行 pre-line 修复；ARCHITECTURE.md 迁移声明同步 001-023）。v2.9 于 2026-08-24 修订（迁移 001-022 全部执行并补登标记；新增 022 上传审计与限流、api/upload 路由、lib/url-policy.ts；/discover/[id] 标注退役重定向；手机号 OTP 临时下架（PHONE_AUTH_ENABLED 开关）；安全边界修复落地（外链网关兜底/上传限流/公告图片，见 DEVELOPER-HANDBOOK §2.5）；文档一致性对齐）。v2.8 于 2026-08-23 修订（回填：/go 外链网关、home-feed 首页三列卡片、toast/post-menu/lib-links、迁移清单 001-015（补 014 广场分类 / 015 广场发布类型）、CSS 拆分（square-detail / profile-posts / publish-form / home）、vitest 冒烟；明确迁移 = 手动复制 SQL 执行、不引入 CLI）。v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*
+*本规范 v3.5 于 2026-08-29 修订（029 title 列回收：`square_posts.title` drop，前端 6 处残留 + 测试 + 3 组样式全部清理；详情页 SEO 回落「作者 的话题」）。v3.4 于 2026-08-29 修订（S3 拆分：`lib/queries.ts` → `queries-{posts,comments,notifications,social,misc}.ts` + `events.ts`，平层文件不留 re-export 桶，全部引用方改 import；数据边界/三条规则/lib 目录树/命名规范/防膨胀红线同步）。v3.3 于 2026-08-29 修订（迁移 001-028 补登 027 安全收口 / 028 内容升级 + 029 title 列遗留说明；组件树对齐实际目录；§8 演进表补 027/028；README/一页纸版/手册同步四列内容流与组件归属）。v3.2 于 2026-08-27 修订（迁移 001-025：新增 025 推广中心 promo_orders 申请单 + /promo 独立页 + 头像菜单入口，商业化阶段 1 申请制；商业化蓝图见 docs/DEVELOPER-HANDBOOK.md §2.6 及 /promo 页）。v3.1 于 2026-08-27 修订（迁移 001-024：新增 024 展示位 featured_until 置顶字段 + 侧栏广告位复用 announcements kind=ad；展示位/广告位商业化架构落地）。v3.0 于 2026-08-27 修订（迁移 001-023：新增 023 浏览计数 v2（游客 IP 24h 去重、user_id=NULL 不绑定身份）；发布三入口合并为单一表单 + 可选标注；登录页新用户注册引导；正文/评论换行 pre-line 修复；ARCHITECTURE.md 迁移声明同步 001-023）。v2.9 于 2026-08-24 修订（迁移 001-022 全部执行并补登标记；新增 022 上传审计与限流、api/upload 路由、lib/url-policy.ts；/discover/[id] 标注退役重定向；手机号 OTP 临时下架（PHONE_AUTH_ENABLED 开关）；安全边界修复落地（外链网关兜底/上传限流/公告图片，见 DEVELOPER-HANDBOOK §2.5）；文档一致性对齐）。v2.8 于 2026-08-23 修订（回填：/go 外链网关、home-feed 首页三列卡片、toast/post-menu/lib-links、迁移清单 001-015（补 014 广场分类 / 015 广场发布类型）、CSS 拆分（square-detail / profile-posts / publish-form / home）、vitest 冒烟；明确迁移 = 手动复制 SQL 执行、不引入 CLI）。v2.7 于 2026-08-22 修订（目录树同步认证闭环与批次 A/B/C：新增 auth/callback、api/account/delete、reset-password、error/loading、admin.ts、load-error、settings-delete；迁移清单 001-011；§4 升级为数据安全四层；§8 演进表补齐批次与 OAuth；README 与一页纸版同步）。v2.6 于 2026-08-21 修订（目录树同步 2a-2c 与图片存储全部演进，数据边界从 mock 改为 Supabase BaaS）。争议裁决原则：简单优先。*

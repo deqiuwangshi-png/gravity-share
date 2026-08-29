@@ -25,8 +25,6 @@ export function SquarePostEditForm({
   onCancel: () => void;
 }) {
   const [content, setContent] = useState(post.content);
-  /* 帖子标题（029：富文本帖可改标题；短帖空串不显示输入框） */
-  const [title, setTitle] = useState(post.title);
   /* 富文本帖：编辑器编辑（2026-08-29）；纯文本帖：textarea */
   const isRich = isRichText(post.content);
   /* 内容分类（固定枚举，随帖子展示模型传入） */
@@ -71,9 +69,8 @@ export function SquarePostEditForm({
     }
     const { error: updateError } = await createClient()
       .from("square_posts")
-      /* 富文本保存前 sanitize（主防线，与发布一致）；标题 trim 后入 title（短帖空串不变）；
-       * url 不再写入（存量帖 url 保留，防误删历史链接） */
-      .update({ title: isRich ? title.trim() : "", content: isRich ? sanitizeHtml(content) : content.trim(), image_url: nextImage, category })
+      /* 富文本保存前 sanitize（主防线，与发布一致）；url 不再写入（存量帖 url 保留，防误删历史链接） */
+      .update({ content: isRich ? sanitizeHtml(content) : content.trim(), image_url: nextImage, category })
       .eq("id", post.id);
     if (updateError) {
       /* 回滚新图，避免孤儿文件 */
@@ -92,16 +89,6 @@ export function SquarePostEditForm({
 
   return (
     <form className="square-post-edit" onSubmit={(event) => void save(event)} onClick={(event) => event.stopPropagation()}>
-      {isRich && (
-        <input
-          className="square-post-edit-title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="标题（可选）"
-          maxLength={60}
-          aria-label="编辑标题"
-        />
-      )}
       {isRich ? (
         <RichEditor value={content} onChange={setContent} upload={{ userId: post.authorId, postId: post.id }} />
       ) : (

@@ -15,9 +15,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const supabase = await createClient();
   const post = await fetchSquarePostById(supabase, id);
-  /* 029 帖子标题：title 非空时用标题（SEO 语义化）；短帖回落「作者 的话题」 */
-  const pageTitle = post ? (post.title || `${post.authorName} 的话题`) : "话题不存在";
-  const desc = post ? (post.title || stripHtml(post.content)) : "";
+  /* 短帖无独立标题：SEO 标题回落「作者 的话题」，描述取正文纯文本 */
+  const pageTitle = post ? `${post.authorName} 的话题` : "话题不存在";
+  const desc = post ? stripHtml(post.content) : "";
   return {
     title: pageTitle,
     description: desc.slice(0, 120),
@@ -55,7 +55,7 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
         dangerouslySetInnerHTML={{
           __html: jsonLd(
             buildArticle({
-              headline: post.title || stripHtml(post.content).slice(0, 60),
+              headline: stripHtml(post.content).slice(0, 60),
               authorName: post.authorName,
               url: `${SITE_URL}/square/${post.id}`,
               datePublished: post.createdAt,

@@ -93,20 +93,6 @@
   font-weight: 600;
 }
 
-/* 帖子标题（029：卡片首行，2 行截断） */
-.home-card-title {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  margin: 0 0 6px;
-  color: var(--foreground);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.4;
-  word-break: break-word;
-}
-
 /* 正文：最多 3 行，超出省略 */
 .home-card-body {
   display: -webkit-box;

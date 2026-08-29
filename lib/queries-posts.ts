@@ -12,8 +12,6 @@ const SQUARE = "square_posts";
 /** square_posts 行 + 关联作者名——导出供 DTO 映射测试构造 */
 export type SquarePostRow = {
   id: string;
-  /* 029 帖子标题（短帖空串） */
-  title: string;
   content: string;
   post_type: string;
   commission: string | null;
@@ -39,7 +37,6 @@ export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
     authorName: safeName(row.users?.name),
     authorAvatar: row.users?.avatar_url ?? undefined,
     authorBadge: (row.users?.badge as SquarePostDTO["authorBadge"]) ?? "none",
-    title: row.title ?? "",
     content: row.content,
     postType: (row.post_type as "share" | "opportunity" | "content") ?? "share",
     commission: row.commission ?? undefined,

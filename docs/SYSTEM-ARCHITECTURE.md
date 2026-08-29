@@ -12,7 +12,7 @@ app/          页面柜 —— 一页一个文件，文件名就是网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 查询层、类型、配置、图标、Supabase 客户端
-supabase/     迁移柜 —— 数据库唯一真相（001-028，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-029，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
@@ -42,7 +42,7 @@ lib/
 ├── supabase/     client.ts（浏览器）/ server.ts（cookie 会话）/ admin.ts（service_role，仅 server）
 ├── data.ts       静态配置（分类 / 公告正文 / 热词）
 └── types / config（含 OAUTH_PROVIDERS / SITE_INFO / SQUARE_CATEGORIES）/ icons / text / url-policy（sanitizeUrl 入库标准化）/ links（外链分级）
-supabase/migrations/   001-028（users → 内容 → 互动 → 存储 → 公开读 → 分类 → views →
+supabase/migrations/   001-029（users → 内容 → 互动 → 存储 → 公开读 → 分类 → views →
                        points 收口 → 通知清理 → 加固 → OAuth 建档 → storage RLS 修复 →
                        views 防刷 → 广场分类 → 广场发布类型 → discoveries 退役并入 square_posts →
                        评论回复/点赞/通知 → 设备会话 RPC → 公告走马灯数据化 → 安全加固
@@ -51,7 +51,8 @@ supabase/migrations/   001-028（users → 内容 → 互动 → 存储 → 公�
                        user_id=NULL 不绑定身份）→ 展示位（featured_until 置顶，UGC 大喇叭）→
                        推广中心（promo_orders 申请单，申请制人工开通）→ 索引（square_posts）→
                        安全收口（badge 列级收写 / promo_orders 加固 / 举报与认证限频 / 内容长度 CHECK）→
-                       内容升级（content 长度放宽至 20000，富文本内容能力），
+                       内容升级（content 长度放宽至 20000，富文本内容能力）→
+                       title 列回收（drop square_posts.title，长文功能清理），
                        全幂等；手动复制 SQL 执行）
 ```
 

@@ -94,7 +94,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=你的publishable key
 SUPABASE_SERVICE_ROLE_KEY=你的service_role key   # 仅注销账号功能需要，server-only
 ```
 
-3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-028`（建表、RLS、触发器、种子数据，幂等可重跑；执行后按迁移文件头部「✅ 已执行」标记登记）；
+3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-029`（建表、RLS、触发器、种子数据，幂等可重跑；执行后按迁移文件头部「✅ 已执行」标记登记）；
 4. 可选：Authentication → Providers 开启 GitHub / Google（OAuth 配置说明见 `docs/DEVELOPER-HANDBOOK.md` §2.5）。
 
 ### 运行
