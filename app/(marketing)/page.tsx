@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/common/logo";
-import { Search, Heart } from "lucide-react";
+import { Search } from "lucide-react";
 import { SITE_INFO } from "@/lib/config";
 import { LANDING_CARDS, MARKETING_CATEGORIES, MARKETING_SEARCH_HINTS } from "@/lib/data";
 
@@ -42,7 +42,6 @@ export default function Home() {
           <div className="search-box" role="search">
             <span className="search-icon" aria-hidden="true"><Search size={22} /></span>
             <input name="q" type="search" placeholder="你正在寻找什么？例如：AI工具、Python教程、3D模型……" aria-label="搜索资源" readOnly />
-            <button className="search-button" type="button">开始发现</button>
           </div>
           <div className="search-hints">大家正在找：{MARKETING_SEARCH_HINTS.map((hint) => <span className="search-hint" data-placeholder key={hint}>{hint}</span>)}</div>
         </section>
@@ -60,7 +59,7 @@ export default function Home() {
         <section className="section container" id="who">
           <div className="two-side">
             <div className="side-card find"><div className="side-label">如果你正在寻找</div><h2>不用再到处找。</h2><p>不需要打开十几个平台。从一个地方开始发现互联网中真正值得关注的东西。</p><div className="side-list">{["工具", "教程", "课程", "作品", "服务", "资源", "活动"].map((item) => <span key={item}>{item}</span>)}</div></div>
-            <div className="side-card share"><div className="side-label">如果你有好东西</div><h2>让它被更多人看见。</h2><p>一个链接，一段介绍。把你做过的、发现的、正在使用的分享出来。</p><span className="side-action" data-placeholder>发布一个发现 <span aria-hidden="true">→</span></span></div>
+            <div className="side-card share"><div className="side-label">如果你有好东西</div><h2>让它被更多人看见。</h2><p>一个链接，一段介绍。把你做过的、发现的、正在使用的分享出来。</p><Link className="side-action" href="/register">发布一个发现 <span aria-hidden="true">→</span></Link></div>
           </div>
         </section>
 
@@ -71,14 +70,13 @@ export default function Home() {
         <section className="section container" id="discover">
           <div className="section-head">
             <div><h2 className="section-title">正在被发现</h2><p className="section-desc">来自互联网不同角落的好东西</p></div>
-            <span className="more" data-placeholder>查看更多 <span aria-hidden="true">→</span></span>
           </div>
           <div className="cards">{LANDING_CARDS.map((card) => (
-            <article className="card" key={card.title}>
-              <div className="card-top"><span className="type">{card.type}</span><button className="save" type="button" aria-label={`收藏${card.title}`}><Heart size={18} /></button></div>
+            <Link className="card" href={card.link} key={card.title}>
+              <div className="card-top"><span className="type">{card.type}</span></div>
               <h3>{card.title}</h3><p>{card.summary}</p>
-              <div className="card-meta"><span>推荐自：{card.source}</span><span className="card-link" data-placeholder>查看 <span aria-hidden="true">→</span></span></div>
-            </article>
+              <div className="card-meta"><span>来自：{card.source}</span><span className="card-link">查看 <span aria-hidden="true">→</span></span></div>
+            </Link>
           ))}</div>
         </section>
 
