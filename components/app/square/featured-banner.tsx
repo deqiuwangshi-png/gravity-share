@@ -3,10 +3,13 @@
  * 置顶帖（featured_until > now()）在广场页顶部的横幅区轮播展示，点击进详情
  * 与自然流分离：列表已排除置顶帖（SquareFeed 拆分），此处不重复
  * 轮播：多条 4s 自动切换 + hover 暂停 + 圆点手动；单条静态不轮播
+ * 正文（2026-08-29）：stripHtml 去标签预览（横幅单行截断，防富文本帖显示 HTML 字符代码）
  */
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AvatarBox } from "@/components/app/common/avatar-box";
+import { stripHtml } from "@/lib/text";
+import { isRichText } from "@/lib/rich-content";
 import type { SquarePostDTO } from "@/lib/types";
 
 /** 轮播间隔（毫秒） */
@@ -54,7 +57,7 @@ export function FeaturedBanner({ posts }: { posts: SquarePostDTO[] }) {
       <Link className="square-banner-card" href={`/square/${post.id}`}>
         <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-banner-avatar" badge={post.authorBadge} />
         <div className="square-banner-text">
-          <p className="square-banner-content">{post.content}</p>
+          <p className="square-banner-content">{isRichText(post.content) ? stripHtml(post.content) : post.content}</p>
           <small>{post.authorName} · {post.time} · {post.views} 浏览</small>
         </div>
         <span className="square-banner-arrow">查看 →</span>

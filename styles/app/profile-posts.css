@@ -50,7 +50,12 @@
   font-size: 11px;
 }
 
+/* 正文：卡片层纯文本预览，最多 3 行超出省略（2026-08-29，与首页卡片 .home-card-body 同款） */
 .profile-post-body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
   white-space: pre-line;
   margin: 0 0 12px;
   font-size: 14px;

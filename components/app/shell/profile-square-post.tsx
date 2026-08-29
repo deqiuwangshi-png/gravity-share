@@ -2,6 +2,8 @@
  * 个人主页「推荐」Tab 帖卡（client，2026-08-23 内容池归一后改读 square_posts）
  * 头像/昵称/时间（右侧三点菜单）→ 正文（可内联编辑）→ 配图 → 统计行
  * 整卡可点 → /square/[id]；菜单与编辑交互 stopPropagation 防误跳
+ * 正文（2026-08-29）：卡片层纯文本预览 + 三行截断（富文本帖 stripHtml 去标签，
+ * 与首页/广场列表卡片一致；line-clamp 对富文本块级标签失效，故预览统一纯文本）——点卡片进详情看完整排版
  */
 "use client";
 
@@ -12,6 +14,8 @@ import { AuthorBadge } from "@/components/app/common/author-badge";
 import { SquarePostEditForm } from "@/components/app/square/square-post-edit-form";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { MessageCircle, Heart, Eye } from "lucide-react";
+import { stripHtml } from "@/lib/text";
+import { isRichText } from "@/lib/rich-content";
 import { publicImageUrl } from "@/lib/storage";
 import type { SquarePostDTO } from "@/lib/types";
 
@@ -54,7 +58,8 @@ export function ProfileSquarePost({
           onCancel={() => setEditing(false)}
         />
       ) : (
-        <p className="profile-post-body">{post.content}</p>
+        /* 卡片层纯文本预览（富文本去标签）+ CSS 三行截断；点卡片进详情看完整内容 */
+        <p className="profile-post-body">{isRichText(post.content) ? stripHtml(post.content) : post.content}</p>
       )}
 
       {post.imageUrl && (
