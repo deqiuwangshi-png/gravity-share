@@ -138,7 +138,12 @@ export default function Home() {
             <h3>社区</h3>
             <Link href="https://github.com/deqiuwangshi-png/gravity-share">引力开源（国际版）</Link>
             <Link href="https://gitee.com/earth-players/GSWL">引力开源（国内版）</Link>
-            <Link href="/terms">关注社群</Link>
+            {/* 2026-08-31：飞书社群二维码（静态图 public/images/fileName.png，URL 不带 public 前缀；原先误放 app/images + public 前缀均无法访问） */}
+            <div className="footer-qr">
+              {/* eslint-disable-next-line @next/next/no-img-element -- 运营二维码静态图 */}
+              <img src="/images/fileName.png" alt="飞书社群二维码" width={110} height={110} loading="lazy" />
+              <span>扫码加入飞书社群</span>
+            </div>
           </nav>
         </div>
         <div className="footer-bottom">
