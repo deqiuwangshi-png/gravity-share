@@ -51,16 +51,26 @@ function renderSection(section: NoticeSection, idx: number) {
   );
 }
 
-/** 公告正文页（/notice/[slug]，2026-08-24）：配置驱动，正文来自 lib/data.ts NOTICE_ARTICLES */
-export default async function NoticePage({ params }: { params: Promise<{ slug: string }> }) {
+/** 公告正文页（/notice/[slug]，2026-08-24）：配置驱动，正文来自 lib/data.ts NOTICE_ARTICLES
+ * 2026-08-31：来源感知返回——app 走马灯进入（?from=app）→「返回应用主页」/home；
+ * 官网直访（无标记）→「返回首页」/（修复应用内点公告后返回被扔回官网的体验断裂） */
+export default async function NoticePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ from?: string }>;
+}) {
   const { slug } = await params;
+  const { from } = await searchParams;
+  const fromApp = from === "app";
   const article = NOTICE_ARTICLES.find((a) => a.slug === slug);
   if (!article) return notFound();
 
   return (
     <div className="legal-page">
       <header className="legal-header">
-        <Link href="/" className="legal-back">← 返回首页</Link>
+        <Link href={fromApp ? "/home" : "/"} className="legal-back">{fromApp ? "← 返回应用主页" : "← 返回首页"}</Link>
       </header>
       <h1>{article.title}</h1>
       {article.subtitle && <p className="notice-subtitle">{article.subtitle}</p>}

@@ -50,7 +50,12 @@ function AnnounceLink({ item, children, className }: { item: Announcement; child
   /* 站内路径严格校验：拒绝 // 协议相对（跳外部）与 \ 容错路径（2026-08-24 安全加固） */
   const isInternal = item.link.startsWith("/") && !item.link.startsWith("//") && !item.link.includes("\\");
   if (isInternal) {
-    return <Link className={className} href={item.link}>{children}</Link>;
+    /* 2026-08-31：公告详情在官网区（marketing /notice/[slug]），走马灯（app 区）进入时打 from=app 标记，
+     * 公告页据此把「返回」指向应用主页 /home（否则会回官网根路径，体验断裂） */
+    const href = item.link.startsWith("/notice/")
+      ? `${item.link}${item.link.includes("?") ? "&" : "?"}from=app`
+      : item.link;
+    return <Link className={className} href={href}>{children}</Link>;
   }
   const href = safeHref(item.link);
   /* 非 http/https（javascript:/data: 等）：不渲染可点击链接，纯展示 */
