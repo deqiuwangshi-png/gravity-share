@@ -35,8 +35,9 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
   /* 提交错误文案（空 = 无错误） */
   const [submitError, setSubmitError] = useState("");
 
-  /* 共用字段：正文 = 富文本 HTML（轻量格式：B/斜体/列表/链接） */
+  /* 共用字段：正文 = 富文本 HTML（轻量格式：B/斜体/列表/链接）；标题（038，可选，SEO L1） */
   const [html, setHtml] = useState("");
+  const [title, setTitle] = useState("");
   const [category, setCategory] = useState<string>("其他");
   /* 图片（2026-08-31 图集化）：多图经 RichEditor 图集条上传，第 1 张自动作封面（image_url）
    * 原表单单张「配图」区已移除（被图集条取代，DoD ② 删除被取代代码） */
@@ -113,6 +114,8 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
         author_id: user.id,
         /* 主防线：入库前 DOMPurify 白名单清洗（渲染端另有二次清洗纵深） */
         content: sanitizeHtml(html),
+        /* 038 可选标题：trim 后非空才写入（空 = 未填写，SEO 走提炼） */
+        title: title.trim() ? title.trim() : null,
         category,
         tags: extractTags(plain),
         /* 2026-08-29 收口：独立链接字段已移除，新帖 url 恒 null（链接统一由正文 <a> 承载） */
@@ -152,6 +155,16 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <form className="publish-immersive" onSubmit={handleSubmit}>
+            {/* 标题（038，可选）：SEO 标题提炼 L1 优先使用；空则自动从正文提炼 */}
+            <input
+              className="publish-title-input"
+              type="text"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="标题（可选，便于搜索与分享展示）"
+              maxLength={60}
+              aria-label="标题（可选）"
+            />
             {/* 轻量富文本正文（compact：工具栏常显 B/斜体/列表/链接/图片；图片多选进图集条，第 1 张自动作封面） */}
             <RichEditor compact value={html} onChange={setHtml} upload={uid ? { userId: uid, postId: draftId } : undefined} onUploadedChange={onGalleryChange} />
 

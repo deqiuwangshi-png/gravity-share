@@ -55,5 +55,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticEntries, ...categoryEntries, ...squareEntries, ...profileEntries];
+  /* P1-5 标签条目：复用已拉 posts 聚合 tags（零额外查询），出现 ≥3 次的标签生成 /tag/{编码} 条目
+   * ——与标签页 noindex 阈值（<3 noindex）严格一致，低质标签不进 sitemap */
+  const tagCounts = new Map<string, number>();
+  for (const post of posts) {
+    for (const tag of post.tags) {
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    }
+  }
+  const tagEntries: MetadataRoute.Sitemap = [...tagCounts.entries()]
+    .filter(([, count]) => count >= 3)
+    .map(([tag]) => ({
+      url: `${SITE_URL}/tag/${encodeURIComponent(tag)}`,
+      changeFrequency: "weekly",
+      priority: 0.5,
+    }));
+
+  return [...staticEntries, ...categoryEntries, ...squareEntries, ...profileEntries, ...tagEntries];
 }

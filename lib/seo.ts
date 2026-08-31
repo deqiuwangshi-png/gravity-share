@@ -46,14 +46,27 @@ export function buildPerson(opts: { name: string; description?: string; url: str
 }
 
 /** 帖子详情实体（/square/[id] 注入，长尾词入口） */
-export function buildArticle(opts: { headline: string; authorName: string; url: string; datePublished?: string }) {
+export function buildArticle(opts: {
+  headline: string;
+  authorName: string;
+  url: string;
+  datePublished?: string;
+  /** P1-1：正文摘要（与页面 description 同源，前 160 字） */
+  description?: string;
+  /** P1-1：封面图 URL（有配图才传） */
+  image?: string;
+}) {
   return {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: opts.headline,
+    ...(opts.description ? { description: opts.description } : {}),
+    ...(opts.image ? { image: [opts.image] } : {}),
     author: { "@type": "Person", name: opts.authorName },
     url: opts.url,
     ...(opts.datePublished ? { datePublished: opts.datePublished } : {}),
+    /* P1-1：页面主体声明（声明本页主要实体 = 该帖，防重复内容误判） */
+    mainEntityOfPage: { "@type": "WebPage", "@id": opts.url },
   };
 }
 

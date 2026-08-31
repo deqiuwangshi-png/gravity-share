@@ -7,6 +7,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PostMenu } from "@/components/app/common/post-menu";
 import { SquarePostEditForm } from "./square-post-edit-form";
@@ -20,6 +21,8 @@ import { isRichText } from "@/lib/rich-content";
 import { publicImageUrl } from "@/lib/storage";
 import { sanitizeUrl } from "@/lib/url-policy";
 import { safeHref } from "@/lib/links";
+import { SQUARE_CATEGORY_META } from "@/lib/config";
+import { postHeadline } from "@/lib/post-title";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner: boolean }) {
@@ -34,13 +37,22 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
      用精确 URL 替代脆弱的 "<img" 字面量判断；与 feed 卡片始终用 image_url 作封面对齐。 */
   const coverSrc = post.imageUrl ? publicImageUrl("post", post.imageUrl) : null;
   const coverInBody = coverSrc ? post.content.includes(coverSrc) : false;
+  /* P1-7：封面 alt 语义化——用标题提炼结果（与 H1/SEO title/Article headline 同源），弃用泛化「帖子配图」 */
+  const coverAlt = postHeadline({
+    title: post.title,
+    content: post.content,
+    category: post.category,
+    url: post.url,
+    authorName: post.authorName,
+    postType: post.postType,
+  });
 
   return (
     <>
       <div className="square-post-head">
-        <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-avatar" badge={post.authorBadge} authorId={post.authorId} />
+        <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-avatar" badge={post.authorBadge} authorId={post.authorId} link />
         <div className="square-post-meta">
-          <strong><AuthorLink authorId={post.authorId} name={post.authorName} /><AuthorBadge badge={post.authorBadge} /></strong>
+          <strong><AuthorLink link authorId={post.authorId} name={post.authorName} /><AuthorBadge badge={post.authorBadge} /></strong>
           <small>{post.time}</small>
         </div>
         <PostMenu
@@ -89,7 +101,7 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
           ) : (
             coverSrc && !coverInBody && (
               /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
-              <img className="square-post-image" src={coverSrc} alt="帖子配图" />
+              <img className="square-post-image" src={coverSrc} alt={coverAlt} />
             )
           )}
           {post.postType === "opportunity" && (
@@ -101,7 +113,17 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
         </>
       )}
 
-      <div className="square-tags">{post.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+      {/* P0-5/P0-7 内部链接网络：分类 → /categories/{slug}；标签 → /tag/{编码}（真链接，爬虫可沿链接发现） */}
+      <div className="square-tags">
+        {SQUARE_CATEGORY_META[post.category] && (
+          <Link className="square-category-link" href={`/categories/${SQUARE_CATEGORY_META[post.category].slug}`}>
+            {post.category}
+          </Link>
+        )}
+        {post.tags.map((tag) => (
+          <Link key={tag} href={`/tag/${encodeURIComponent(tag)}`}>{tag}</Link>
+        ))}
+      </div>
     </>
   );
 }

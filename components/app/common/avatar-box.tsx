@@ -7,6 +7,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { safeAvatarUrl } from "@/lib/storage";
 
@@ -16,6 +17,7 @@ export function AvatarBox({
   className,
   authorId,
   badge,
+  link = false,
 }: {
   path?: string;
   name: string;
@@ -23,6 +25,8 @@ export function AvatarBox({
   authorId?: string;
   /** 用户标识（021）：official 时头像加相框描边 */
   badge?: string;
+  /** true = 渲染 <a href>（详情页等非嵌套场景，P0-4）；默认 span + JS（卡片防嵌套链接） */
+  link?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const router = useRouter();
@@ -44,6 +48,15 @@ export function AvatarBox({
   );
 
   if (!authorId) return inner;
+
+  /* P0-4 真链接模式：详情页头像可被搜索引擎直接抓取（默认跳转，无嵌套场景无需 preventDefault） */
+  if (link) {
+    return (
+      <Link className="avatar-link" href={`/profile/${authorId}`} aria-label={`查看 ${name} 的主页`}>
+        {inner}
+      </Link>
+    );
+  }
 
   function go(event: React.MouseEvent | React.KeyboardEvent) {
     event.preventDefault();

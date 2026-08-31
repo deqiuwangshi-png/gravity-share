@@ -24,6 +24,7 @@ export default function robots(): MetadataRoute.Robots {
         "/categories",
         "/square",
         "/profile",
+        "/tag",
       ],
       disallow: [
         "/api",

@@ -13,6 +13,8 @@ const SQUARE = "square_posts";
 export type SquarePostRow = {
   id: string;
   content: string;
+  /* 038 可选用户标题（SEO L1；null = 未填写） */
+  title: string | null;
   post_type: string;
   commission: string | null;
   source_platform: string | null;
@@ -40,6 +42,7 @@ export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
     authorAvatar: row.users?.avatar_url ?? undefined,
     authorBadge: (row.users?.badge as SquarePostDTO["authorBadge"]) ?? "none",
     content: row.content,
+    title: row.title ?? undefined,
     postType: (row.post_type as "share" | "opportunity" | "content") ?? "share",
     commission: row.commission ?? undefined,
     sourcePlatform: row.source_platform ?? undefined,
@@ -102,6 +105,16 @@ export async function fetchSquarePostsByAuthor(supabase: SupabaseClient, userId:
     .from(SQUARE)
     .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
     .eq("author_id", userId)
+    .order("created_at", { ascending: false });
+  return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
+}
+
+/** 某标签下的公开帖（/tag/[tag] 用，P0-7；Postgres 数组包含查询，精确匹配 tags 元素） */
+export async function fetchSquarePostsByTag(supabase: SupabaseClient, tag: string): Promise<SquarePostDTO[]> {
+  const { data } = await supabase
+    .from(SQUARE)
+    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
+    .contains("tags", [tag])
     .order("created_at", { ascending: false });
   return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
 }

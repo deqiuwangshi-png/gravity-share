@@ -37,11 +37,16 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
     router.push(q ? `/home?q=${encodeURIComponent(q)}` : "/home");
   }
 
-  /* 搜索词回显（2026-08-31）：路由变化时把 URL ?q= 同步进输入框——从 /home?q=xx 进入或搜索后离开再回来，搜索态不丢失 */
-  useEffect(() => {
+  /* 搜索词回显（2026-08-31）：路由变化时把 URL ?q= 同步进输入框——从 /home?q=xx 进入或搜索后离开再回来，搜索态不丢失。
+   * 实现：React 官方「render 期状态调整」模式（you-might-not-need-an-effect），替代 effect 内同步 setState——
+   * 规避 react-hooks/set-state-in-effect 级联渲染告警；SSR 首帧无 window（typeof 防护），
+   * pathname 未变化时不触发调整（prevPath 守卫，不会无限重渲染） */
+  const [prevPath, setPrevPath] = useState(pathname);
+  if (pathname !== prevPath && typeof window !== "undefined") {
+    setPrevPath(pathname);
     const q = new URLSearchParams(window.location.search).get("q") ?? "";
     setSearch(q);
-  }, [pathname]);
+  }
 
   /* 全局 / 快捷键（2026-08-31 兑现 kbd 提示）：焦点不在输入类元素时按 / → 聚焦搜索框（阻止浏览器找字默认行为） */
   useEffect(() => {

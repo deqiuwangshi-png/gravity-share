@@ -25,10 +25,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const catName = SQUARE_CATEGORIES.find((name) => SQUARE_CATEGORY_META[name].slug === slug);
   const meta = catName ? SQUARE_CATEGORY_META[catName] : null;
+  const title = catName ? `${catName} · 分类` : "分类不存在";
+  const description = meta?.desc ?? "引力分类内容";
   return {
-    title: catName ? `${catName} · 分类` : "分类不存在",
-    description: meta?.desc ?? "引力分类内容",
+    title,
+    description,
     alternates: { canonical: `/categories/${slug}` },
+    /* P1-3：分类枢纽页补 OG（社交分享 / AI 引用完整卡片） */
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}/categories/${slug}`,
+      type: "website",
+    },
   };
 }
 

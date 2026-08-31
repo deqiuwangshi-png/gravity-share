@@ -8,6 +8,7 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
   const row: SquarePostRow = {
     id: "s1",
     content: "推荐一个好用的 AI 工具",
+    title: null,
     post_type: "opportunity",
     commission: "分佣 10%",
     source_platform: null,
@@ -27,10 +28,16 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
   it("字段映射正确", () => {
     const dto = toSquarePostDTO(row);
     expect(dto.content).toBe("推荐一个好用的 AI 工具");
+    expect(dto.title).toBeUndefined();
     expect(dto.postType).toBe("opportunity");
     expect(dto.commission).toBe("分佣 10%");
     expect(dto.category).toBe("工具");
     expect(dto.authorName).toBe("张三");
+  });
+
+  it("038 标题映射：非空 → title，空 → undefined", () => {
+    expect(toSquarePostDTO({ ...row, title: "我的标题" }).title).toBe("我的标题");
+    expect(toSquarePostDTO({ ...row, title: null }).title).toBeUndefined();
   });
 
   it("024 展示位：未置顶 featured=false", () => {

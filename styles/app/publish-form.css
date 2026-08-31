@@ -4,6 +4,33 @@
 
 /* ---------- 发布沉浸式表单 ---------- */
 
+/* 标题输入框（038 可选标题，SEO L1；发布/编辑表单共用） */
+.publish-title-input {
+  width: 100%;
+  padding: 4px 2px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+  box-sizing: border-box;
+  transition: border-color 180ms ease;
+}
+
+.publish-title-input::placeholder {
+  color: var(--text-soft);
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.publish-title-input:focus {
+  border-bottom-color: var(--border-primary);
+}
+
 .publish-immersive {
   display: grid;
   /* 2026-08-31 修复：单列 grid 轨道默认 minmax(auto,1fr)，编辑器长 URL 的 min-content 会撑开轨道 → minmax(0,1fr) 锁死轨道宽度 */

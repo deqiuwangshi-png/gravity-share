@@ -31,6 +31,8 @@ export interface SquarePostDTO {
   /** 作者标识（021：official 蓝V / discoverer 发现者 / none 无） */
   authorBadge?: UserBadge;
   content: string;
+  /** 用户标题（选填，038；SEO 标题提炼 L1 优先，空 = 未填写走 L2-L4 提炼） */
+  title?: string;
   /** 发布类型（2026-08-23 三入口：share 分享 / opportunity 机会 / content 内容） */
   postType: "share" | "opportunity" | "content";
   /** 机会披露（选填，postType=opportunity 合规：佣金/奖励等利益关系） */

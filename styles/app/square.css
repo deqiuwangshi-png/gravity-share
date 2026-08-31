@@ -187,10 +187,30 @@
   margin-top: 12px;
 }
 
-.square-tags span {
+/* P0-7 标签链接化（2026-08-31）：span → <a>，真链接可抓；hover 高亮 */
+.square-tags a {
   padding: 4px 8px;
   border-radius: 5px;
   background: var(--bg-hover);
   color: var(--text-muted);
   font-size: 11px;
+  text-decoration: none;
+  transition: color 180ms ease, background 180ms ease;
+}
+
+.square-tags a:hover {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* P0-5 分类链接（标签区首位，primary 色区分层级） */
+.square-tags .square-category-link {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.square-tags .square-category-link:hover {
+  background: var(--primary-subtle);
+  color: var(--primary-dark);
 }

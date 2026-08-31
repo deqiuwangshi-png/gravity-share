@@ -32,6 +32,30 @@
   color: var(--primary);
 }
 
+/* P0-2 详情页 H1（标题提炼结果；与 SEO title 同源；正文首行同文时靠字号/字重区分层级） */
+.square-detail-title {
+  margin: 0 0 14px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: -0.2px;
+  overflow-wrap: break-word;
+}
+
+/* P0-6 相关内容区（同分类内链，帖子 → 帖子形成内容网络） */
+.square-related {
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.square-related h2 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 .square-post-head {
   display: flex;
   align-items: center;

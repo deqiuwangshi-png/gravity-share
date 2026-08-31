@@ -34,6 +34,7 @@ export default function ProfileView({
   avatarUrl = "",
   coverUrl = "",
   badge = "none",
+  initialPosts = [],
 }: {
   name: string;
   bio: string;
@@ -45,9 +46,11 @@ export default function ProfileView({
   coverUrl?: string;
   /** 用户标识（021） */
   badge?: "none" | "official" | "discoverer";
+  /** P0-8 服务端预取内容流（SSR 首帧爬虫可见）；交互刷新逻辑不变 */
+  initialPosts?: SquarePostDTO[];
 }) {
   const [tab, setTab] = useState<ProfileTab>("推荐");
-  const [myPosts, setMyPosts] = useState<SquarePostDTO[]>([]);
+  const [myPosts, setMyPosts] = useState<SquarePostDTO[]>(initialPosts);
   const [myComments, setMyComments] = useState<CommentDTO[]>([]);
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);

@@ -26,6 +26,8 @@ export function SquarePostEditForm({
   onCancel: () => void;
 }) {
   const [content, setContent] = useState(post.content);
+  /* 标题（038，可选）：随帖展示模型传入；空 = 未填写（SEO 走提炼） */
+  const [title, setTitle] = useState(post.title ?? "");
   /* 富文本帖：编辑器编辑（2026-08-29）；纯文本帖：textarea */
   const isRich = isRichText(post.content);
   /* 内容分类（固定枚举，随帖子展示模型传入） */
@@ -64,6 +66,8 @@ export function SquarePostEditForm({
          旧帖正文存量图已由预载进 galleryPaths，保存即升级新模型）；url 不再写入（存量帖 url 保留，防误删历史链接） */
       .update({
         content: isRich ? stripImages(sanitizeHtml(content)) : content.trim(),
+        /* 038 可选标题：trim 后非空才写入（空 = 清空标题，SEO 走提炼） */
+        title: title.trim() ? title.trim() : null,
         image_url: nextImage,
         gallery: galleryPaths,
         category,
@@ -98,6 +102,16 @@ export function SquarePostEditForm({
 
   return (
     <form className="square-post-edit" onSubmit={(event) => void save(event)} onClick={(event) => event.stopPropagation()}>
+      {/* 标题（038，可选）：与发布一致，SEO 标题提炼 L1 */}
+      <input
+        className="publish-title-input"
+        type="text"
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        placeholder="标题（可选，便于搜索与分享展示）"
+        maxLength={60}
+        aria-label="标题（可选）"
+      />
       {isRich ? (
         <RichEditor value={content} onChange={setContent} upload={{ userId: post.authorId, postId: post.id }} onUploadedChange={onGalleryChange} onRemovedExistingChange={onRemovedExistingChange} galleryPaths={post.gallery} />
       ) : (
