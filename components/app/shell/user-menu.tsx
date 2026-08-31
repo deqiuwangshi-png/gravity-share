@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { User, Gem, Settings, HelpCircle, LogOut } from "lucide-react";
+import { User, Settings, HelpCircle, LogOut } from "lucide-react";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 
 /**
@@ -108,9 +108,8 @@ export function UserMenu({
           <Link className="user-menu-item" href="/profile" role="menuitem" onClick={() => setOpen(false)}>
             <span><User size={13} /></span>个人主页
           </Link>
-          <Link className="user-menu-item" href="/promo" role="menuitem" onClick={() => setOpen(false)}>
-            <span><Gem size={13} /></span>订阅计划
-          </Link>
+          {/* 商业化入口（订阅计划 /promo 与内容投流 /boost）2026-08-31 起从菜单摘除：
+              页面与逻辑保留（均处「即将开放」占位态），恢复入口见 deliverables/ads-monetization-SOP-2026-08-31.md */}
           <button
             type="button"
             className="user-menu-item"

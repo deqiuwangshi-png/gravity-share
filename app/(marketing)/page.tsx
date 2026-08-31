@@ -93,17 +93,18 @@ export default function Home() {
 
         <section className="section container" id="pricing">
           <div className="section-head">
-            <div><h2 className="section-title">选择一个计划，解锁更多分发与增长能力。</h2><p className="section-desc">发现与分享永远免费；订阅解锁高级分发与增长能力。</p></div>
+            <div><h2 className="section-title">选择一个计划，解锁更多分发与增长能力。</h2><p className="section-desc">发现与分享永远免费；会员订阅即将开放。</p></div>
             <Link className="more" href="/register">加入引力 <span aria-hidden="true">→</span></Link>
           </div>
 
-          {/* 订阅计划四卡（与 /promo 订阅计划价格一致，2026-08-27 对齐；占位未接支付） */}
+          {/* 订阅计划三卡（2026-08-31：订阅暂未开放 → 全部为「即将开放」占位；
+              档位与 lib/config.ts SUBSCRIPTION_PLANS 及库 check 约束一致：免费 / 专业 / 团队，
+              已移除此前遗留的「基础版」（库与 config 中均不存在），价格与配置同源） */}
           <div className="pricing-grid">
             {[
               { name: "免费版", price: "¥0", tag: "永久免费", features: ["发布 / 发现 / 分享", "内容参与", "基础统计"] },
-              { name: "基础版", price: "¥45", tag: "首月 ¥9.9/月", features: ["含免费版全部", "投放 9 折", "浏览数据报表"] },
-              { name: "专业版", price: "¥68", tag: "首月 ¥19.9/月", featured: true, features: ["含基础版全部", "展示位 8 折", "高级筛选", "优先客服"] },
-              { name: "团队版", price: "¥128", tag: "首月 ¥45/月", features: ["含专业版全部", "多账号管理", "团队报表", "专属支持"] },
+              { name: "专业版", price: "¥68", tag: "即将开放", featured: true, features: ["含免费版全部", "展示位 8 折", "高级筛选", "优先客服"] },
+              { name: "团队版", price: "¥128", tag: "即将开放", features: ["含专业版全部", "多账号管理", "团队报表", "专属支持"] },
             ].map((tier) => (
               <article className={`pricing-card${tier.featured ? " featured" : ""}`} key={tier.name}>
                 <div className="pricing-card-head">
@@ -117,7 +118,7 @@ export default function Home() {
             ))}
           </div>
 
-          <p className="pricing-note">订阅价格与方案详情以应用内「订阅计划」为准；价格为占位锚点，上线前公示确认。</p>
+          <p className="pricing-note">订阅功能即将开放，以上价格为展示锚点；开放时间与最终方案会在应用内「订阅计划」提前公示。</p>
         </section>
 
         <section className="principle container" id="about"><p className="principle-kicker">引力的原则</p><h2>互联网不缺好东西，缺的是让它们相遇的地方。</h2><p>我们相信，真正有价值的内容不应该被平台和算法隔开。引力把发现和分享连接在一起，让每一个好东西都有机会抵达真正需要它的人。</p></section>

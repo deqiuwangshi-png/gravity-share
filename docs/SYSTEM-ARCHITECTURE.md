@@ -89,6 +89,9 @@ supabase/migrations/   001-029（users → 内容 → 互动 → 存储 → 公�
 | 认证闭环 | 邮箱 + GitHub/Google 登录、密码重置（/reset-password）、自助注销（含 storage 即时清理） |
 | 安全加固 | 列级权限（points/计数列只读）、浏览计数 RPC、通知清理触发器、安全头 4 项 |
 | 外链安全网关 | `/go?url=…` 白/黑名单分级（lib/links.ts），白名单服务端直跳防开放重定向，未知需确认，高危拦截 |
+| 订阅计划 `/promo` | **占位态**（2026-08-31：`SUBSCRIPTION_OPEN=false`，页面显示「即将开放」；完整链路保留：Waffo / 032~036 迁移 / subscriptions 表，改回 true 即恢复） |
+| 内容投流 `/boost` | **占位态**（2026-08-31：`BOOST_OPEN=false`，页面显示「即将开放」；promo_orders + 034 五档触发器保留，改回 true 即恢复） |
+| 第三方广告 | AdSense 三处埋点（2026-08-31）：首页信息流 `ad-slot-feed` / 详情页 `ad-slot-detail` / 分类页 `ad-slot-multiplex`（`components/common/ad-slot.tsx` + `styles/app/ad.css`；env 未配置零渲染；**自有投流位永不接第三方广告**） |
 
 ## 五、色板（全站就这 15 个颜色变量，定义在 `styles/globals.css`）
 

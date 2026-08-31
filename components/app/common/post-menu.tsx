@@ -219,6 +219,7 @@ export function PostMenu({
             </>
           ) : isOwner ? (
             <>
+              {/* 投放入口（2026-08-31 内容投流暂未开放，已摘除；恢复时在此还原按钮，跳 /boost?post=<id> 预选本帖） */}
               <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setConfirming(true); }}>
                 删除
               </button>

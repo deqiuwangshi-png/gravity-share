@@ -1,166 +1,318 @@
 /**
- * 订阅计划页（client，2026-08-27 推广中心 → 订阅计划）
- * ① 订阅四卡（免费 / 基础 / 专业 / 团队，选中高亮）→ 订阅支付区随选中版本变化
- * ② 单次投放：自定义金额（¥2-100，2026-08-27 用户确认），实时预览效果 → 一次性支付区
- * 映射规则：时长 = 金额 × 2 小时；强度三档 ¥2-10 单区域加权 / ¥11-50 分类置顶 / ¥51-100 全网置顶
- * 支付均为占位（二维码占位 + 文案样例）；投放生效逻辑（推荐流加权）见 docs/DEVELOPER-HANDBOOK.md §2.6 商业化口径（2026-08-29：原 COMMERCIAL-ROADMAP.md 已随文档精简删除，口径以手册与 /promo 页为准）
- * 入口：头像菜单 → /promo（proxy 守卫需登录）
+ * 订阅管理页（client，2026-08-30 重写：混合页 → 纯订阅管理）
+ * 结构：我的订阅状态条 → 套餐三卡（免费/专业/团队，月/年切换）→ 支付区（订阅/续费/取消）
+ * 真实链路：insert subscriptions（触发器置 pending）→ /api/pay/checkout → 跳 Waffo 收银台
+ * 支付通道未配置时 checkout 返回 503「支付通道准备中」，页面原样展示，密钥补齐即通
+ * 单次投放已拆至 /boost（2026-08-30 用户确认分离）
+ * 订阅价格真相源在 Waffo 商品，本页价格为展示缓存（lib/config.ts SUBSCRIPTION_PLANS）
+ * 2026-08-31：早期项目暂不开放订阅 → 页面进入「即将开放」占位（SUBSCRIPTION_OPEN = false）
+ *   占位期间下方完整逻辑（状态条 / 三卡 / 支付区）原样保留，改回 true 即完整恢复，零重写成本
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { SUBSCRIPTION_PLANS, type SubscriptionCycle } from "@/lib/config";
+import {
+  fetchMySubscription,
+  createSubscription,
+  type SubscriptionRow,
+} from "@/lib/queries-billing";
+import { useToast } from "@/components/app/common/toast";
 
-/** 订阅计划档位（占位价格，上线前可改；firstMonth = 首月优惠价，renew = 下次续费日占位） */
-const PLANS = [
-  { id: "free", name: "免费版", price: 0, tag: "永久免费", renew: "", highlight: false, features: ["发布 / 发现 / 分享", "内容参与", "基础统计"] },
-  { id: "basic", name: "基础版", price: 45, firstMonth: 9.9, renew: "2026/09/26", tag: "", highlight: false, features: ["含免费版全部", "投放 9 折", "浏览数据报表"] },
-  { id: "pro", name: "专业版", price: 68, firstMonth: 19.9, renew: "2026/09/26", highlight: true, tag: "", features: ["含基础版全部", "展示位 8 折", "高级筛选", "优先客服"] },
-  { id: "team", name: "团队版", price: 128, firstMonth: 45, renew: "2026/09/26", tag: "", highlight: false, features: ["含专业版全部", "多账号管理", "团队报表", "专属支持"] },
-] as const;
+type PlanId = "free" | "pro" | "team";
 
-type Plan = (typeof PLANS)[number];
+const FREE_PLAN = {
+  id: "free",
+  name: "免费版",
+  price: 0,
+  features: ["发布 / 发现 / 分享", "内容参与", "基础统计"],
+  highlight: false,
+} as const;
 
-/** 单次投放：自定义金额范围（2026-08-27 用户确认：最低 ¥2 · 上限 ¥100 · 默认 ¥10） */
-const BOOST_MIN = 2;
-const BOOST_MAX = 100;
-const BOOST_DEFAULT = "10";
-
-/** 金额 → 投放效果（时长 = 金额 × 2 小时；强度三档） */
-function boostInfo(amount: number): { hours: number; strength: string } {
-  const hours = amount * 2;
-  const strength = amount <= 10 ? "单区域推荐流加权" : amount <= 50 ? "单区域 + 分类置顶" : "全网加权 + 置顶";
-  return { hours, strength };
+/** 订阅状态展示文案 */
+function subscriptionStatus(sub: SubscriptionRow | null): {
+  kind: "none" | "active" | "pending" | "ended" | "past_due";
+  text: string;
+} {
+  if (!sub) return { kind: "none", text: "尚未订阅，选择套餐开始" };
+  if (sub.status === "active") {
+    const end = sub.current_period_end ? new Date(sub.current_period_end) : null;
+    if (end && end.getTime() > Date.now()) {
+      const planName = SUBSCRIPTION_PLANS[sub.plan].name;
+      const label = sub.cycle === "year" ? "年付" : "月付";
+      return { kind: "active", text: `${planName} ${label} · 生效至 ${end.toLocaleDateString()}，到期自动续费` };
+    }
+    return { kind: "ended", text: "订阅已到期，可重新订阅" };
+  }
+  if (sub.status === "pending") {
+    return { kind: "pending", text: "待支付：请在 15 分钟内完成付款，超时自动取消；也可直接取消该订单重新选择" };
+  }
+  if (sub.status === "past_due") {
+    return { kind: "past_due", text: "续费扣款失败（欠费），请及时处理" };
+  }
+  return { kind: "ended", text: "订阅已取消，可重新订阅" };
 }
 
-export default function PromoPage() {
-  /* 默认选中第一个付费版（支付区默认展示） */
-  const [selected, setSelected] = useState<Plan["id"]>("basic");
-  const plan = PLANS.find((p) => p.id === selected)!;
-  /* 单次投放金额（字符串 state，输入可能为空/非法） */
-  const [boostAmount, setBoostAmount] = useState(BOOST_DEFAULT);
+/**
+ * 订阅开放开关（2026-08-31：早期项目暂不开放订阅，页面转入「即将开放」占位）
+ * 恢复方式：改为 true —— 下方完整订阅逻辑一行未删，无需重写
+ */
+const SUBSCRIPTION_OPEN: boolean = false;
 
-  const amount = Number.parseInt(boostAmount, 10);
-  const boostValid = Number.isInteger(amount) && amount >= BOOST_MIN && amount <= BOOST_MAX;
-  const boost = boostValid ? boostInfo(amount) : null;
-  const boostError = !boostValid && boostAmount !== "" ? `金额需在 ¥${BOOST_MIN} ～ ¥${BOOST_MAX} 之间` : "";
+export default function PromoPage() {
+  return SUBSCRIPTION_OPEN ? <PromoMain /> : <PromoClosed />;
+}
+
+/** 订阅未开放时的占位视图（引导至已可用的内容投流，保留未来期待） */
+function PromoClosed() {
+  return (
+    <div className="app-content promo-page">
+      <header className="feed-head">
+        <h1>订阅计划</h1>
+        <p>订阅功能即将开放；发现与分享永久免费。</p>
+      </header>
+      <section className="promo-soon">
+        <b>即将开放</b>
+        <p>会员订阅（专业版 / 团队版）正在接入支付能力，开放时间与价格会在本页提前公示。</p>
+        <p>现在就能用：把好东西分享出去，让更多人看见——分享始终是平台免费的展示与传播能力。</p>
+      </section>
+    </div>
+  );
+}
+
+/** 订阅开放后的完整视图（2026-08-31 起暂时不渲染，逻辑保留待启用） */
+function PromoMain() {
+  const { show } = useToast();
+
+  const [selected, setSelected] = useState<PlanId>("pro");
+  const [cycle, setCycle] = useState<SubscriptionCycle>("month");
+  const [sub, setSub] = useState<SubscriptionRow | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const supabase = createClient();
+      /* 033 激活：页面进入时先清理超时（>15 分钟）的 pending 单，避免卡死 */
+      await supabase.rpc("cancel_stale_payments");
+      const mine = await fetchMySubscription(supabase);
+      if (cancelled) return;
+      setSub(mine);
+      setLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const status = subscriptionStatus(sub);
+  const plan = selected === "free" ? FREE_PLAN : SUBSCRIPTION_PLANS[selected];
+  /* 价格索引走 SUBSCRIPTION_PLANS，避免 FREE_PLAN 无 monthly/yearly 的类型问题 */
+  const price =
+    selected === "free" ? 0 : SUBSCRIPTION_PLANS[selected][cycle === "month" ? "monthly" : "yearly"];
+  const canSubscribe = selected !== "free" && status.kind !== "pending" && status.kind !== "active";
+
+  /** 订阅 / 续费：建单 → 跳收银台 */
+  async function handleSubscribe() {
+    if (busy || selected === "free") return;
+    setBusy(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        show("请先登录", "danger");
+        return;
+      }
+      const order = await createSubscription(supabase, user.id, selected as "pro" | "team", cycle);
+      const res = await fetch("/api/pay/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "sub", orderId: order.id }),
+      });
+      const data = (await res.json()) as { checkoutUrl?: string; error?: string };
+      if (!res.ok || !data.checkoutUrl) {
+        show(data.error ?? "下单失败，请重试", "danger");
+        /* 触发器可能已插入 pending 单：重新拉取订阅状态 */
+        const mine = await fetchMySubscription(createClient());
+        setSub(mine);
+        return;
+      }
+      /* 官方强制：收银台新标签页打开（禁止 location.href），保留本站页面状态 */
+      window.open(data.checkoutUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      show(err instanceof Error ? err.message : "下单失败，请重试", "danger");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** 取消订阅：/api/pay/cancel（Waffo 侧停止续费 + 本地置 cancelled） */
+  async function handleCancel() {
+    if (busy || !sub) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/pay/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: sub.id }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        show(data.error ?? "取消失败，请稍后重试", "danger");
+        return;
+      }
+      show("已取消，当前周期内权益保留至到期");
+      const mine = await fetchMySubscription(createClient());
+      setSub(mine);
+    } catch {
+      show("取消失败，请稍后重试", "danger");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** 取消待支付订单（036 RPC：立即取消本人 pending 单，不等 15 分钟超时） */
+  async function handleCancelPending() {
+    if (busy || !sub) return;
+    setBusy(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.rpc("cancel_my_pending", { p_kind: "sub", p_id: sub.id });
+      if (error) {
+        show("取消失败，请重试", "danger");
+        return;
+      }
+      show("已取消该待支付订单，可重新订阅");
+      const mine = await fetchMySubscription(supabase);
+      setSub(mine);
+    } catch {
+      show("取消失败，请重试", "danger");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="app-content promo-page">
       <header className="feed-head">
         <h1>订阅计划</h1>
-        <p>选择一个计划，或按需单次投放，解锁更多分发与增长能力</p>
+        <p>订阅解锁更多分发与增长能力；单次内容投放请前往 <Link className="legal-link" href="/boost">内容投流</Link></p>
       </header>
 
-      {/* ---------- ① 订阅四卡 ---------- */}
-      <div className="plans-grid" role="tablist" aria-label="订阅计划选择">
-        {PLANS.map((p) => (
+      {/* ---------- 我的订阅状态条 ---------- */}
+      <section className="sub-status" aria-live="polite">
+        <b>{loaded ? status.text : "加载中…"}</b>
+        {loaded && status.kind === "active" && sub && (
           <button
-            key={p.id}
             type="button"
-            role="tab"
-            aria-selected={selected === p.id}
-            className={`plans-card${selected === p.id ? " active" : ""}${p.highlight ? " highlight" : ""}`}
-            onClick={() => setSelected(p.id)}
+            className="sub-status-cancel"
+            disabled={busy}
+            onClick={() => void handleCancel()}
           >
-            <div className="plans-card-head">
-              <b>{p.name}</b>
-              {p.highlight && <span className="plans-badge">推荐</span>}
-            </div>
-            <p className="plans-price">
-              {p.price === 0 ? "¥0" : `¥${p.price}`}
-              <small>{p.tag}</small>
-            </p>
-            <ul className="plans-features">
-              {p.features.map((f) => <li key={f}>{f}</li>)}
-            </ul>
+            {busy ? "处理中…" : "取消订阅"}
           </button>
-        ))}
-      </div>
-
-      {/* 订阅支付区（随选中版本变化；免费版无支付） */}
-      <section className="plans-pay" aria-live="polite">
-        {plan.price === 0 ? (
-          <p className="plans-pay-free">免费版功能永久开放，无需付费。</p>
-        ) : (
-          <>
-            <div className="plans-qr">
-              <div className="plans-qr-box" aria-label="支付二维码占位">
-                <span className="plans-qr-mark">支付二维码</span>
-                <span className="plans-qr-sub">支付宝 / 抖音 扫码支付</span>
-              </div>
-            </div>
-            <div className="plans-pay-info">
-              <p className="plans-pay-price">¥{plan.firstMonth}</p>
-              <p className="plans-pay-desc">
-                首月 ¥{plan.firstMonth}/月优惠，之后 ¥{plan.price}/月自动续费，下次续费时间 {plan.renew}，可随时取消
-              </p>
-              <p className="plans-agreements">
-                同意
-                <Link href="/terms">《用户协议》</Link>
-                <Link href="/privacy">《隐私政策》</Link>
-                <span>《引力自动续费服务协议》</span>
-              </p>
-              <button className="plans-submit" type="button" disabled data-placeholder>扫码支付</button>
-            </div>
-          </>
+        )}
+        {loaded && status.kind === "pending" && sub && (
+          <button
+            type="button"
+            className="sub-status-cancel"
+            disabled={busy}
+            onClick={() => void handleCancelPending()}
+          >
+            {busy ? "处理中…" : "取消订单"}
+          </button>
         )}
       </section>
 
-      {/* ---------- ② 单次投放（自定义金额） ---------- */}
-      <div className="boost-divider"><span>不想订阅？单次投放，¥2 起</span></div>
+      {/* ---------- 月 / 年切换 ---------- */}
+      <div className="cycle-toggle" role="tablist" aria-label="计费周期">
+        <button type="button" role="tab" aria-selected={cycle === "month"} className={cycle === "month" ? "active" : ""} onClick={() => setCycle("month")}>
+          按月付
+        </button>
+        <button type="button" role="tab" aria-selected={cycle === "year"} className={cycle === "year" ? "active" : ""} onClick={() => setCycle("year")}>
+          按年付 · 省 2 个月
+        </button>
+      </div>
 
-      <section className="promo-card boost-card" aria-live="polite">
-        <h2 className="promo-card-title">单次投放</h2>
-        <p className="promo-card-desc">输入金额，实时预览投放效果；一次性支付，立即生效。</p>
+      {/* ---------- 套餐三卡 ---------- */}
+      <div className="plans-grid plans-grid-3" role="tablist" aria-label="订阅计划选择">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={selected === FREE_PLAN.id}
+          className={`plans-card${selected === FREE_PLAN.id ? " active" : ""}`}
+          onClick={() => setSelected(FREE_PLAN.id)}
+        >
+          <div className="plans-card-head"><b>{FREE_PLAN.name}</b></div>
+          <p className="plans-price">¥0<small>永久免费</small></p>
+          <ul className="plans-features">{FREE_PLAN.features.map((f) => <li key={f}>{f}</li>)}</ul>
+        </button>
 
-        <div className="boost-input-row">
-          <span className="boost-currency">¥</span>
-          <input
-            type="number"
-            min={BOOST_MIN}
-            max={BOOST_MAX}
-            step={1}
-            value={boostAmount}
-            onChange={(event) => setBoostAmount(event.target.value)}
-            placeholder={BOOST_DEFAULT}
-            aria-label="投放金额"
-          />
-          <span className="boost-hint">最低 ¥{BOOST_MIN} · 最高 ¥{BOOST_MAX}</span>
-        </div>
-
-        {boostError && <p className="promo-error" role="alert">{boostError}</p>}
-
-        {boost && (
-          <>
-            <div className="boost-preview">
-              <span>{boost.strength}</span>
-              <span>{boost.hours} 小时</span>
-              <b>¥{amount}</b>
-            </div>
-
-            <div className="plans-pay boost-pay">
-              <div className="plans-qr">
-                <div className="plans-qr-box" aria-label="支付二维码占位">
-                  <span className="plans-qr-mark">支付二维码</span>
-                  <span className="plans-qr-sub">支付宝 / 抖音 扫码支付</span>
-                </div>
+        {(Object.keys(SUBSCRIPTION_PLANS) as Array<"pro" | "team">).map((id) => {
+          const p = SUBSCRIPTION_PLANS[id];
+          const p2 = cycle === "month" ? p.monthly : p.yearly;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={selected === id}
+              className={`plans-card${selected === id ? " active" : ""}${p.highlight ? " highlight" : ""}`}
+              onClick={() => setSelected(id)}
+            >
+              <div className="plans-card-head">
+                <b>{p.name}</b>
+                {p.highlight && <span className="plans-badge">推荐</span>}
               </div>
-              <div className="plans-pay-info">
-                <p className="plans-pay-price">¥{amount}</p>
-                <p className="plans-pay-desc">一次性投放 · {boost.hours} 小时 · {boost.strength}，支付后立即生效</p>
-                <p className="plans-agreements">
-                  同意 <Link href="/terms">《用户协议》</Link> <Link href="/privacy">《隐私政策》</Link>
-                </p>
-                <button className="plans-submit" type="button" disabled data-placeholder>扫码支付</button>
-              </div>
-            </div>
-          </>
+              <p className="plans-price">
+                ¥{p2}
+                <small>{cycle === "month" ? "每月" : `每年（${p.monthly * 12 - p.yearly} 元优惠）`}</small>
+              </p>
+              <ul className="plans-features">{p.features.map((f) => <li key={f}>{f}</li>)}</ul>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ---------- 支付区 ---------- */}
+      <section className="plans-pay" aria-live="polite">
+        {selected === "free" ? (
+          <p className="plans-pay-free">免费版功能永久开放，无需付费。升级可解锁展示位折扣与更多权益。</p>
+        ) : (
+          <div className="plans-pay-info">
+            <p className="plans-pay-price">
+              {cycle === "month" ? `¥${price}/月` : `¥${price}/年`}
+            </p>
+            <p className="plans-pay-desc">
+              {status.kind === "active" ? "订阅已生效，续费将在到期后自动进行（由 Waffo 收银台管理）。" : `订阅后立即可用：${plan.features.join("、")}。`}
+              订阅期间内容投放享 8 折。
+            </p>
+            <p className="plans-agreements">
+              点击订阅即表示同意
+              <Link href="/terms">《用户协议》</Link>
+              <Link href="/privacy">《隐私政策》</Link>
+              <span>《自动续费服务协议》（订阅按所选周期自动续费，可随时取消）</span>
+            </p>
+            {status.kind === "active" ? (
+              <p className="plans-pay-desc">如需停止续费，请使用上方「取消订阅」。</p>
+            ) : (
+              <button className="plans-submit" type="button" disabled={busy || !canSubscribe} onClick={() => void handleSubscribe()}>
+                {busy ? "处理中…" : status.kind === "pending" ? "已有待支付订单" : "订阅"}
+              </button>
+            )}
+          </div>
         )}
       </section>
 
       {/* 分享展示说明（免费传播能力，无佣金承诺） */}
-      <div className="promo-share-note">不想花钱？把喜欢的资源分享出去，让更多人看见 —— 分享是平台免费的展示与传播能力，帮你扩大内容触达。</div>
+      <div className="promo-share-note">
+        不想花钱？把喜欢的资源分享出去，让更多人看见——分享是平台免费的展示与传播能力。单次内容投放见 <Link className="legal-link" href="/boost">内容投流</Link>。
+      </div>
     </div>
   );
 }

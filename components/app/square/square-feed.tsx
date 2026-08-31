@@ -9,9 +9,10 @@
  */
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { SQUARE_CATEGORIES } from "@/lib/config";
+import { AD_FEED_INTERVAL, AD_SLOTS, SQUARE_CATEGORIES } from "@/lib/config";
+import { AdSlot } from "@/components/common/ad-slot";
 import { LoadError } from "@/components/app/common/load-error";
 import { SquareCard } from "@/components/app/common/square-card";
 import { useSquarePosts } from "@/lib/use-square-posts";
@@ -64,7 +65,13 @@ export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) 
         <p className="feed-empty">{q ? `未找到与「${q}」相关的内容。` : "该分类暂无内容，去「+ 发布」分享第一份好东西。"}</p>
       ) : (
         <div className="home-grid">
-          {filtered.map((post) => <SquareCard post={post} key={post.id} />)}
+          {/* A1 广告位：每 AD_FEED_INTERVAL 条内容后插入一张广告卡（内容不足则不插，避免「广告多于内容」） */}
+          {filtered.map((post, index) => (
+            <Fragment key={post.id}>
+              <SquareCard post={post} />
+              {(index + 1) % AD_FEED_INTERVAL === 0 && <AdSlot slot={AD_SLOTS.homeFeed} variant="feed" />}
+            </Fragment>
+          ))}
         </div>
       )}
     </>

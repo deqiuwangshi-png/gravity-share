@@ -1,0 +1,4 @@
+# ads.txt（2026-08-31）：AdSense 过审后，把下面的 pub-0000000000000000 换成后台显示的发布商 ID
+# 位置：AdSense 后台「广告 → 概览」给出的 ca-pub-xxxxxxxxxxxxxxxx（去掉 ca- 前缀后填 pub- 形式亦可，官方示例为 pub- 开头）
+# 未替换前该文件不产生收益影响；替换后有助于避免「未经授权的广告库存」导致的收入损失
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

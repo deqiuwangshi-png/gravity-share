@@ -1,0 +1,209 @@
+/* (app) 内容投流页（/boost 需登录，2026-08-30 新建：单次投放独立成页，境内高频小额）
+ * 四段式：① 选帖 → ② 金额 + 预览（五档映射）→ ③ 支付 → ④ 投放记录
+ * 复用 promo.css 的 .promo-page / .plans-submit；本文件只含投流专属样式 */
+
+/* ---------- 卡片通用 ---------- */
+
+.promo-card {
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.boost-card {
+  border-style: dashed;
+}
+
+.promo-card-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.promo-card-desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.promo-card-desc + .promo-card-desc {
+  margin-top: 8px;
+}
+
+.promo-error {
+  margin: 8px 0 0;
+  color: var(--danger, #a32d2d);
+  font-size: 12px;
+}
+
+/* ---------- ① 选帖 ---------- */
+
+.boost-post-select {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.boost-post-select:focus {
+  border-color: var(--border-primary);
+}
+
+/* ---------- ② 金额输入 + 预览 ---------- */
+
+.boost-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.boost-currency {
+  color: var(--text-muted);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.boost-input-row input {
+  width: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.boost-input-row input:focus {
+  border-color: var(--border-primary);
+}
+
+.boost-hint {
+  color: var(--text-soft);
+  font-size: 12px;
+}
+
+.boost-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px dashed var(--border-primary);
+  border-radius: 10px;
+  background: var(--primary-soft);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.boost-preview b {
+  margin-left: auto;
+  font-size: 16px;
+}
+
+.boost-preview-tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ---------- ③ 支付 ---------- */
+
+.boost-submit {
+  width: 180px;
+  margin-top: 14px;
+}
+
+/* ---------- ④ 投放记录 ---------- */
+
+.boost-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.boost-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.boost-list-post {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--foreground);
+}
+
+.boost-list-meta {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.boost-list-status {
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.boost-list-status.is-pending {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
+
+.boost-list-status.is-active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.boost-list-status.is-ended {
+  background: var(--bg-hover);
+  color: var(--text-soft);
+}
+
+.boost-list-status.is-cancelled {
+  background: var(--bg-hover);
+  color: var(--text-soft);
+  text-decoration: line-through;
+}
+
+.boost-list-cancel {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+
+.boost-list-cancel:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
