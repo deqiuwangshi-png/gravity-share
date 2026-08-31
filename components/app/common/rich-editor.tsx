@@ -1,29 +1,57 @@
 /**
  * 富文本编辑器（2026-08-29，TipTap）——富文本帖发布 / 编辑共用
  * 全量模式：标题 H2/H3、加粗/斜体/删除线、有序/无序列表、引用、代码块、分割线、链接、图片
- * compact 轻量模式（短帖发布，2026-08-29）：仅 B/斜体/列表/链接 4 按钮；
- *   容器透明无边框、工具栏仅在聚焦时于右上角浮出（气泡）、空内容显示占位文案
- * 图片走现有 /api/upload（upload prop 传入 uid + postId 时显示图片按钮，插入完整公开 URL）
+ * compact 轻量模式（短帖发布，2026-08-29 起工具栏常显，2026-08-31 改）：B/斜体/列表/链接/图片
+ * 图片（2026-08-31 重构）：
+ *   ① 多选上传（input multiple，逐张串行走 /api/upload），上限 GALLERY_MAX 张
+ *   ② 上传后进「图集条」（编辑器底部缩略图带）——不自动插入正文，编辑区不被图片撑开
+ *   ③ 点缩略图「插入」→ 放到光标处（用户主动控制位置）；已插入图在编辑区压缩为小图
+ *   ④ 图集第 1 张自动作为帖子封面（image_url，由外层通过 onUploadedChange 取 done 列表）
+ *   ⑤ 删除条目 = 删 storage 文件 + 同步移除正文中同 src 的 <img>
+ *   ⑥ 未提交关闭弹窗时由外层（publish-modal）按 onUploadedChange 的 path 列表清理孤儿文件
  * 输出 HTML（editor.getHTML），提交方存 content；渲染端 sanitize 防 XSS
  */
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import {
   Bold, Italic, Strikethrough, Heading2, Heading3,
-  List, ListOrdered, Quote, Code2, Minus, Link2, ImagePlus,
+  List, ListOrdered, Quote, Code2, Minus, Link2, ImagePlus, CornerDownLeft, X,
 } from "lucide-react";
-import { publicImageUrl, uploadImage } from "@/lib/storage";
+import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
+
+/** 图集图片上限（2026-08-31：与 5MB/张 校验协同防滥用） */
+const GALLERY_MAX = 9;
+
+type GalleryItem = {
+  /** 本地唯一 key（上传成功前用于定位条目） */
+  key: string;
+  /** storage path（上传成功后才有，删除/清理用） */
+  path: string;
+  /** 完整公开 URL（插入正文用） */
+  src: string;
+  status: "uploading" | "done" | "error";
+  /** 原始文件（重试用） */
+  file?: File;
+};
+
+/** 图集条目状态 → 容器类（显式映射：check-styles 静态扫描需要字面量类名，勿改回模板拼接） */
+const GALLERY_STATUS_CLASS = {
+  uploading: "is-uploading",
+  done: "is-done",
+  error: "is-error",
+} as const;
 
 export function RichEditor({
   value,
   onChange,
   upload,
   compact,
+  onUploadedChange,
 }: {
   /** 初始 HTML（编辑场景传入存量内容） */
   value?: string;
@@ -31,10 +59,13 @@ export function RichEditor({
   onChange: (html: string) => void;
   /** 图片上传凭证（发布/编辑场景提供后显示图片按钮） */
   upload?: { userId: string; postId: string };
-  /** 轻量模式（短帖发布）：仅 4 按钮，工具栏聚焦时浮出，透明无边框 */
+  /** 轻量模式（短帖发布）：工具栏常显，透明无边框 */
   compact?: boolean;
+  /** 已成功上传的 storage path 列表（外层用于封面/孤儿清理；编辑场景可不传） */
+  onUploadedChange?: (paths: string[]) => void;
 }) {
-  const [focused, setFocused] = useState(false);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [galleryHint, setGalleryHint] = useState("");
   const editor = useEditor({
     /* Link 协议白名单（2026-08-29）：编辑器入口即拒绝 javascript:/data: 等危险协议，
      * 与渲染端 sanitizeHtmlForRender 的 URI 白名单形成双保险 */
@@ -59,13 +90,18 @@ export function RichEditor({
       attributes: { class: "rich-editor-content" },
     },
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
-    onFocus: () => setFocused(true),
-    onBlur: () => setFocused(false),
   });
   const fileRef = useRef<HTMLInputElement>(null);
   const uploading = useRef(false);
 
+  /* 上传成功列表上抛（外层取封面 = 第 1 张，未提交关闭时清理孤儿文件） */
+  useEffect(() => {
+    onUploadedChange?.(gallery.filter((it) => it.status === "done" && it.path).map((it) => it.path));
+  }, [gallery, onUploadedChange]);
+
   if (!editor) return <div className="rich-editor" aria-label="编辑器加载中" />;
+
+  const uploadingCount = gallery.filter((it) => it.status === "uploading").length;
 
   /** 链接：prompt 输入（留空清除） */
   function toggleLink() {
@@ -79,19 +115,69 @@ export function RichEditor({
     editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
   }
 
-  /** 图片：上传（复用 /api/upload 魔术字节校验）→ 插入完整公开 URL */
-  async function onPickImage(file: File) {
-    if (!upload || uploading.current) return;
+  /** 多选图片 → 逐张串行上传（一次一张防配额突刺）→ 进图集条（不自动插入正文） */
+  async function onPickImages(files: FileList | null) {
+    if (!files || !upload || uploading.current) return;
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    if (gallery.length + list.length > GALLERY_MAX) {
+      setGalleryHint(`图片最多 ${GALLERY_MAX} 张`);
+      return;
+    }
+    setGalleryHint("");
+    for (const file of list) {
+      const invalid = validateImage(file);
+      if (invalid) {
+        setGalleryHint(invalid);
+        continue;
+      }
+      const key = `g${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+      setGallery((g) => [...g, { key, path: "", src: "", status: "uploading", file }]);
+      uploading.current = true;
+      try {
+        const path = await uploadImage("post", file, upload.userId, upload.postId);
+        setGallery((g) => g.map((it) => (it.key === key ? { ...it, path, src: publicImageUrl("post", path), status: "done" } : it)));
+      } catch {
+        setGallery((g) => g.map((it) => (it.key === key ? { ...it, status: "error" } : it)));
+      } finally {
+        uploading.current = false;
+      }
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  /** 失败重试：用条目保留的原始 File 重新上传 */
+  async function retryUpload(item: GalleryItem) {
+    if (!upload || !item.file || uploading.current) return;
+    setGallery((g) => g.map((it) => (it.key === item.key ? { ...it, status: "uploading" } : it)));
     uploading.current = true;
     try {
-      const path = await uploadImage("post", file, upload.userId, upload.postId);
-      const url = publicImageUrl("post", path);
-      editor.chain().focus().setImage({ src: url }).run();
+      const path = await uploadImage("post", item.file, upload.userId, upload.postId);
+      setGallery((g) => g.map((it) => (it.key === item.key ? { ...it, path, src: publicImageUrl("post", path), status: "done" } : it)));
     } catch {
-      /* 上传失败静默，不打断输入 */
+      setGallery((g) => g.map((it) => (it.key === item.key ? { ...it, status: "error" } : it)));
+    } finally {
+      uploading.current = false;
     }
-    uploading.current = false;
-    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  /** 删除图集条目：删 storage 文件 + 同步移除正文中同 src 的 <img> */
+  function removeFromGallery(item: GalleryItem) {
+    setGallery((g) => g.filter((it) => it.key !== item.key));
+    if (item.path) void removeImage("post", item.path).catch(() => {});
+    if (item.src) removeImageFromDoc(item.src);
+  }
+
+  /** 按 src 移除正文中的 <img>（Tiptap 无内置命令，遍历 doc 删除节点） */
+  function removeImageFromDoc(src: string) {
+    const positions: number[] = [];
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === "image" && node.attrs.src === src) positions.push(pos);
+    });
+    if (positions.length === 0) return;
+    let tr = editor.state.tr;
+    for (const pos of positions.reverse()) tr = tr.delete(pos, pos + 1);
+    editor.view.dispatch(tr);
   }
 
   const btn = (active: boolean, onClick: () => void, title: string, icon: React.ReactNode) => (
@@ -107,18 +193,32 @@ export function RichEditor({
     </button>
   );
 
+  /** 图片按钮（upload 凭证存在时显示；上传中禁用） */
+  const imageBtn = upload && (
+    <button
+      type="button"
+      className="rich-tool-btn"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => fileRef.current?.click()}
+      disabled={uploadingCount > 0}
+      title="添加图片（可多选，最多 9 张）"
+      aria-label="添加图片"
+    >
+      <ImagePlus size={15} />
+    </button>
+  );
+
   return (
     <div className={`rich-editor${compact ? " compact" : ""}`}>
       {compact ? (
-        /* 轻量模式：聚焦时右上角浮出迷你工具栏（点击按钮不夺焦，onMouseDown preventDefault 保证不触发 blur） */
-        focused && (
-          <div className="rich-toolbar rich-toolbar-compact" role="toolbar" aria-label="文本格式工具栏">
-            {btn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), "加粗", <Bold size={15} />)}
-            {btn(editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), "斜体", <Italic size={15} />)}
-            {btn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), "列表", <List size={15} />)}
-            {btn(editor.isActive("link"), toggleLink, "链接", <Link2 size={15} />)}
-          </div>
-        )
+        /* 轻量模式（2026-08-31 起常显，不再聚焦浮出——更易被发现；点击按钮不夺焦） */
+        <div className="rich-toolbar rich-toolbar-compact" role="toolbar" aria-label="文本格式工具栏">
+          {btn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), "加粗", <Bold size={15} />)}
+          {btn(editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), "斜体", <Italic size={15} />)}
+          {btn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), "列表", <List size={15} />)}
+          {btn(editor.isActive("link"), toggleLink, "链接", <Link2 size={15} />)}
+          {imageBtn}
+        </div>
       ) : (
         <div className="rich-toolbar" role="toolbar" aria-label="富文本工具栏">
           {btn(editor.isActive("heading", { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), "标题", <Heading2 size={15} />)}
@@ -141,35 +241,73 @@ export function RichEditor({
           >
             <Minus size={15} />
           </button>
-          {upload && (
-            <button
-              type="button"
-              className="rich-tool-btn"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => fileRef.current?.click()}
-              title="插入图片"
-              aria-label="插入图片"
-            >
-              <ImagePlus size={15} />
-            </button>
-          )}
+          {imageBtn}
         </div>
       )}
-      {/* 轻量模式占位文案（TipTap 无内置 placeholder 扩展，零依赖用 isEmpty 判断） */}
-      {compact && editor.isEmpty && (
-        <span className="rich-placeholder" aria-hidden="true">分享你发现的好东西，或介绍你的内容…（可加 #标签）</span>
-      )}
+      {/* 正文容器：EditorContent 必须始终渲染（2026-08-31 回归修复——若按 isEmpty 条件渲染整个容器，
+          用户一输入 isEmpty 变 false → 容器卸载 → 编辑区消失且内容丢失）；
+          占位文案只是 overlay，按 isEmpty 单独显隐 */}
+      <div className="rich-editor-body">
+        {compact && editor.isEmpty && (
+          <span className="rich-placeholder" aria-hidden="true">分享你发现的好东西，或介绍你的内容…（可加 #标签）</span>
+        )}
+        <EditorContent editor={editor} />
+      </div>
       <input
         ref={fileRef}
         type="file"
         accept="image/jpeg,image/png,image/webp,image/gif"
+        multiple
         hidden
         onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void onPickImage(file);
+          void onPickImages(event.target.files);
         }}
       />
-      <EditorContent editor={editor} />
+
+      {/* 图集条（2026-08-31：多图管理区；图片不自动插入正文，编辑区保持干净） */}
+      {(gallery.length > 0 || galleryHint) && (
+        <div className="rich-gallery" role="list" aria-label="已上传图片">
+          {gallery.map((item) => (
+            <div className={`rich-gallery-item ${GALLERY_STATUS_CLASS[item.status]}`} key={item.key} role="listitem">
+              {item.src && <img src={item.src} alt="" />}
+              {item.status === "uploading" && <span className="rich-gallery-status">上传中…</span>}
+              {item.status === "error" && (
+                <span className="rich-gallery-error">
+                  <button type="button" onClick={() => void retryUpload(item)}>重试</button>
+                </span>
+              )}
+              {item.status === "done" && (
+                <span className="rich-gallery-actions">
+                  <button
+                    type="button"
+                    title="插入到正文光标处"
+                    onClick={() => {
+                      editor.chain().focus().setImage({ src: item.src }).run();
+                    }}
+                  >
+                    <CornerDownLeft size={12} />
+                  </button>
+                  <button type="button" title="删除" onClick={() => removeFromGallery(item)}>
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+            </div>
+          ))}
+          {gallery.length < GALLERY_MAX && (
+            <button
+              type="button"
+              className="rich-gallery-add"
+              disabled={uploadingCount > 0}
+              onClick={() => fileRef.current?.click()}
+              aria-label="继续添加图片"
+            >
+              <ImagePlus size={14} />
+            </button>
+          )}
+          {galleryHint && <span className="rich-gallery-hint">{galleryHint}</span>}
+        </div>
+      )}
     </div>
   );
 }

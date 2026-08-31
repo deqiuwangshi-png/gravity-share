@@ -120,8 +120,12 @@
   text-decoration: underline;
 }
 
+/* 编辑区图片（2026-08-31：压缩为小图显示，不再撑满编辑区占排版空间；
+ * 完整大图见帖子详情渲染端，编辑区保持「写字优先」） */
 .rich-editor-content img {
   max-width: 100%;
+  max-height: 140px;
+  width: auto;
   border-radius: 8px;
 }
 
@@ -206,8 +210,8 @@
   border-radius: 8px;
 }
 
-/* --- compact 轻量模式（短帖发布，2026-08-29）---
- * 透明无边框，与发布弹窗输入区视觉融合；工具栏仅聚焦时右上角浮出；空态占位文案 */
+/* --- compact 轻量模式（短帖发布，2026-08-29；2026-08-31 工具栏改常显）---
+ * 透明无边框，与发布弹窗输入区视觉融合；工具栏常显（不再聚焦浮出）；空态占位文案 */
 
 .rich-editor.compact {
   position: relative;
@@ -215,6 +219,12 @@
   border-radius: 0;
   background: transparent;
   overflow: visible;
+}
+
+/* 正文容器（2026-08-31：占位文案的定位上下文——工具栏改常显后，
+ * 文案若相对整个编辑器定位会与工具栏重叠；改为相对正文区定位即自动避开工具栏） */
+.rich-editor-body {
+  position: relative;
 }
 
 /* 编辑区对齐原 textarea 的视觉（15px/1.9，透明底）；
@@ -241,29 +251,119 @@
   user-select: none;
 }
 
-/* 聚焦浮出工具栏：右上角气泡 */
+/* 常显工具栏（2026-08-31：不再聚焦浮出，发布表单顶部固定一行，更易被发现） */
 .rich-toolbar-compact {
-  position: absolute;
-  top: 4px;
-  right: 12px;
-  z-index: 2;
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--surface);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  animation: rich-toolbar-pop 140ms ease;
+  padding: 0 0 8px;
 }
 
-@keyframes rich-toolbar-pop {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* --- 图集条（2026-08-31：多图上传管理区）---
+ * 上传的图片进这里（不自动插入正文，编辑区不被撑开）；第 1 张自动作帖子封面
+ * 条目操作：hover 显示「插入正文 / 删除」；失败显示重试；上传中显示进度 */
+
+.rich-gallery {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.rich-gallery-item {
+  position: relative;
+  flex: 0 0 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-hover);
+}
+
+.rich-gallery-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rich-gallery-item.is-uploading img {
+  opacity: 0.4;
+}
+
+.rich-gallery-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 11px;
+}
+
+.rich-gallery-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+}
+
+.rich-gallery-error button {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.rich-gallery-actions {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+}
+
+.rich-gallery-actions button {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 3px 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+
+.rich-gallery-actions button:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.rich-gallery-add {
+  flex: 0 0 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--border-primary);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.rich-gallery-add:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rich-gallery-hint {
+  margin-left: auto;
+  padding-right: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
 }

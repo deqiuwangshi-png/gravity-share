@@ -76,7 +76,9 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
               </a>
             )
           )}
-          {post.imageUrl && (
+          {/* 2026-08-31：正文富文本已含 <img>（图集插入）时不再单独显示封面图，防重复展示；
+              图集第 1 张仍写入 image_url 供卡片/列表作封面 */}
+          {post.imageUrl && !post.content.includes("<img") && (
             /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
             <img className="square-post-image" src={publicImageUrl("post", post.imageUrl)} alt="帖子配图" />
           )}

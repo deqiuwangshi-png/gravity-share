@@ -43,6 +43,12 @@
   background: var(--primary-dark);
 }
 
+/* 提交中（2026-08-31 防重复提交：禁用 + 降透明度，避免用户反复点击误发多条） */
+.publish-immersive-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* ---------- 发布通用字段（合并后共用） ---------- */
 
 .publish-field {
@@ -138,46 +144,6 @@
 }
 
 .publish-optional {
-  color: var(--text-soft);
-}
-
-/* 话题配图（S-1 起，发布入口 C 可选；入口 B 推广图片复用） */
-.publish-topic-image {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.publish-topic-image-preview {
-  width: 64px;
-  height: 64px;
-  border-radius: 10px;
-  object-fit: cover;
-  background: var(--bg-hover);
-}
-
-.publish-topic-image-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  white-space: nowrap;
-  transition: border-color 180ms ease, color 180ms ease;
-}
-
-.publish-topic-image-btn:hover {
-  border-color: var(--border-primary);
-  color: var(--primary);
-}
-
-.publish-topic-image-btn.remove {
-  border-color: transparent;
   color: var(--text-soft);
 }
 
