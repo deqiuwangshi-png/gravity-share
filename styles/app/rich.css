@@ -2,6 +2,9 @@
 
 /* --- 编辑器容器 --- */
 .rich-editor {
+  /* 2026-08-31 修复：grid 子项 min-width:auto + 长 URL 不换行会把父容器撑破 → 允许收缩 + 锁死自身宽度 */
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
   background: var(--surface);
@@ -42,6 +45,12 @@
 
 .rich-editor-content {
   min-height: 180px;
+  /* 2026-08-31 修复：长 URL 无空格不换行 → intrinsic width 撑开 modal；
+     overflow-wrap:anywhere 允许任意断行（长链接在编辑器内换行，不再撑破父容器） */
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   padding: 12px 14px;
   outline: 0;
   color: var(--foreground);
@@ -133,7 +142,9 @@
 .rich-content {
   font-size: 14px;
   line-height: 1.8;
+  /* 2026-08-31 修复：与编辑区同规则，长 URL 在详情页正文内换行（防 flex/grid 容器被 min-content 撑破） */
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .rich-content p {
@@ -341,6 +352,16 @@
 
 .rich-gallery-actions button:hover {
   background: rgba(0, 0, 0, 0.75);
+}
+
+/* 图集排序（037 左移/右移）：首尾位置对应按钮禁用 */
+.rich-gallery-actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.rich-gallery-actions button:disabled:hover {
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .rich-gallery-add {

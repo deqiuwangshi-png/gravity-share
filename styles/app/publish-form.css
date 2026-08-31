@@ -6,6 +6,8 @@
 
 .publish-immersive {
   display: grid;
+  /* 2026-08-31 修复：单列 grid 轨道默认 minmax(auto,1fr)，编辑器长 URL 的 min-content 会撑开轨道 → minmax(0,1fr) 锁死轨道宽度 */
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
 }
 
@@ -117,77 +119,10 @@
   font-weight: 600;
 }
 
-/* 商业警示条 */
-.publish-warning {
-  margin: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  background: var(--accent-soft);
-  color: var(--on-accent);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
 /* 发布失败提示（2b 写库后） */
 .publish-error {
   margin: -6px 0 10px;
   color: var(--error);
   font-size: 12px;
-}
-
-/* 推广表单改版（2026-08-22）：必填/选填标记（副文案与字数计数已按 UI 精简移除） */
-.publish-optional {
-  font-style: normal;
-  font-weight: 500;
-  font-size: 11px;
-}
-
-.publish-optional {
-  color: var(--text-soft);
-}
-
-/* 可选标注（2026-08-27 三入口合并；视觉减负：并排单行胶囊 + 精简文案 + title 悬浮说明） */
-.publish-toggles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.publish-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 12px;
-  white-space: nowrap;
-  transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
-}
-
-.publish-toggle:hover {
-  border-color: var(--border-primary);
-  color: var(--primary);
-}
-
-.publish-toggle.on {
-  border-color: var(--primary);
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-weight: 600;
-}
-
-.publish-toggle input {
-  margin: 0;
-  accent-color: var(--primary);
-}
-
-/* 勾选后展开区（披露输入 / 来源平台） */
-.publish-toggle-sub {
-  display: grid;
-  gap: 10px;
 }
 

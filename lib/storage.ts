@@ -55,6 +55,15 @@ export function publicImageUrl(target: UploadTarget, path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketOf(target)}/${path}`;
 }
 
+/** 公开 URL → 存储 path（publicImageUrl 的反函数，仅 posts 桶用于编辑时图集预载存量图）
+ * 非本桶公开 URL / 外链返回 null（不预载，避免误删他人文件） */
+export function pathFromPublicUrl(url: string): string | null {
+  const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/posts/`;
+  if (!url.startsWith(base)) return null;
+  const path = url.slice(base.length).split("?")[0];
+  return path || null;
+}
+
 /* 头像外部 URL 白名单（OAuth provider 图床域名）——防第三方用头像追踪浏览者 IP（审计 P1）
  * users.avatar_url 用户可自改为任意 http URL，非白名单一律回退首字母渲染 */
 const AVATAR_TRUSTED_HOSTS = ["githubusercontent.com", "googleusercontent.com", "gravatar.com"];

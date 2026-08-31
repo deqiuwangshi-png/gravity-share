@@ -17,6 +17,8 @@
 
 .modal-box {
   width: min(560px, 100%);
+  /* 2026-08-31 修复：flex 子项默认 min-width:auto，长内容（编辑器长 URL）会撑破宽度约束 → 显式放行收缩 */
+  min-width: 0;
   padding: 28px;
   border-radius: 18px;
   background: var(--surface);

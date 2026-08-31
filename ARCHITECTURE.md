@@ -26,7 +26,7 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-036，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-037，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
@@ -211,7 +211,9 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 内容池归一（016） | ✅ | discoveries 退役并入 square_posts：发布统一广场、分类页/个人主页改读 square、`/discover/[id]` 重定向到 `/square/[id]` |
 | vitest 冒烟 | ✅ | 纯函数测试（lib/text.test.ts / lib/links.test.ts / lib/url-policy.test.ts 等）落地 |
 | 安全收口（027） | ✅ | users.badge 列级收写 / promo_orders 加固（状态/定价/归属）/ 举报与认证限频 / 内容长度 CHECK（2026-08-29） |
-| 富文本内容（028） | ✅ | content 放宽至 20000 + TipTap 编辑器（B/斜体/列表/链接 4 按钮）+ DOMPurify 双防线 + 富文本链接走 /go 网关（2026-08-29） |
+| 富文本内容（028） | ✅ | content 放宽至 20000 + TipTap 编辑器（B/斜体/列表/链接/图片 + 图集条，第1张作封面）+ DOMPurify 双防线 + 富文本链接走 /go 网关（2026-08-29） |
+| 图片模型统一（P1，2026-08-31） | ✅ | 发布/编辑/详情三端图片模型统一：编辑页预载存量图进图集条（可管理/删）；删除存量图延迟到保存才清 storage（避免取消编辑 → content 回滚仍引用已删文件 → 404）；取消仅清新上传孤儿；详情页封面用精确 URL 匹配替代 `<img` 字符串判断，与 feed 对齐 |
+| 帖子图集化（037，2026-08-31） | ✅ | 图片从正文 HTML 剥离为结构化 `gallery jsonb`（有序 path 数组，第 1 张 = 封面 image_url，≤9 张 CHECK）；发布/编辑写 gallery，保存时 stripImages 剥离正文 img（旧帖保存一次即升级新模型）；图集条左移/右移排序（顺序 = 展示顺序 + 封面）；详情/个人主页渲染 1/2/3 列网格（3 列封顶多行）+ 零依赖 lightbox 点击放大（ESC/左右键/遮罩关闭）；删帖联动清理图集全部文件；旧帖（gallery 空）回退正文内联图 + 封面 |
 | 规模化前置（CSP / 分页缓存 / 迁移 CLI 等） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七；迁移 CLI 经用户决策改用手动复制 |
 
 **防膨胀红线**：新增第 3 套分类体系或第 3 种图标方案前，必须先归一；**图标边界（2026-08-28 P2-3 收口）**：组件 UI 层图标一律 `lucide-react`，配置/数据层（可序列化静态配置，如 config.ts 导航/分类枚举）用 `lib/icons.ts` 字符串表，禁止混层；`lib/queries-*.ts` 任一超过 500 行或新增领域时按需拆分（平层文件取向，不留 re-export 桶，调用方直接改 import）；新增写操作必须先定「RLS / 列级权限 / 触发器 / Handler」归属。

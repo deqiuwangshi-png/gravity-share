@@ -18,6 +18,7 @@ import "@/styles/app/profile-posts.css";
 import "@/styles/app/relation.css";
 import "@/styles/app/publish-form.css";
 import "@/styles/app/rich.css";
+import "@/styles/app/gallery.css";
 import "@/styles/app/promo.css";
 import "@/styles/app/boost.css";
 import "@/styles/app/ad.css";

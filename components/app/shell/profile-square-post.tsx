@@ -13,6 +13,7 @@ import { PostMenu } from "@/components/app/common/post-menu";
 import { AuthorBadge } from "@/components/app/common/author-badge";
 import { SquarePostEditForm } from "@/components/app/square/square-post-edit-form";
 import { AvatarBox } from "@/components/app/common/avatar-box";
+import { PostGallery } from "@/components/app/common/post-gallery";
 import { MessageCircle, Heart, Eye } from "lucide-react";
 import { stripHtml } from "@/lib/text";
 import { isRichText } from "@/lib/rich-content";
@@ -43,6 +44,7 @@ export function ProfileSquarePost({
           content={post.content}
           shareUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/square/${post.id}`}
           imagePath={post.imageUrl}
+          galleryPaths={post.gallery}
           onEdit={() => setEditing(true)}
           onDeleted={onChanged}
         />
@@ -62,9 +64,14 @@ export function ProfileSquarePost({
         <p className="profile-post-body">{isRichText(post.content) ? stripHtml(post.content) : post.content}</p>
       )}
 
-      {post.imageUrl && (
-        /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
-        <img className="profile-post-image" src={publicImageUrl("post", post.imageUrl)} alt="帖子配图" />
+      {/* 图片（037 图集化）：图集非空 → 网格 + 点击放大；空（旧帖）→ 回退单张封面 */}
+      {post.gallery && post.gallery.length > 0 ? (
+        <PostGallery paths={post.gallery} />
+      ) : (
+        post.imageUrl && (
+          /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
+          <img className="profile-post-image" src={publicImageUrl("post", post.imageUrl)} alt="帖子配图" />
+        )
       )}
 
       <div className="profile-post-stats">

@@ -15,6 +15,7 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
     tags: ["AI"],
     url: null,
     image_url: null,
+    gallery: null,
     views: 5,
     likes_count: 3,
     comments_count: 0,

@@ -10,7 +10,6 @@ export function RichContent({ content }: { content: string }) {
     return <LinkifiedText text={content} />;
   }
   return (
-    /* eslint-disable-next-line react/no-danger -- 内容已过 DOMPurify 白名单清洗 + /go 改写（lib/rich-content.ts） */
     <div className="rich-content" dangerouslySetInnerHTML={{ __html: sanitizeHtmlForRender(content) }} />
   );
 }

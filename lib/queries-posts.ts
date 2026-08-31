@@ -20,6 +20,8 @@ export type SquarePostRow = {
   tags: string[];
   url: string | null;
   image_url: string | null;
+  /* 037 图集：有序 storage path 数组（jsonb；空数组 = 旧帖回退正文内联图） */
+  gallery: string[] | null;
   views: number;
   likes_count: number;
   comments_count: number;
@@ -52,6 +54,7 @@ export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
     url: row.url_status === "blocked" ? undefined : (row.url ?? undefined),
     urlStatus: (row.url_status as SquarePostDTO["urlStatus"]) ?? "normal",
     imageUrl: row.image_url ?? undefined,
+    gallery: row.gallery ?? undefined,
     /* 024 展示位：置顶中 = 到期时间 > 当前时刻（过期自动回落自然流） */
     featured: !!row.featured_until && new Date(row.featured_until).getTime() > Date.now(),
     featuredUntil: row.featured_until ?? undefined,

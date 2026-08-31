@@ -72,42 +72,6 @@
   min-height: 88px;
 }
 
-.square-post-edit-image {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.square-post-edit-image-preview {
-  width: 140px;
-  max-height: 88px;
-  border-radius: 10px;
-  object-fit: cover;
-  background: var(--bg-hover);
-}
-
-.square-post-edit-image-btn {
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 12px;
-  transition: border-color 180ms ease, color 180ms ease;
-}
-
-.square-post-edit-image-btn:hover {
-  border-color: var(--border-primary);
-  color: var(--primary);
-}
-
-.square-post-edit-image-btn.remove:hover {
-  border-color: var(--error);
-  color: var(--error);
-}
-
 .square-post-edit-error {
   margin: 0;
   color: var(--error);

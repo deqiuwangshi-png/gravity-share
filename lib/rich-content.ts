@@ -73,3 +73,24 @@ export function sanitizeHtmlForRender(html: string): string {
 export function isRichText(content: string): boolean {
   return /<[a-z][\s\S]*>/i.test(content);
 }
+
+/** 提取富文本正文中的 <img> src 列表（按出现顺序、去重）
+ * 用于编辑场景把存量图预载进图集条；输入为已 sanitize 的受控 HTML，src 为简单 URL，正则足够。
+ * 返回完整公开 URL（与存储 content 中的 img src 一致），交由 pathFromPublicUrl 反解 storage path。 */
+export function extractImageUrls(html: string): string[] {
+  const urls: string[] = [];
+  const re = /<img[^>]+src=["']([^"']+)["']/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    const src = m[1];
+    if (src && !urls.includes(src)) urls.push(src);
+  }
+  return urls;
+}
+
+/** 移除富文本正文中的全部 <img> 标签（037 图集化：图片统一进 gallery，正文纯文字）
+ * 保存前调用（先 sanitize 再剥离，保证剥离对象是受控 HTML）；其余标签原样保留。
+ * TipTap getHTML 输出 `<img src="…">`（无自闭合），正则同时兼容 `<img … />`。 */
+export function stripImages(html: string): string {
+  return html.replace(/<img[^>]*>/gi, "");
+}

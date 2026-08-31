@@ -16,9 +16,6 @@ export const MAIN_NAV = [
  */
 export const SQUARE_POST_TYPES = ["share", "opportunity", "content"] as const;
 
-/** 内容入口·来源平台（选填下拉，post_type='content' 跨平台分发标识） */
-export const SOURCE_PLATFORMS = ["微信公众号", "个人博客", "知乎", "CSDN", "掘金", "视频（B站/YouTube 等）", "作品集", "开源项目", "其他"] as const;
-
 /**
  * 广场内容分类（固定枚举，2026-08-23：原「我的领域/探索领域」合并为单层内容分类）
  * 分类是内容属性（发布时落库 square_posts.category），不是用户兴趣标签；
@@ -97,7 +94,6 @@ export const SUBSCRIPTION_PLANS = {
   },
 } as const;
 
-type SubscriptionPlan = keyof typeof SUBSCRIPTION_PLANS;
 export type SubscriptionCycle = "month" | "year";
 
 /**

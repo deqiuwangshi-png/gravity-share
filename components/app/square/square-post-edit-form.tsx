@@ -1,17 +1,18 @@
 /**
  * 广场帖编辑表单（client，详情页 / 个人主页共用）
- * 可改：正文（必填）+ 配图（可选：保留 / 换图 / 移除）
+ * 可改：正文（必填）+ 图集图片（037：与发布一致第 1 张作封面；编辑打开预载存量图集 + 旧帖正文存量图；
+ *   删除存量图延迟到保存才清 storage；保存时 stripImages 剥离正文 img，旧帖保存一次即升级新模型）
  * 链接（2026-08-29 收口）：与发布一致移除独立链接字段——链接统一由富文本正文 <a> 承载；
  *   update 不写 url（存量帖 url 保留，防误删历史链接）
  * 保存：update square_posts（RLS 作者）；换图/移除后联动清理旧图（BUG-14 模式）
  */
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
+import { removeImage, pathFromPublicUrl } from "@/lib/storage";
 import { SQUARE_CATEGORIES } from "@/lib/config";
-import { isRichText, sanitizeHtml } from "@/lib/rich-content";
+import { isRichText, sanitizeHtml, extractImageUrls, stripImages } from "@/lib/rich-content";
 import { RichEditor } from "@/components/app/common/rich-editor";
 import type { SquarePostDTO } from "@/lib/types";
 
@@ -29,26 +30,23 @@ export function SquarePostEditForm({
   const isRich = isRichText(post.content);
   /* 内容分类（固定枚举，随帖子展示模型传入） */
   const [category, setCategory] = useState(post.category);
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState("");
-  /* true = 保留原图；false = 移除配图（换新图时自动覆盖） */
-  const [keepImage, setKeepImage] = useState(true);
+  /* 图集已上传路径（RichEditor onUploadedChange 上抛；封面 = 第 1 张，与发布一致；取消/失败清理孤儿） */
+  const [galleryPaths, setGalleryPaths] = useState<string[]>([]);
+  const onGalleryChange = useCallback((paths: string[]) => setGalleryPaths(paths), []);
+  /* 打开时全部存量图 path（图集 + 正文存量，037 兼容：用于区分本次新上传孤儿，取消时只清新上传的） */
+  const initialExisting = useRef(
+    new Set([
+      ...(post.gallery ?? []),
+      ...extractImageUrls(post.content)
+        .map((url) => pathFromPublicUrl(url))
+        .filter((p): p is string => Boolean(p)),
+    ]),
+  );
+  /* 被用户删除的存量图 path（保存成功后才真删 storage） */
+  const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
+  const onRemovedExistingChange = useCallback((paths: string[]) => setPendingDeletes(paths), []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  function onImageChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    const invalid = validateImage(file);
-    if (invalid) {
-      setError(invalid);
-      return;
-    }
-    setError("");
-    setImage(file);
-    setImagePreview(URL.createObjectURL(file));
-  }
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,40 +55,51 @@ export function SquarePostEditForm({
     if (!text || busy) return;
     setBusy(true);
     setError("");
-    let nextImage: string | null = keepImage ? (post.imageUrl ?? null) : null;
-    if (image) {
-      try {
-        nextImage = await uploadImage("post", image, post.authorId, post.id);
-      } catch {
-        setError("图片上传失败，请重试");
-        setBusy(false);
-        return;
-      }
-    }
+    /* 统一图片模型（与发布一致，037）：封面 = 图集第 1 张；图集空且原封面未被删则保留原封面，否则（删光）置空，避免回退到已删文件 → 404 */
+    const nextImage: string | null =
+      galleryPaths[0] ?? (post.imageUrl && !pendingDeletes.includes(post.imageUrl) ? post.imageUrl : null);
     const { error: updateError } = await createClient()
       .from("square_posts")
-      /* 富文本保存前 sanitize（主防线，与发布一致）；url 不再写入（存量帖 url 保留，防误删历史链接） */
-      .update({ content: isRich ? sanitizeHtml(content) : content.trim(), image_url: nextImage, category })
+      /* 富文本保存前 sanitize（主防线，与发布一致）+ stripImages 剥离正文 img（037：图片统一进图集，正文纯文字；
+         旧帖正文存量图已由预载进 galleryPaths，保存即升级新模型）；url 不再写入（存量帖 url 保留，防误删历史链接） */
+      .update({
+        content: isRich ? stripImages(sanitizeHtml(content)) : content.trim(),
+        image_url: nextImage,
+        gallery: galleryPaths,
+        category,
+      })
       .eq("id", post.id);
     if (updateError) {
-      /* 回滚新图，避免孤儿文件 */
-      if (image && nextImage) void removeImage("post", nextImage);
+      /* 回滚本次新上传的孤儿图（仅 upload，existing 存量图不动——保存失败数据库未变，仍引用这些图） */
+      galleryPaths
+        .filter((path) => !initialExisting.current.has(path))
+        .forEach((path) => void removeImage("post", path).catch(() => {}));
       setError("保存失败，请重试");
       setBusy(false);
       return;
     }
-    /* 换图 / 移除：清理旧图 */
-    if ((image || !keepImage) && post.imageUrl && post.imageUrl !== nextImage) {
+    /* 封面变更：清理旧封面图 */
+    if (post.imageUrl && post.imageUrl !== nextImage) {
       void removeImage("post", post.imageUrl);
     }
+    /* 保存成功：清理被删除的存量图（延迟删除，避免取消编辑 → content 回滚仍引用 → 404） */
+    pendingDeletes.forEach((path) => void removeImage("post", path).catch(() => {}));
     setBusy(false);
     onDone();
+  }
+
+  /** 取消编辑：仅清理本次新上传且未删的孤儿图（existing 存量图不动——content 回滚后仍引用，删则 404） */
+  function handleCancel() {
+    galleryPaths
+      .filter((path) => !initialExisting.current.has(path))
+      .forEach((path) => void removeImage("post", path).catch(() => {}));
+    onCancel();
   }
 
   return (
     <form className="square-post-edit" onSubmit={(event) => void save(event)} onClick={(event) => event.stopPropagation()}>
       {isRich ? (
-        <RichEditor value={content} onChange={setContent} upload={{ userId: post.authorId, postId: post.id }} />
+        <RichEditor value={content} onChange={setContent} upload={{ userId: post.authorId, postId: post.id }} onUploadedChange={onGalleryChange} onRemovedExistingChange={onRemovedExistingChange} galleryPaths={post.gallery} />
       ) : (
         <textarea
           rows={4}
@@ -116,43 +125,12 @@ export function SquarePostEditForm({
         </div>
       </div>
 
-      <div className="square-post-edit-image">
-        {/* 当前展示图：新预览 > 保留原图 > 无 */}
-        {imagePreview ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- 本地预览 */
-          <img className="square-post-edit-image-preview" src={imagePreview} alt="新配图预览" />
-        ) : keepImage && post.imageUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
-          <img className="square-post-edit-image-preview" src={publicImageUrl("post", post.imageUrl)} alt="当前配图" />
-        ) : null}
-
-        <input
-          id={`square-edit-image-${post.id}`}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          hidden
-          onChange={onImageChange}
-        />
-        <label className="square-post-edit-image-btn" htmlFor={`square-edit-image-${post.id}`} role="button">
-          {image ? "更换图片" : post.imageUrl ? "更换图片" : "添加图片"}
-        </label>
-        {(post.imageUrl || image) && (
-          <button
-            type="button"
-            className="square-post-edit-image-btn remove"
-            onClick={() => {
-              setImage(null);
-              setImagePreview("");
-              setKeepImage(false);
-            }}
-          >移除图片</button>
-        )}
-      </div>
+      {/* 图片管理已统一到正文 RichEditor 图集条（第 1 张作封面），无独立封面区 */}
 
       {error && <p className="square-post-edit-error" role="alert">{error}</p>}
 
       <div className="square-post-edit-actions">
-        <button type="button" onClick={onCancel}>取消</button>
+        <button type="button" onClick={handleCancel}>取消</button>
         <button type="submit" disabled={busy || !content.replace(/<[^>]*>/g, "").trim()}>{busy ? "保存中…" : "保存"}</button>
       </div>
     </form>

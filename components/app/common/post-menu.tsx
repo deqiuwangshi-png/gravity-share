@@ -32,6 +32,7 @@ export function PostMenu({
   content,
   shareUrl,
   imagePath,
+  galleryPaths,
   onEdit,
   onDeleted,
 }: {
@@ -45,6 +46,8 @@ export function PostMenu({
   shareUrl?: string;
   /** 关联配图存储 path（post 桶），删除时联动清理 */
   imagePath?: string;
+  /** 关联图集存储 path 数组（037），删除时与封面一起联动清理 */
+  galleryPaths?: string[];
   /** 点「修改」触发（仅本人分支可见） */
   onEdit?: () => void;
   /** 删除成功后回调（跳转 / 刷新） */
@@ -108,8 +111,10 @@ export function PostMenu({
       show("删除失败，请重试", "danger");
       return;
     }
-    /* 内容已删：配图联动清理（删图失败静默，避免孤儿文件） */
-    if (imagePath) void removeImage("post", imagePath);
+    /* 内容已删：配图联动清理（封面 + 图集全部，删图失败静默，避免孤儿文件） */
+    [...new Set([...(galleryPaths ?? []), ...(imagePath ? [imagePath] : [])])].forEach((path) =>
+      void removeImage("post", path).catch(() => {}),
+    );
     show("已删除");
     if (onDeleted) onDeleted();
     else router.refresh();

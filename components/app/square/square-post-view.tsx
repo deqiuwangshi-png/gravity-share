@@ -15,6 +15,7 @@ import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { LinkifiedText } from "@/components/app/common/linkified-text";
 import { RichContent } from "@/components/app/common/rich-content";
+import { PostGallery } from "@/components/app/common/post-gallery";
 import { isRichText } from "@/lib/rich-content";
 import { publicImageUrl } from "@/lib/storage";
 import { sanitizeUrl } from "@/lib/url-policy";
@@ -29,6 +30,10 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
    * linkHref 走 /go 网关，失败亦不渲染——不再回退原始值（防 javascript:/data: 绕过） */
   const linkUrl = post.url && !post.content.includes(post.url) ? sanitizeUrl(post.url) : null;
   const linkHref = linkUrl ? safeHref(linkUrl) : null;
+  /* P1-4：封面 = image_url；若封面图已插入正文（精确 URL 匹配）则不重复显示，否则显示。
+     用精确 URL 替代脆弱的 "<img" 字面量判断；与 feed 卡片始终用 image_url 作封面对齐。 */
+  const coverSrc = post.imageUrl ? publicImageUrl("post", post.imageUrl) : null;
+  const coverInBody = coverSrc ? post.content.includes(coverSrc) : false;
 
   return (
     <>
@@ -45,6 +50,7 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
           content={post.content}
           shareUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/square/${post.id}`}
           imagePath={post.imageUrl}
+          galleryPaths={post.gallery}
           onEdit={() => setEditing(true)}
           onDeleted={() => router.replace("/home")}
         />
@@ -76,11 +82,15 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
               </a>
             )
           )}
-          {/* 2026-08-31：正文富文本已含 <img>（图集插入）时不再单独显示封面图，防重复展示；
-              图集第 1 张仍写入 image_url 供卡片/列表作封面 */}
-          {post.imageUrl && !post.content.includes("<img") && (
-            /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
-            <img className="square-post-image" src={publicImageUrl("post", post.imageUrl)} alt="帖子配图" />
+          {/* 图片（037 图集化）：图集非空 → 底部网格 + 点击放大；空（旧帖）→ 回退封面图
+              封面（image_url）已入正文则不重复显示，避免与图集首图重复 */}
+          {post.gallery && post.gallery.length > 0 ? (
+            <PostGallery paths={post.gallery} />
+          ) : (
+            coverSrc && !coverInBody && (
+              /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
+              <img className="square-post-image" src={coverSrc} alt="帖子配图" />
+            )
           )}
           {post.postType === "opportunity" && (
             <p className="square-post-notice opportunity"><b>⚠ 机会</b>{post.commission ? ` · ${post.commission}` : ""}</p>

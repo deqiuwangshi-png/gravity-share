@@ -1,13 +1,10 @@
 /**
- * 发布弹窗（client，2026-08-27 三入口合并改版；2026-08-29 正文升级轻量富文本）
- * 分享 / 机会 / 内容 三入口 → 单一表单 + 两个可选标注（产品决策：发布性质从「必选入口」降级为「可选标注」）
+ * 发布弹窗（client，2026-08-27 三入口合并改版；2026-08-29 正文升级轻量富文本；2026-08-31 移除可选标注）
  * 统一发布到广场（square_posts）——广场 = 全量供给池，首页从广场精选推荐
  * 表单字段：正文（必填，RichEditor compact：B/斜体/列表/链接/图片，工具栏常显；图片多选进图集条，第 1 张自动作封面）+ 内容分类（12 选 1 默认「其他」）
  * 链接（2026-08-29 收口）：移除独立「链接」字段——链接统一由富文本正文 <a> 承载（url 字段新帖恒 null）
- * 可选标注（默认都不勾，post_type 由标注映射，库结构不变，015 CHECK 不破）：
- *   ① 推广/有利益关系 → 勾选后必填利益披露 → 帖子标记「机会」（post_type=opportunity，合规必需）
- *   ② 我的原创内容 → 勾选后选来源平台 → 帖子标记「内容」（post_type=content）
- *   都不勾 → 普通分享（post_type=share）
+ * 标注（2026-08-31 移除）：「包含推广/返佣信息」「我的原创内容」两个复选框已删除（用户判定多余非必要），
+ *   新帖统一 post_type=share（存量 opportunity/content 帖标识仍正常渲染，库字段 015 保留）
  * 安全：正文 HTML 入库前 sanitizeHtml（DOMPurify 白名单主防线），字数按纯文本（stripHtml）≤2000 校验
  * 提交成功后 dispatch SQUARE_UPDATED_EVENT，广场重新拉取（刷新不丢）
  */
@@ -16,7 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
-import { SQUARE_CATEGORIES, SOURCE_PLATFORMS, SQUARE_POST_TYPES } from "@/lib/config";
+import { SQUARE_CATEGORIES, SQUARE_POST_TYPES } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { SQUARE_UPDATED_EVENT } from "@/lib/events";
 import { extractTags, stripHtml } from "@/lib/text";
@@ -24,8 +21,14 @@ import { sanitizeHtml } from "@/lib/rich-content";
 import { RichEditor } from "@/components/app/common/rich-editor";
 import { removeImage } from "@/lib/storage";
 
-/* A2 修复（2026-08-23）：post_type 由 SQUARE_POST_TYPES 枚举驱动（与迁移 015 CHECK 同源），不再写死字面量 */
-const [PT_SHARE, PT_OPPORTUNITY, PT_CONTENT] = SQUARE_POST_TYPES;
+/* A2 修复（2026-08-23）：post_type 由 SQUARE_POST_TYPES 枚举驱动（与迁移 015 CHECK 同源），不再写死字面量；
+ * 2026-08-31 移除可选标注后新帖恒为 PT_SHARE（存量 opportunity/content 帖保留渲染） */
+const [PT_SHARE] = SQUARE_POST_TYPES;
+
+/** 生成防重复短 id（同毫秒连发也唯一）；模块级纯函数（2026-08-31 修复：useState 初始化器引用须先于声明） */
+function newId(prefix: string): string {
+  return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
 
 export default function PublishModal({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -35,12 +38,6 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
   /* 共用字段：正文 = 富文本 HTML（轻量格式：B/斜体/列表/链接） */
   const [html, setHtml] = useState("");
   const [category, setCategory] = useState<string>("其他");
-  /* 可选标注 ①：推广 / 有利益关系（勾选后披露必填，合规必需） */
-  const [isPromo, setIsPromo] = useState(false);
-  const [commission, setCommission] = useState("");
-  /* 可选标注 ②：我的原创内容（勾选后选来源平台） */
-  const [isOriginal, setIsOriginal] = useState(false);
-  const [sourcePlatform, setSourcePlatform] = useState("");
   /* 图片（2026-08-31 图集化）：多图经 RichEditor 图集条上传，第 1 张自动作封面（image_url）
    * 原表单单张「配图」区已移除（被图集条取代，DoD ② 删除被取代代码） */
   const [galleryPaths, setGalleryPaths] = useState<string[]>([]);
@@ -80,21 +77,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  /** 生成防重复短 id（同毫秒连发也唯一） */
-  function newId(prefix: string): string {
-    return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-  }
-
-  /* 两个标注互斥：一个帖子要么推广、要么原创、要么普通分享（post_type 三选一） */
-  function togglePromo(v: boolean) {
-    setIsPromo(v);
-    if (v) setIsOriginal(false);
-  }
-
-  function toggleOriginal(v: boolean) {
-    setIsOriginal(v);
-    if (v) setIsPromo(false);
-  }
+  /* 两个标注已移除（2026-08-31）：发布性质恒为普通分享，无互斥切换逻辑 */
 
   async function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -113,11 +96,6 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       return;
     }
     setSubmitError("");
-    /* 合规红线：勾选推广必须披露利益关系，否则拦截 */
-    if (isPromo && !commission.trim()) {
-      setSubmitError("勾选了推广/有利益关系，请填写利益披露（如返佣比例、奖励内容）");
-      return;
-    }
     /* 全部同步校验通过后才上锁（校验失败 return 不影响下次点击） */
     submittingRef.current = true;
     setSubmitting(true);
@@ -140,14 +118,13 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
         /* 2026-08-29 收口：独立链接字段已移除，新帖 url 恒 null（链接统一由正文 <a> 承载） */
         url: null,
         image_url: imageUrl ?? null,
+        /* 037 图集：有序 storage path 数组（第 1 张 = 封面 image_url；正文纯文字不含图） */
+        gallery: galleryPaths,
+        /* 2026-08-31 移除可选标注：新帖统一普通分享（015 CHECK 三值，库结构不变）；
+           commission/source_platform 不写入 → 默认 null（存量帖字段保留供渲染） */
+        post_type: PT_SHARE,
       };
-      /* 标注映射 post_type（015 CHECK 约束三值，库结构不变） */
-      const extra = isPromo
-        ? { post_type: PT_OPPORTUNITY, commission: commission.trim() || null, source_platform: null }
-        : isOriginal
-          ? { post_type: PT_CONTENT, source_platform: sourcePlatform || null, commission: null }
-          : { post_type: PT_SHARE, commission: null, source_platform: null };
-      const { error } = await supabase.from("square_posts").insert({ ...base, ...extra });
+      const { error } = await supabase.from("square_posts").insert(base);
       if (error) {
         /* BUG-14 扩展：insert 失败回滚本次上传的全部图片，避免孤儿文件 */
         galleryPaths.forEach((path) => void removeImage("post", path).catch(() => {}));
@@ -177,46 +154,6 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
         <form className="publish-immersive" onSubmit={handleSubmit}>
             {/* 轻量富文本正文（compact：工具栏常显 B/斜体/列表/链接/图片；图片多选进图集条，第 1 张自动作封面） */}
             <RichEditor compact value={html} onChange={setHtml} upload={uid ? { userId: uid, postId: draftId } : undefined} onUploadedChange={onGalleryChange} />
-
-            {/* 可选标注（并排单行胶囊，悬浮 title 详细说明；勾选后展开披露/来源） */}
-            <div className="publish-toggles">
-              <label
-                className={`publish-toggle${isPromo ? " on" : ""}`}
-                title="含返佣、奖励、分佣等利益关系；勾选后需填写披露，帖子显示「机会」标识"
-              >
-                <input type="checkbox" checked={isPromo} onChange={(event) => togglePromo(event.target.checked)} />
-                <span>包含推广/返佣信息</span>
-              </label>
-              <label
-                className={`publish-toggle${isOriginal ? " on" : ""}`}
-                title="你在别处创作的内容（博客 / 视频 / 作品集…），可标注来源平台"
-              >
-                <input type="checkbox" checked={isOriginal} onChange={(event) => toggleOriginal(event.target.checked)} />
-                <span>我的原创内容</span>
-              </label>
-            </div>
-            {isPromo && (
-              <div className="publish-toggle-sub">
-                <label className="publish-field">
-                  <span>利益披露 <i className="publish-optional">必填</i></span>
-                  <input type="text" value={commission} onChange={(event) => setCommission(event.target.value)} placeholder="如：邀请返佣比例、分佣比例、积分奖励等利益关系" aria-label="利益披露" />
-                </label>
-                <p className="publish-warning">推广内容含利益关系，请如实披露；平台将加官方「机会」标识，帮助用户识别。</p>
-              </div>
-            )}
-            {isOriginal && (
-              <div className="publish-toggle-sub">
-                <label className="publish-field">
-                  <span>来源平台 <i className="publish-optional">选填</i></span>
-                  <select value={sourcePlatform} onChange={(event) => setSourcePlatform(event.target.value)} aria-label="来源平台">
-                    <option value="">不标注</option>
-                    {SOURCE_PLATFORMS.map((name) => (
-                      <option key={name} value={name}>{name}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            )}
 
             {/* 内容分类（固定枚举，默认「其他」可改；分类是内容属性，与 #标签 分离） */}
             <div className="publish-field publish-type-field">
