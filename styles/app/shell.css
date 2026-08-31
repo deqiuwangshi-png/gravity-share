@@ -140,6 +140,24 @@
   font-family: inherit;
 }
 
+/* 清除搜索按钮（2026-08-31：有输入时显示，点击退出搜索态回 /home） */
+.global-search-clear {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.global-search-clear:hover {
+  color: var(--foreground);
+}
+
 .topbar-actions {
   display: flex;
   align-items: center;

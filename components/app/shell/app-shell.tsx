@@ -3,13 +3,13 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Logo } from "@/components/common/logo";
 import { SettingsPanel, type PanelId } from "./settings-panel";
 import { UserMenu } from "./user-menu";
 import { NotificationDrawer, NotificationTrigger } from "./notification-drawer";
 import { MAIN_NAV } from "@/lib/config";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
 import { fetchNotifications } from "@/lib/queries-notifications";
@@ -27,6 +27,8 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchRef = useRef<HTMLInputElement>(null);
 
   /** 最小搜索：回车跳 /home?q=…，由 SquareFeed 用 useSearchParams 过滤（零新依赖，2026-08-27 方案A 广场合并首页后目标改为 /home） */
   function onSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -34,6 +36,25 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
     const q = search.trim();
     router.push(q ? `/home?q=${encodeURIComponent(q)}` : "/home");
   }
+
+  /* 搜索词回显（2026-08-31）：路由变化时把 URL ?q= 同步进输入框——从 /home?q=xx 进入或搜索后离开再回来，搜索态不丢失 */
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q") ?? "";
+    setSearch(q);
+  }, [pathname]);
+
+  /* 全局 / 快捷键（2026-08-31 兑现 kbd 提示）：焦点不在输入类元素时按 / → 聚焦搜索框（阻止浏览器找字默认行为） */
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const el = document.activeElement;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || (el as HTMLElement).isContentEditable)) return;
+      event.preventDefault();
+      searchRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   /* 未读红点：查库（2c）；抽屉内已读后监听事件刷新 */
   useEffect(() => {
@@ -55,7 +76,19 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
     </aside>
     <main className="app-main">
       <header className="app-topbar">
-        <form className="global-search" onSubmit={onSearchSubmit}><span className="app-search-icon"><Search size={16} /></span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索你需要的东西……（回车搜索）" aria-label="全局搜索" /><kbd>/</kbd></form>
+        <form className="global-search" onSubmit={onSearchSubmit}><span className="app-search-icon"><Search size={16} /></span><input ref={searchRef} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索你需要的东西……（回车搜索，/ 快捷聚焦）" aria-label="全局搜索" />
+          {search && (
+            <button
+              type="button"
+              className="global-search-clear"
+              aria-label="清除搜索"
+              onClick={() => {
+                setSearch("");
+                router.push("/home");
+              }}
+            ><X size={13} /></button>
+          )}
+          <kbd>/</kbd></form>
         <div className="topbar-actions">
           <NotificationTrigger
             open={notifyOpen}
