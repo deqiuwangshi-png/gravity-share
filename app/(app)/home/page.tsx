@@ -21,8 +21,11 @@ export const metadata: Metadata = {
  */
 export default async function HomePage() {
   const supabase = await createClient();
-  const announcements = await fetchAnnouncements(supabase);
-  const initialPosts = await fetchSquarePosts(supabase, 100);
+  /* P1-1 性能优化（2026-08-31）：公告 + 帖子两个查询并行发，不再排队串行等待 */
+  const [announcements, initialPosts] = await Promise.all([
+    fetchAnnouncements(supabase),
+    fetchSquarePosts(supabase, 100),
+  ]);
 
   return <div className="app-content app-layout">
     <div className="app-feed">

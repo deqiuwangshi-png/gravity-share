@@ -1,18 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/common/logo";
 import { SettingsPanel, type PanelId } from "./settings-panel";
 import { UserMenu } from "./user-menu";
 import { NotificationDrawer, NotificationTrigger } from "./notification-drawer";
-import PublishModal from "./publish-modal";
 import { MAIN_NAV } from "@/lib/config";
 import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
 import { fetchNotifications } from "@/lib/queries-notifications";
+
+/* P0-1 性能优化（2026-08-31）：发布弹窗动态导入——Tiptap 编辑器全家从 app 首屏主 bundle 拆出，
+ * 仅在点「+ 发布」时按需加载，导航/首屏不再解析这段大 JS */
+const PublishModal = dynamic(() => import("./publish-modal"), { ssr: false, loading: () => null });
 
 type NavItem = readonly [string, string, string];
 

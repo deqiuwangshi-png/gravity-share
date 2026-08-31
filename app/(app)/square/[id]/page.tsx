@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { headers } from "next/headers";
 import { SquareActions } from "@/components/app/square/square-actions";
 import { SquarePostView } from "@/components/app/square/square-post-view";
@@ -13,10 +14,16 @@ import { bumpViews, fetchSquarePostById } from "@/lib/queries-posts";
 import { stripHtml } from "@/lib/text";
 import { SITE_URL, buildArticle, jsonLd } from "@/lib/seo";
 
+/* P0-2 性能优化（2026-08-31）：同一次请求内 generateMetadata 与页面主体共享同一查询
+ * （React cache 以 id 为 key 去重）——进详情页不再把同一帖查两遍 */
+const getPost = cache(async (id: string) => {
+  const supabase = await createClient();
+  return fetchSquarePostById(supabase, id);
+});
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createClient();
-  const post = await fetchSquarePostById(supabase, id);
+  const post = await getPost(id);
   /* 短帖无独立标题：SEO 标题回落「作者 的话题」，描述取正文纯文本 */
   const pageTitle = post ? `${post.authorName} 的话题` : "话题不存在";
   const desc = post ? stripHtml(post.content) : "";
@@ -34,20 +41,22 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function SquareDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const post = await fetchSquarePostById(supabase, id);
+  /* 与 generateMetadata 共享缓存（P0-2：同一请求内只查一次） */
+  const post = await getPost(id);
   if (!post) notFound();
   /* BUG-4：进入详情 +1 浏览（RPC security definer，失败静默）
    * 023 起：游客传 IP（x-forwarded-for 首段，防刷键，不绑定用户身份）→ 帖子维度计数；
    * 登录用户保留 013 规则（作者不计 + 30 分钟去重）；本地 dev 无代理头 IP 为空 → 游客不计 */
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || null;
-  await bumpViews(supabase, id, ip).catch(() => {});
-  const comments = await fetchComments(supabase, id);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const myId = user?.id ?? "";
+  const supabase = await createClient();
+  /* P0-2 并行化：评论 / 登录态 / 浏览计数三件事同时发，不再排队串行 */
+  const [comments, userRes] = await Promise.all([
+    fetchComments(supabase, id),
+    supabase.auth.getUser(),
+  ]);
+  void bumpViews(supabase, id, ip).catch(() => {});
+  const myId = userRes.data.user?.id ?? "";
 
   return (
     <div className="app-content square-detail-wrap">
