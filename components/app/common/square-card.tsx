@@ -1,9 +1,9 @@
 /**
  * 广场帖子卡片（纯展示，2026-08-23 内容池归一后首页 / 分类详情 / 广场统一复用）
- * 四列内容流 (.home-grid) 承载；头像/昵称/时间 → 正文（3 行截断）→ 机会/来源标识 → 赞/评论/浏览统计；整卡可点 → /square/[id]
+ * 四列内容流 (.home-grid) 承载；头像/昵称/时间 → 正文（3 行截断）→ 机会/来源标识 → 赞/评论统计；整卡可点 → /square/[id]
  */
 import Link from "next/link";
-import { MessageCircle, Heart, Eye } from "lucide-react";
+import { MessageCircle, Heart } from "lucide-react";
 import { AuthorLink } from "@/components/app/common/author-link";
 import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
@@ -40,7 +40,6 @@ export function SquareCard({ post }: { post: SquarePostDTO }) {
       <div className="home-card-stats">
         <span><Heart size={14} />{post.likes}</span>
         <span><MessageCircle size={14} />{post.comments}</span>
-        <span><Eye size={14} />{post.views}</span>
         {(hasUrl(post.content) || post.url) && (
           <span className="home-card-link-mark">{post.url ? hostOf(post.url) : "含链接"}</span>
         )}

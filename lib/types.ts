@@ -44,7 +44,6 @@ export interface SquarePostDTO {
   tags: string[];
   likes: number;
   comments: number;
-  views: number;
   time: string;
   /** 原始发布时间（ISO，2026-08-25 SEO 用：Article datePublished / sitemap lastModified） */
   createdAt: string;

@@ -1,7 +1,7 @@
 /**
  * 查询层 · 广场帖子域（S3 拆分 2026-08-29，自 lib/queries.ts 搬移，零逻辑改动）
  * 调用方注入 client（server 页面传 server.ts 的 cookie 客户端，client 组件传 client.ts 浏览器客户端），
- * 公开读依赖 RLS（anon + 登录用户都可见）；bumpViews 走 RPC（security definer）
+ * 公开读依赖 RLS（anon + 登录用户都可见）
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SquarePostDTO } from "@/lib/types";
@@ -24,7 +24,6 @@ export type SquarePostRow = {
   image_url: string | null;
   /* 037 图集：有序 storage path 数组（jsonb；空数组 = 旧帖回退正文内联图） */
   gallery: string[] | null;
-  views: number;
   likes_count: number;
   comments_count: number;
   created_at: string;
@@ -50,7 +49,6 @@ export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
     tags: row.tags,
     likes: row.likes_count,
     comments: row.comments_count,
-    views: row.views,
     time: formatRelativeTime(row.created_at),
     createdAt: row.created_at,
     /* V8：外链处置（blocked 不渲染链接，内容保留） */
@@ -133,12 +131,4 @@ export async function fetchProfileIds(
     id: row.id,
     createdAt: row.created_at,
   })) ?? [];
-}
-
-/* ---------- BUG-4 浏览计数（RPC：security definer 只 +views，不放开表 update） ---------- */
-/** 浏览 +1（square 详情页进入调用；失败静默不影响展示）
- * 2026-08-27 v2（迁移 023）：ip = 游客防刷键（x-forwarded-for 首段），
- * 游客 user_id 不绑定身份（NULL），仅帖子维度计数；登录用户保留作者不计 + 30 分钟去重 */
-export async function bumpViews(supabase: SupabaseClient, targetId: string, ip?: string | null): Promise<void> {
-  await supabase.rpc("bump_views", { target_type: "square", target_id: targetId, visitor_ip: ip ?? null });
 }

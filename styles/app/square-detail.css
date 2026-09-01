@@ -178,7 +178,7 @@
   color: var(--primary-dark);
 }
 
-/* 互动条：点赞（可点）+ 浏览，带图标（2026-08-22 图标化） */
+/* 互动条：点赞（可点），带图标（2026-08-22 图标化；2026-09-01 浏览量展示下线） */
 .square-actions {
   display: flex;
   align-items: center;
@@ -207,14 +207,6 @@
   padding: 5px 12px;
   border-radius: 999px;
   background: var(--primary-soft);
-}
-
-.square-views {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--text-soft);
-  font-size: 13px;
 }
 
 /* 广场帖子配图（S-1 起，详情展示） */

@@ -58,7 +58,7 @@ export function FeaturedBanner({ posts }: { posts: SquarePostDTO[] }) {
         <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-banner-avatar" badge={post.authorBadge} />
         <div className="square-banner-text">
           <p className="square-banner-content">{isRichText(post.content) ? stripHtml(post.content) : post.content}</p>
-          <small>{post.authorName} · {post.time} · {post.views} 浏览</small>
+          <small>{post.authorName} · {post.time}</small>
         </div>
         <span className="square-banner-arrow">查看 →</span>
       </Link>

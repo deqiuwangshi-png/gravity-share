@@ -52,7 +52,9 @@ supabase/migrations/   001-029（users → 内容 → 互动 → 存储 → 公�
                        推广中心（promo_orders 申请单，申请制人工开通）→ 索引（square_posts）→
                        安全收口（badge 列级收写 / promo_orders 加固 / 举报与认证限频 / 内容长度 CHECK）→
                        内容升级（content 长度放宽至 20000，富文本内容能力）→
-                       title 列回收（drop square_posts.title，长文功能清理），
+                       title 列回收（drop square_posts.title，长文功能清理）→
+                       views 清理（040 drop bump_views RPC / view_events 明细表 / views 列，
+                       MVP 阶段不运营浏览指标），
                        全幂等；手动复制 SQL 执行）
 ```
 

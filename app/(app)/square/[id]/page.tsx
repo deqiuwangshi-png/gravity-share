@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
-import { headers } from "next/headers";
 import { SquareActions } from "@/components/app/square/square-actions";
 import { SquarePostView } from "@/components/app/square/square-post-view";
 import { CommentSection } from "@/components/app/square/comment-section";
@@ -11,7 +10,7 @@ import { AdSlot } from "@/components/common/ad-slot";
 import { AD_SLOTS } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
 import { fetchComments } from "@/lib/queries-comments";
-import { bumpViews, fetchSquarePostById, fetchSquarePosts } from "@/lib/queries-posts";
+import { fetchSquarePostById, fetchSquarePosts } from "@/lib/queries-posts";
 import { stripHtml } from "@/lib/text";
 import { publicImageUrl } from "@/lib/storage";
 import { SITE_URL, buildArticle, jsonLd } from "@/lib/seo";
@@ -75,19 +74,13 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
   /* 与 generateMetadata 共享缓存（P0-2：同一请求内只查一次） */
   const post = await getPost(id);
   if (!post) notFound();
-  /* BUG-4：进入详情 +1 浏览（RPC security definer，失败静默）
-   * 023 起：游客传 IP（x-forwarded-for 首段，防刷键，不绑定用户身份）→ 帖子维度计数；
-   * 登录用户保留 013 规则（作者不计 + 30 分钟去重）；本地 dev 无代理头 IP 为空 → 游客不计 */
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || null;
+  /* P0-2 并行化：评论 / 登录态 两件事同时发，不再排队串行；相关文章与帖子主体并行（P0-6） */
   const supabase = await createClient();
-  /* P0-2 并行化：评论 / 登录态 / 浏览计数三件事同时发，不再排队串行；相关文章与帖子主体并行（P0-6） */
   const [comments, userRes, related] = await Promise.all([
     fetchComments(supabase, id),
     supabase.auth.getUser(),
     getRelated(post.category, post.id),
   ]);
-  void bumpViews(supabase, id, ip).catch(() => {});
   const myId = userRes.data.user?.id ?? "";
   /* 标题提炼（与 generateMetadata 同一函数 → H1 与 SEO title 严格一致） */
   const headline = postHeadline({
@@ -131,7 +124,7 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
         {/* 帖子主体：发帖头 + 三点菜单（本人 删/改/复/享，他人 举报/复/享）+ 正文（可编辑）+ 配图 */}
         <SquarePostView post={post} isOwner={post.authorId === myId} />
 
-        <SquareActions postId={post.id} likes={post.likes} views={post.views} />
+        <SquareActions postId={post.id} likes={post.likes} />
 
         {/* P0-6 相关内容：同分类优先内链（帖子→帖子，形成内容网络；纯 server 渲染，爬虫可沿链接深入） */}
         {related.length > 0 && (

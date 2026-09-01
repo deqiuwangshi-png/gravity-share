@@ -1,15 +1,15 @@
 /**
- * 广场详情互动条（client）：点赞 toggle（2c 落库，计数由数据库触发器维护）+ 浏览量展示
- * 统计项带图标（评论/点赞/浏览），不再纯文字（体验修复）
+ * 广场详情互动条（client）：点赞 toggle（2c 落库，计数由数据库触发器维护）
+ * 2026-09-01 浏览量展示下线（040 清理，MVP 阶段不运营浏览指标）
  */
 "use client";
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { isLiked, toggleLike } from "@/lib/queries-social";
-import { Heart, Eye } from "lucide-react";
+import { Heart } from "lucide-react";
 
-export function SquareActions({ postId, likes, views }: { postId: string; likes: number; views: number }) {
+export function SquareActions({ postId, likes }: { postId: string; likes: number }) {
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState(likes);
   const [busy, setBusy] = useState(false);
@@ -42,7 +42,6 @@ export function SquareActions({ postId, likes, views }: { postId: string; likes:
       >
         <Heart size={15} />{liked ? "已赞" : "赞"} {count}
       </button>
-      <span className="square-views"><Eye size={15} />浏览 {views}</span>
     </div>
   );
 }

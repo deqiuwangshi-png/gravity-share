@@ -26,7 +26,7 @@ app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-038，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-040，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 ```
@@ -70,7 +70,7 @@ yinli/
 │                               square-comment-box / square-post-view / square-post-edit-form /
 │                               square-profile-post / featured-banner / comment-section
 ├── lib/                        数据柜：纯 TS，禁止 import 组件
-│   ├── queries-posts.ts        查询层·帖子域（DTO 映射 / 列表/详情/作者/sitemap / bumpViews）
+│   ├── queries-posts.ts        查询层·帖子域（DTO 映射 / 列表/详情/作者/sitemap）
 │   ├── queries-comments.ts     查询层·评论域（评论读写 + 评论点赞批量态）
 │   ├── queries-notifications.ts 查询层·通知域（我的通知 / 已读操作）
 │   ├── queries-social.ts       查询层·互动域（帖子点赞 / 关注家族 / 关注粉丝列表）
@@ -103,6 +103,8 @@ yinli/
 │                               027 安全收口（users.badge 列级收写 / promo_orders 加固 / 举报与认证限频 / 内容长度 CHECK）→
 │                               028 内容升级（square_posts.content 放宽至 20000，富文本内容能力）；
 │                               029 title 列回收（2026-08-29 长文功能清理：drop square_posts.title，列已移除）；
+│                               040 views 清理（2026-09-01 MVP 阶段不运营浏览指标：drop bump_views RPC /
+│                               view_events 明细表 / square_posts.views 与 discoveries.views 列）；
 │                               全幂等；手动复制 SQL 到 Supabase Dashboard 执行，不引入 CLI）
 ├── vitest.config.ts            vitest 配置 + lib/*.test.ts（纯函数冒烟测试）
 ├── public/                     静态资源
@@ -134,11 +136,11 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 
 **数据安全四层**（v2.7 起）：
 1. **RLS 管身份** —— 内容公开读 + 作者写，互动/通知仅本人（34+ 策略）；
-2. **列级权限管敏感字段** —— `points` 与计数列（`likes_count/views/comments_count`）对 API 直读直写被拒，本人取值走 RPC（`get_my_points`）；
+2. **列级权限管敏感字段** —— `points` 与计数列（`likes_count/comments_count`）对 API 直读直写被拒，本人取值走 RPC（`get_my_points`）；
 3. **触发器管一致性** —— 计数、互动→通知、内容删除→通知清理、OAuth 建档（6+ 函数）；
 4. **service_role 管服务端操作** —— 注销等管理操作走 Route Handler（`lib/supabase/admin.ts`，密钥仅 server 环境，严禁客户端 import）。
 
-写路径：发布/评论/点赞/收藏/关注/已读由 client 直接 `insert/update`（RLS 校验）；敏感读取与浏览计数走 RPC；管理操作走 Route Handler——**新增写操作必须先问「这条规则该在哪一层」**。
+写路径：发布/评论/点赞/收藏/关注/已读由 client 直接 `insert/update`（RLS 校验）；敏感读取走 RPC；管理操作走 Route Handler——**新增写操作必须先问「这条规则该在哪一层」**。
 
 ## 5. 命名与文件规范
 

@@ -14,7 +14,7 @@ import { AuthorBadge } from "@/components/app/common/author-badge";
 import { SquarePostEditForm } from "@/components/app/square/square-post-edit-form";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { PostGallery } from "@/components/app/common/post-gallery";
-import { MessageCircle, Heart, Eye } from "lucide-react";
+import { MessageCircle, Heart } from "lucide-react";
 import { stripHtml } from "@/lib/text";
 import { isRichText } from "@/lib/rich-content";
 import { publicImageUrl } from "@/lib/storage";
@@ -77,7 +77,6 @@ export function ProfileSquarePost({
       <div className="profile-post-stats">
         <span><Heart size={15} />{post.likes}</span>
         <span><MessageCircle size={15} />{post.comments}</span>
-        <span><Eye size={15} />{post.views}</span>
       </div>
     </>
   );

@@ -17,7 +17,6 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
     url: null,
     image_url: null,
     gallery: null,
-    views: 5,
     likes_count: 3,
     comments_count: 0,
     created_at: "2026-08-23T00:00:00.000Z",
