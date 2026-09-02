@@ -27,13 +27,13 @@ function renderInline(text: string) {
 
 function renderSection(section: NoticeSection, idx: number) {
   return (
-    <div key={idx} className="notice-block">
+    <div key={idx}>
       {section.heading && <h2>{section.heading}</h2>}
       {section.sub && <h3>{section.sub}</h3>}
       {section.paras?.map((p, i) => <p key={i}>{renderInline(p)}</p>)}
       {section.quote && (
-        <blockquote className="notice-quote">
-          {section.quote.map((q, i) => <p key={i}>{renderInline(q)}</p>)}
+        <blockquote className="my-4 rounded-lg border-l-[3px] border-primary bg-hover p-[14px_18px]">
+          {section.quote.map((q, i) => <p key={i} className="m-0 mb-2 text-[14px] leading-[1.8] text-muted last:mb-0">{renderInline(q)}</p>)}
         </blockquote>
       )}
       {section.list && (
@@ -68,17 +68,17 @@ export default async function NoticePage({
   if (!article) return notFound();
 
   return (
-    <div className="legal-page">
-      <header className="legal-header">
-        <Link href={fromApp ? "/home" : "/"} className="legal-back">{fromApp ? "← 返回应用主页" : "← 返回首页"}</Link>
+    <div className="mx-auto max-w-[720px] p-[64px_24px_96px]">
+      <header className="mb-16 flex items-center justify-between">
+        <Link href={fromApp ? "/home" : "/"} className="text-[13px] text-muted transition-[color] duration-[180ms] hover:text-primary">{fromApp ? "← 返回应用主页" : "← 返回首页"}</Link>
       </header>
-      <h1>{article.title}</h1>
-      {article.subtitle && <p className="notice-subtitle">{article.subtitle}</p>}
-      <p className="legal-updated">发布于 {article.date} · {article.author}</p>
+      <h1 className="mb-[10px] mt-0 text-[32px] tracking-[-1px]">{article.title}</h1>
+      {article.subtitle && <p className="m-0 -mt-[6px] text-[15px] text-muted">{article.subtitle}</p>}
+      <p className="mb-12 mt-0 text-xs text-soft">发布于 {article.date} · {article.author}</p>
       <article className="legal-section">
         {article.sections.map(renderSection)}
       </article>
-      <footer className="legal-footer">
+      <footer className="mt-[72px] border-t border-line pt-6 text-xs text-soft">
         相关文档：<Link className="legal-link" href="/guidelines">引力社区规范</Link> ·{" "}
         <Link className="legal-link" href="/enforcement">举报与处罚细则</Link> ·{" "}
         <Link className="legal-link" href="/disclaimer">免责声明</Link>

@@ -3,8 +3,9 @@
  * 承载：头像（选文件即上传，BUG-14 回滚/清旧图）+ 昵称（保存时更新）
  * 用户设置「用户设置」tab 保留：邮箱 / 简介 / 加入时间（简介仍在设置里编辑）
  * 封面编辑在主页（profile-view 的「更换封面」），与本弹窗无重复
- * 2026-09-02 迁移：profile-edit-* 框架原子类化（原 styles/app/profile.css）；
- * 内部 settings-* 行控件仍由 settings.css 提供；遮罩壳/面板阴影见 styles/app/decor.css ⑤
+ * 2026-09-02 迁移：profile-edit-* 框架 + settings-* 行控件原子类化
+ * （原 styles/app/profile.css 与 settings.css；行控件与 SettingsPanel 同款，见下方常量）；
+ * 遮罩壳/面板阴影见 styles/app/decor.css ⑤
  */
 "use client";
 
@@ -12,6 +13,14 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { removeImage, safeAvatarUrl, uploadImage, validateImage } from "@/lib/storage";
 import { useToast } from "@/components/app/common/toast";
+
+/* 行控件（原 settings.css .settings-row 族，2026-09-02 原子类化，与 SettingsPanel 同款；[font:inherit] 保真） */
+const rowClass = "flex min-h-[56px] items-center justify-between gap-4 border-b border-line py-4 last:border-0";
+const rowLabelClass = "text-[13px] text-foreground";
+const rowActionClass = "shrink-0 cursor-pointer border-0 bg-transparent text-[13px] font-medium text-primary [font:inherit]";
+const errClass = "-mt-1 mb-2.5 text-xs text-error";
+const inputClass =
+  "ml-auto max-w-[220px] min-w-0 flex-1 rounded-lg border border-line bg-surface p-[7px_10px] text-[13px] text-foreground outline-none focus:border-line-primary [font:inherit]";
 
 export function ProfileEditModal({
   name,
@@ -98,17 +107,17 @@ export function ProfileEditModal({
       <div className="profile-edit-modal w-[min(420px,100%)] overflow-hidden rounded-[14px] bg-background" onClick={(event) => event.stopPropagation()}>
         <header className="flex items-center justify-between border-b border-line px-5 py-[14px]">
           <h3 className="m-0 text-[15px]">编辑个人资料</h3>
-          <button type="button" className="settings-close" onClick={onClose} aria-label="关闭">×</button>
+          <button type="button" className="cursor-pointer border-0 bg-transparent p-1 text-[18px] text-soft" onClick={onClose} aria-label="关闭">×</button>
         </header>
 
         <div className="grid gap-1 px-5 py-[18px]">
-          <div className="settings-row">
-            <span className="settings-row-label">头像</span>
+          <div className={rowClass}>
+            <span className={rowLabelClass}>头像</span>
             {avatar ? (
               // eslint-disable-next-line @next/next/no-img-element -- 用户上传图
-              <img className="settings-avatar-img" src={safeAvatarUrl(avatar)} alt="头像" />
+              <img className="ml-auto size-[34px] rounded-full bg-hover object-cover" src={safeAvatarUrl(avatar)} alt="头像" />
             ) : (
-              <span className="settings-avatar-fallback">{displayName.charAt(0).toUpperCase()}</span>
+              <span className="ml-auto grid size-[34px] place-items-center rounded-full bg-primary-soft text-[13px] font-bold text-primary">{displayName.charAt(0).toUpperCase()}</span>
             )}
             <input
               id="profile-edit-avatar"
@@ -117,16 +126,16 @@ export function ProfileEditModal({
               hidden
               onChange={(event) => void onAvatarChange(event)}
             />
-            <label className="settings-row-action" htmlFor="profile-edit-avatar" role="button">
+            <label className={rowActionClass} htmlFor="profile-edit-avatar" role="button">
               {avatarBusy ? "上传中…" : "修改"}
             </label>
           </div>
-          {avatarError && <p className="settings-edit-error">{avatarError}</p>}
+          {avatarError && <p className={errClass}>{avatarError}</p>}
 
-          <div className="settings-row">
-            <span className="settings-row-label">昵称</span>
+          <div className={rowClass}>
+            <span className={rowLabelClass}>昵称</span>
             <input
-              className="settings-input"
+              className={inputClass}
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
               onKeyDown={(event) => {
@@ -136,7 +145,7 @@ export function ProfileEditModal({
               autoFocus
             />
           </div>
-          {error && <p className="settings-edit-error">{error}</p>}
+          {error && <p className={errClass}>{error}</p>}
         </div>
 
         <footer className="flex justify-end gap-2 border-t border-line px-5 py-[14px]">

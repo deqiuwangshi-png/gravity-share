@@ -23,6 +23,18 @@ const NAV_ITEMS = [
   ["帮助与反馈", "help"],
 ] as const satisfies ReadonlyArray<readonly [string, PanelId]>;
 
+/* 2026-09-02 迁移：settings-* 原子类化（原 styles/app/settings.css；profile-edit-modal 行控件同款就地） */
+const groupClass = "mt-5 mb-1.5 text-xs font-semibold text-soft first:mt-2";
+const rowClass = "flex min-h-[56px] items-center justify-between gap-4 border-b border-line py-4 last:border-0";
+const rowClassPlain = "flex min-h-[56px] items-center justify-between gap-4 py-4";
+const rowLabelClass = "text-[13px] text-foreground";
+const rowValueClass = "ml-auto text-[13px] text-muted";
+const rowActionClass = "shrink-0 cursor-pointer border-0 bg-transparent text-[13px] font-medium text-primary [font:inherit]";
+const errClass = "-mt-1 mb-2.5 text-xs text-error";
+/* 敏感操作弹窗内裸 input（原 account-action.css .account-action-body input；聚焦光晕由 decor 承载） */
+const aaInputClass =
+  "h-[42px] w-full rounded-[var(--radius-control)] border border-line bg-surface px-[14px] text-[14px] text-foreground outline-none focus:border-primary";
+
 /** 键值操作行：名称（左）| 当前值（灰）| 操作按钮（右）；onAction 存在时为真实按钮，否则为占位 */
 function SettingRow({
   label,
@@ -36,13 +48,13 @@ function SettingRow({
   onAction?: () => void;
 }) {
   return (
-    <div className="settings-row">
-      <span className="settings-row-label">{label}</span>
-      {value && <span className="settings-row-value">{value}</span>}
+    <div className={rowClass}>
+      <span className={rowLabelClass}>{label}</span>
+      {value && <span className={rowValueClass}>{value}</span>}
       {action && (
         <button
           type="button"
-          className="settings-row-action"
+          className={rowActionClass}
           data-placeholder={onAction ? undefined : ""}
           onClick={onAction}
         >
@@ -75,6 +87,7 @@ function PwdInput({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required
+        className={aaInputClass}
       />
       <button type="button" onClick={() => setShow(!show)} aria-label={show ? "隐藏密码" : "显示密码"} aria-pressed={show}>
         {show ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
@@ -86,6 +99,7 @@ function PwdInput({
 /**
  * 设置面板（下拉菜单弹出）：用户设置 / 账户安全 / 登录设备 / 官方认证 / 帮助
  * 2026-08-29 统一：改密码 / 改邮箱 / 注销 全部收敛为 AccountActionModal 弹窗（re-auth 校验当前密码）
+ * 2026-09-02 迁移：settings-* 壳与行控件原子类化（遮罩背景 .settings-overlay、导航 active 竖条 ::before 见 decor.css）
  */
 export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; onClose: () => void }) {
   const [tab, setTab] = useState<PanelId>(initialTab);
@@ -278,36 +292,40 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
   }
 
   return (
+    /* 遮罩壳（app-modal 提供居中/背景，settings-overlay 浅色背景覆盖见 decor.css） */
     <div className="app-modal settings-overlay" onClick={onClose}>
-      <div className="settings-panel" onClick={(event) => event.stopPropagation()}>
-        <aside className="settings-nav">
+      <div
+        className="grid h-[480px] w-[760px] grid-cols-[220px_minmax(0,1fr)] overflow-hidden rounded-2xl bg-surface shadow-panel max-[640px]:grid-cols-1"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <aside className="flex flex-col gap-1 border-r border-line bg-raised p-[28px_24px] max-[640px]:flex-row max-[640px]:overflow-x-auto max-[640px]:border-r-0 max-[640px]:border-b max-[640px]:border-line max-[640px]:p-[12px_14px]">
           {NAV_ITEMS.map(([label, id]) => (
             <button
               key={id}
               type="button"
-              className={`settings-nav-item${tab === id ? " active" : ""}`}
+              className={`settings-nav-item relative block w-full cursor-pointer rounded-lg border-0 bg-transparent p-[10px_12px] text-left text-[13px] text-muted transition-[background-color,color] duration-[180ms] hover:bg-hover hover:text-foreground max-[640px]:whitespace-nowrap${tab === id ? " active bg-hover font-semibold text-foreground" : ""}`}
               onClick={() => setTab(id)}
             >
               {label}
             </button>
           ))}
         </aside>
-        <section className="settings-content">
-          <header className="settings-header">
-            <h2>{NAV_ITEMS.find(([, id]) => id === tab)![0]}</h2>
-            <button type="button" className="settings-close" onClick={onClose} aria-label="关闭">×</button>
+        <section className="flex min-h-0 min-w-0 flex-col">
+          <header className="flex items-center justify-between border-b border-line p-[28px_32px]">
+            <h2 className="m-0 text-[16px]">{NAV_ITEMS.find(([, id]) => id === tab)![0]}</h2>
+            <button type="button" className="cursor-pointer border-0 bg-transparent p-1 text-[18px] text-soft" onClick={onClose} aria-label="关闭">×</button>
           </header>
-          <div className="settings-body">
+          <div className="min-h-0 flex-1 overflow-y-auto p-[8px_32px_32px]">
             {tab === "settings" && (
               <>
-                <h3 className="settings-group">个人资料</h3>
+                <h3 className={groupClass}>个人资料</h3>
                 <SettingRow label="邮箱" value={email || "未设置"} action="修改" onAction={() => setModal("email")} />
                 {editing === "bio" ? (
-                  <div className="settings-edit">
-                    <div className="settings-row">
-                      <span className="settings-row-label">简介</span>
+                  <div className="border-b border-line">
+                    <div className={rowClassPlain}>
+                      <span className={rowLabelClass}>简介</span>
                       <input
-                        className="settings-input"
+                        className="ml-auto max-w-[220px] min-w-0 flex-1 rounded-lg border border-line bg-surface p-[7px_10px] text-[13px] text-foreground outline-none focus:border-line-primary [font:inherit]"
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}
                         onKeyDown={(event) => {
@@ -317,14 +335,14 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
                         maxLength={80}
                         placeholder="一句话介绍自己（可留空）"
                       />
-                      <div className="settings-row-actions">
-                        <button type="button" onClick={() => setEditing(null)} disabled={saving}>取消</button>
-                        <button type="button" className="save" onClick={() => void saveEdit()} disabled={saving}>
+                      <div className="flex shrink-0 gap-3">
+                        <button type="button" onClick={() => setEditing(null)} disabled={saving} className="cursor-pointer border-0 bg-transparent text-[13px] text-primary disabled:cursor-default disabled:text-disabled [font:inherit]">取消</button>
+                        <button type="button" className="cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-primary disabled:cursor-default disabled:text-disabled [font:inherit]" onClick={() => void saveEdit()} disabled={saving}>
                           {saving ? "保存中…" : "保存"}
                         </button>
                       </div>
                     </div>
-                    {error && <p className="settings-edit-error">{error}</p>}
+                    {error && <p className={errClass}>{error}</p>}
                   </div>
                 ) : (
                   <SettingRow label="简介" value={bio || "未填写"} action="编辑" onAction={() => startEdit("bio")} />
@@ -334,11 +352,11 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
             )}
             {tab === "security" && (
               <>
-                <h3 className="settings-group">账户安全</h3>
+                <h3 className={groupClass}>账户安全</h3>
                 <SettingRow label="修改密码" value="输入当前密码直接修改" action="修改" onAction={() => setModal("password")} />
-                <div className="settings-row danger">
-                  <span className="settings-row-label">永久删除账号</span>
-                  <button type="button" className="settings-row-action danger-action" onClick={() => setModal("delete")}>删除</button>
+                <div className={rowClass}>
+                  <span className={`${rowLabelClass} text-error`}>永久删除账号</span>
+                  <button type="button" className={`${rowActionClass} text-error`} onClick={() => setModal("delete")}>删除</button>
                 </div>
               </>
             )}
@@ -353,14 +371,19 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
                 <SettingRow label="如何开始使用引力？" action="查看" />
                 <SettingRow label="引力和原平台是什么关系？" action="查看" />
                 <SettingRow label="有收费计划吗？" action="查看" />
-                <div className="settings-row">
-                  <span className="settings-row-label">查看完整帮助</span>
-                  <Link className="settings-row-action" href="/help">前往</Link>
+                <div className={rowClass}>
+                  <span className={rowLabelClass}>查看完整帮助</span>
+                  <Link className={rowActionClass} href="/help">前往</Link>
                 </div>
-                <div className="settings-feedback">
-                  <h3>反馈意见</h3>
-                  <p className="settings-feedback-desc">遇到问题或有建议？通过飞书表单告诉我们，我们会尽快处理。</p>
-                  <a className="settings-feedback-link" href={FEISHU_FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
+                <div className="mt-5 grid gap-3">
+                  <h3 className="m-0 text-[13px]">反馈意见</h3>
+                  <p className="m-0 text-xs leading-[1.7] text-soft">遇到问题或有建议？通过飞书表单告诉我们，我们会尽快处理。</p>
+                  <a
+                    className="inline-flex h-[38px] items-center justify-center rounded-lg bg-primary text-[13px] font-semibold text-on-primary no-underline transition-[background-color] duration-[180ms] hover:bg-primary-dark hover:text-on-primary"
+                    href={FEISHU_FEEDBACK_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     前往提交反馈 →
                   </a>
                 </div>
@@ -381,9 +404,9 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
           onSubmit={() => void submitPasswordChange()}
           onClose={closeModal}
         >
-          <label className="field"><span>当前密码</span><PwdInput value={curPassword} onChange={setCurPassword} placeholder="验证身份" autoComplete="current-password" /></label>
-          <label className="field"><span>新密码</span><PwdInput value={newPassword} onChange={setNewPassword} placeholder="至少 8 位字符" autoComplete="new-password" /></label>
-          <label className="field"><span>确认新密码</span><PwdInput value={confirmPassword} onChange={setConfirmPassword} placeholder="再次输入新密码" autoComplete="new-password" /></label>
+          <label className="grid gap-1.5"><span className="text-xs font-semibold text-muted">当前密码</span><PwdInput value={curPassword} onChange={setCurPassword} placeholder="验证身份" autoComplete="current-password" /></label>
+          <label className="grid gap-1.5"><span className="text-xs font-semibold text-muted">新密码</span><PwdInput value={newPassword} onChange={setNewPassword} placeholder="至少 8 位字符" autoComplete="new-password" /></label>
+          <label className="grid gap-1.5"><span className="text-xs font-semibold text-muted">确认新密码</span><PwdInput value={confirmPassword} onChange={setConfirmPassword} placeholder="再次输入新密码" autoComplete="new-password" /></label>
         </AccountActionModal>
       )}
       {modal === "email" && (
@@ -396,8 +419,8 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
           onSubmit={() => void submitEmailChange()}
           onClose={closeModal}
         >
-          <label className="field"><span>新邮箱</span><input type="email" value={newEmail} onChange={(event) => setNewEmail(event.target.value)} placeholder="新邮箱地址" maxLength={64} autoFocus /></label>
-          <label className="field"><span>当前密码</span><PwdInput value={emailPassword} onChange={setEmailPassword} placeholder="验证身份" autoComplete="current-password" /></label>
+          <label className="grid gap-1.5"><span className="text-xs font-semibold text-muted">新邮箱</span><input type="email" className={aaInputClass} value={newEmail} onChange={(event) => setNewEmail(event.target.value)} placeholder="新邮箱地址" maxLength={64} autoFocus /></label>
+          <label className="grid gap-1.5"><span className="text-xs font-semibold text-muted">当前密码</span><PwdInput value={emailPassword} onChange={setEmailPassword} placeholder="验证身份" autoComplete="current-password" /></label>
         </AccountActionModal>
       )}
       {modal === "delete" && (
@@ -412,8 +435,8 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
           onSubmit={() => void submitDeleteAccount()}
           onClose={closeModal}
         >
-          <label className="field"><span>输入「删除」确认</span><input value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="删除" maxLength={2} autoFocus /></label>
-          <label className="field"><span>当前密码</span><PwdInput value={deletePassword} onChange={setDeletePassword} placeholder="验证身份" autoComplete="current-password" /></label>
+          <label className="grid gap-1.5"><span className="text-xs font-semibold text-muted">输入「删除」确认</span><input className={aaInputClass} value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="删除" maxLength={2} autoFocus /></label>
+          <label className="grid gap-1.5"><span className="text-xs font-semibold text-muted">当前密码</span><PwdInput value={deletePassword} onChange={setDeletePassword} placeholder="验证身份" autoComplete="current-password" /></label>
         </AccountActionModal>
       )}
     </div>

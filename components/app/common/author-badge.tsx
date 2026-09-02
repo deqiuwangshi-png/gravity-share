@@ -10,11 +10,11 @@ export function AuthorBadge({ badge, className }: { badge?: UserBadge; className
   if (badge === "official") {
     return (
       <span
-        className={`author-badge badge-official${className ? ` ${className}` : ""}`}
+        className={`ml-1 inline-flex shrink-0 items-center align-middle text-verify-blue${className ? ` ${className}` : ""}`}
         title="官方认证"
         aria-label="官方认证"
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="size-[14px]">
           <path d="M12 2 L13.4 8.6 L20 10 L13.4 11.4 L12 18 L10.6 11.4 L4 10 L10.6 8.6 Z" />
         </svg>
       </span>
@@ -23,7 +23,7 @@ export function AuthorBadge({ badge, className }: { badge?: UserBadge; className
   if (badge === "discoverer") {
     return (
       <span
-        className={`author-badge badge-discoverer${className ? ` ${className}` : ""}`}
+        className={`ml-1 inline-flex shrink-0 items-center rounded-full bg-[linear-gradient(90deg,var(--verify-gold),var(--verify-gold-deep))] px-[6px] py-[1px] align-middle text-[10px] font-bold tracking-[0.3px] text-[var(--verify-gold-ink)]${className ? ` ${className}` : ""}`}
         title="认证发现者"
       >
         发现者

@@ -1,7 +1,8 @@
-/* (app) 装饰/特殊段收容（2026-09-02 P2-home+P3-壳 批次：自 shell.css / home.css / square.css 迁出瘦身保留）
+/* (app) 装饰/特殊段收容（CSS→Tailwind 迁移系列多批次累积：P2-home+P3-壳 → profile → 设置族，2026-09-02）
  * 保留理由：① CSS 变量宿主（notification.css 依赖 --app-sidebar-w/--app-topbar-h 定位抽屉）；
- * ② 非令牌 rgba 半透明色（毛玻璃/光晕/hover 阴影，规则：颜色唯一真相在 :root，未入令牌的保留原值）；
- * ③ ::-webkit-scrollbar 伪元素（Tailwind 无对应）；④ .app-logo 内 logo-mark 尺寸覆盖（globals 基础 32px 缩 30px）。
+ * ② 非令牌 rgba 半透明色（毛玻璃/光晕/hover 阴影/遮罩，规则：颜色唯一真相在 :root，未入令牌的保留原值）；
+ * ③ 伪元素（::before 导航竖条 / ::-webkit-scrollbar，Tailwind 无对应）；
+ * ④ .app-logo 内 logo-mark 尺寸覆盖（globals 基础 32px 缩 30px）。
  * 布局/令牌色一律走组件 Tailwind 类，本文件不承担布局职责。
  */
 
@@ -68,4 +69,44 @@
 
 .profile-edit-modal {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+/* ---------- ⑥ 设置面板 + 敏感操作弹窗（2026-09-02 设置族批次：自 settings.css / account-action.css 迁出收容）
+ * .settings-overlay：遮罩浅色背景为非令牌 rgba（覆盖 modal.css .app-modal 更深底色，类名由 settings-panel.tsx 保留）；
+ * .settings-nav-item.active::before：导航 active 左侧 3px 主色竖条（::before 伪元素 Tailwind 无对应；
+ *   定位宿主 relative 由组件保留，border-radius 背景为令牌色；640 以下导航转横向时隐藏）；
+ * .account-action-overlay：z-index 110 叠于 .app-modal(z100) 之上（类名由 account-action-modal.tsx 保留）；
+ * .account-action-modal：面板阴影为非令牌 rgba（同 modal.css 家族阴影）；
+ * .account-action-modal input:focus：聚焦光晕为非令牌 rgba(0,104,85,.1)，border-color 已原子类化 focus:border-primary */
+.settings-overlay {
+  background: rgba(15, 25, 22, 0.18);
+}
+
+.settings-nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+.account-action-overlay {
+  z-index: 110;
+}
+
+.account-action-modal {
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+}
+
+.account-action-modal input:focus {
+  box-shadow: 0 0 0 3px rgba(0, 104, 85, 0.1);
+}
+
+@media (max-width: 640px) {
+  .settings-nav-item.active::before {
+    display: none;
+  }
 }

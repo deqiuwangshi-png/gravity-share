@@ -1,40 +1,8 @@
-/* (marketing) 法律文档页（about / help / terms / privacy 共用 LegalLayout）
- * 自 (marketing)/marketing.css 拆分（2026-08-21 治理：styles/ 统一管理，单文件 ≤ 400 行） */
-
-.legal-page {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 64px 24px 96px;
-}
-
-.legal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 64px;
-}
-
-.legal-back {
-  color: var(--text-muted);
-  font-size: 13px;
-  transition: color 180ms ease;
-}
-
-.legal-back:hover {
-  color: var(--primary);
-}
-
-.legal-page h1 {
-  margin: 0 0 10px;
-  font-size: 32px;
-  letter-spacing: -1px;
-}
-
-.legal-updated {
-  margin: 0 0 48px;
-  color: var(--text-soft);
-  font-size: 12px;
-}
+/* (marketing) 法律文档页内容排版层（about / help / terms / privacy / notice 等共用 LegalLayout）
+ * 2026-09-02 瘦身：壳类（.legal-page/.legal-header/.legal-back/.legal-page h1/.legal-updated/.legal-footer）
+ * 已由 legal-layout.tsx + notice page.tsx 原子类化；本文件只保留长文裸元素排版层
+ * （页面正文无类名，靠 .legal-section 后代选择器命中 h2/h3/p/ul/ol/li/b 与表格），8 个 legal 页内容零改动。
+ */
 
 .legal-section h2 {
   margin: 36px 0 12px;
@@ -46,14 +14,6 @@
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.8;
-}
-
-.legal-footer {
-  margin-top: 72px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-  color: var(--text-soft);
-  font-size: 12px;
 }
 
 /* 帮助中心问答标题 */

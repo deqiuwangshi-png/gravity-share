@@ -3,6 +3,7 @@
  * 三种认证：个人（→ 金牌「发现者」）/ 机构 / 企业（→ 官方蓝 V + 相框）
  * 状态流：未申请（选类型 + 填说明提交）→ pending 审核中 → approved / rejected
  * 审核：MVP Table Editor（verifications.status 置 approved 并同步 users.badge），无后台代码
+ * 2026-09-02 迁移：verify-* 原子类化（原 styles/app/verify.css 面板段；徽标基础段已随 author-badge/avatar-box 内化）
  */
 "use client";
 
@@ -20,6 +21,10 @@ const VTYPES = [
 
 type VType = (typeof VTYPES)[number]["id"];
 const VLABEL: Record<VType, string> = { personal: "个人", organization: "机构", enterprise: "企业" };
+
+/* 认证类型选择卡（.verify-type 原子化） */
+const verifyTypeBtn =
+  "grid cursor-pointer gap-1 rounded-[10px] border border-line bg-surface p-[14px_16px] text-left transition-[border-color] duration-[180ms] enabled:hover:border-line-primary [font:inherit]";
 
 export function VerifyPanel() {
   const [myVerifications, setMyVerifications] = useState<VerificationRow[] | null>(null);
@@ -100,14 +105,14 @@ export function VerifyPanel() {
       myBadge === "official" || (approvedV ? approvedV.vtype !== "personal" : false);
     const badgeKind: "official" | "discoverer" = isOfficial ? "official" : "discoverer";
     return (
-      <div className="verify-status approved">
-        <h3>认证已通过</h3>
-        <p>
+      <div className="grid gap-[14px]">
+        <h3 className="m-0 text-[14px]">认证已通过</h3>
+        <p className="m-0 text-[13px] leading-[1.7] text-muted">
           你已获得
           {badgeKind === "official" ? (
-            <span className="verify-badge-inline badge-official">官方认证</span>
+            <span className="mx-1 inline-flex items-center align-middle text-verify-blue">官方认证</span>
           ) : (
-            <span className="verify-badge-inline badge-discoverer">发现者</span>
+            <span className="mx-1 inline-flex items-center rounded-full bg-[linear-gradient(90deg,var(--verify-gold),var(--verify-gold-deep))] px-2 py-[2px] align-middle text-[11px] font-bold text-[var(--verify-gold-ink)]">发现者</span>
           )}
           标识，将展示在你的头像与名称旁（对外公开）。
         </p>
@@ -118,50 +123,61 @@ export function VerifyPanel() {
   /* 审核中 */
   if (latest?.status === "pending") {
     return (
-      <div className="verify-status">
-        <h3>认证申请审核中</h3>
-        <p>你的「{VLABEL[latest.vtype]}认证」申请已提交，审核通过后你会收到站内消息通知，也可稍后重新打开本页查看结果。</p>
+      <div className="grid gap-[14px]">
+        <h3 className="m-0 text-[14px]">认证申请审核中</h3>
+        <p className="m-0 text-[13px] leading-[1.7] text-muted">你的「{VLABEL[latest.vtype]}认证」申请已提交，审核通过后你会收到站内消息通知，也可稍后重新打开本页查看结果。</p>
       </div>
     );
   }
 
   /* 未申请 或 被驳回（可重新提交） */
   return (
-    <div className="verify-panel">
+    <div className="grid gap-[14px]">
       {latest?.status === "rejected" && (
-        <p className="verify-rejected">上次申请未通过，可修改后重新提交。</p>
+        <p className="m-0 rounded-lg border border-error px-3 py-[10px] text-xs text-error">上次申请未通过，可修改后重新提交。</p>
       )}
 
       {!selected ? (
         <>
-          <p className="verify-desc">选择认证类型开始申请。通过后标识将对外公开显示。</p>
-          <div className="verify-types">
+          <p className="m-0 text-xs leading-[1.7] text-soft">选择认证类型开始申请。通过后标识将对外公开显示。</p>
+          <div className="grid gap-[10px]">
             {VTYPES.map((t) => (
               <button
                 type="button"
-                className="verify-type"
+                className={verifyTypeBtn}
                 key={t.id}
                 onClick={() => setSelected(t.id)}
               >
-                <strong>{t.title}</strong>
-                <small>{t.desc}</small>
+                <strong className="text-[13px]">{t.title}</strong>
+                <small className="text-xs leading-[1.6] text-soft">{t.desc}</small>
               </button>
             ))}
           </div>
         </>
       ) : (
-        <div className="verify-form">
-          <h3>{VTYPES.find((t) => t.id === selected)!.title}</h3>
+        <div className="grid gap-[10px]">
+          <h3 className="m-0 text-[13px]">{VTYPES.find((t) => t.id === selected)!.title}</h3>
           <textarea
             rows={4}
             value={statement}
             onChange={(event) => setStatement(event.target.value)}
             placeholder="请简要说明认证理由与相关材料（如代表作品、机构/企业介绍、官网地址等）"
             aria-label="认证申请说明"
+            className="min-h-[88px] w-full resize-y rounded-lg border border-line bg-surface px-3 py-[10px] text-[13px] leading-[1.7] text-foreground outline-none focus:border-line-primary [font:inherit]"
           />
-          <div className="verify-form-actions">
-            <button type="button" onClick={() => setSelected(null)} disabled={submitting}>返回</button>
-            <button type="button" className="primary" onClick={() => void submit()} disabled={submitting || !statement.trim()}>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              disabled={submitting}
+              className="cursor-pointer rounded-full border border-line bg-surface px-4 py-[6px] text-xs text-muted transition-[border-color,color] duration-[180ms] enabled:hover:border-line-primary enabled:hover:text-primary disabled:cursor-default disabled:text-disabled [font:inherit]"
+            >返回</button>
+            <button
+              type="button"
+              onClick={() => void submit()}
+              disabled={submitting || !statement.trim()}
+              className="cursor-pointer rounded-full border-0 bg-primary px-4 py-[6px] text-xs font-semibold text-on-primary transition-[background-color] duration-[180ms] enabled:hover:bg-primary-dark enabled:hover:text-on-primary disabled:cursor-default disabled:text-disabled [font:inherit]"
+            >
               {submitting ? "提交中…" : "提交申请"}
             </button>
           </div>

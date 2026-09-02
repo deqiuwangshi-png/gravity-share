@@ -30,7 +30,8 @@ export function AvatarBox({
 }) {
   const [failed, setFailed] = useState(false);
   const router = useRouter();
-  const frameClass = badge === "official" ? " avatar-official" : "";
+  /* official 相框：外 2px 背景色 + 内 4px 蓝环（原 verify.css .avatar-official box-shadow） */
+  const frameClass = badge === "official" ? " shadow-[0_0_0_2px_var(--background),0_0_0_4px_var(--verify-blue)]" : "";
 
   const inner = !path || failed ? (
     <span className={`${className ?? ""}${frameClass}`} aria-hidden="true">{name.charAt(0).toUpperCase()}</span>
