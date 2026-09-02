@@ -20,6 +20,13 @@ import { useToast } from "./toast";
 /** 举报原因（与 /guidelines 红线、/enforcement 专项对齐；举报时必选） */
 const REPORT_REASONS = ["违法内容", "侵权内容", "广告推广", "骚扰攻击", "虚假信息", "其他"] as const;
 
+/** 菜单项基础类（原子类化，2026-09-02）；danger 变体独立成串不拼接，避免同属性 hover/text 色冲突 */
+const MENU_ITEM_CLASS =
+  "w-full cursor-pointer rounded-[7px] border-0 bg-transparent p-[8px_12px] text-left text-[13px] text-foreground transition-[background-color] duration-[180ms] hover:bg-hover disabled:cursor-default disabled:text-disabled [font:inherit]";
+
+const MENU_ITEM_DANGER_CLASS =
+  "w-full cursor-pointer rounded-[7px] border-0 bg-transparent p-[8px_12px] text-left text-[13px] font-semibold text-error transition-[background-color] duration-[180ms] hover:bg-error hover:text-on-error disabled:cursor-default disabled:text-disabled [font:inherit]";
+
 /** 举报短 id 生成（模块级函数：规避 react-hooks/purity 对组件内不纯调用的拦截） */
 function makeReportId(): string {
   return `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -191,10 +198,10 @@ export function PostMenu({
   }
 
   return (
-    <div className="comment-menu" ref={ref}>
+    <div className="relative shrink-0" ref={ref}>
       <button
         type="button"
-        className="comment-menu-btn"
+        className="inline-flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-soft transition-[background-color,color] duration-[180ms] hover:bg-hover hover:text-foreground"
         aria-label={targetType === "comment" ? "评论操作" : "内容操作"}
         aria-expanded={open}
         onClick={(event) => {
@@ -207,58 +214,59 @@ export function PostMenu({
       </button>
 
       {open && (
-        <div className="comment-menu-pop" role="menu">
+        <div className="absolute right-0 top-[calc(100%+4px)] z-30 grid min-w-[108px] rounded-[10px] border border-line bg-surface p-[5px] shadow-panel" role="menu">
           {confirming ? (
             <>
-              <div className="comment-menu-confirm">{targetType === "comment" ? "确定删除这条评论？" : "确定删除这条内容？"}</div>
+              <div className="px-3 pb-[2px] pt-2 text-[12px] text-muted">{targetType === "comment" ? "确定删除这条评论？" : "确定删除这条内容？"}</div>
               <button
                 type="button"
                 role="menuitem"
-                className="comment-menu-danger"
+                className={MENU_ITEM_DANGER_CLASS}
                 disabled={busy}
                 onClick={(event) => { event.preventDefault(); event.stopPropagation(); void onDelete(); }}
               >{busy ? "删除中…" : "删除"}</button>
-              <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setConfirming(false); }}>
+              <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setConfirming(false); }}>
                 取消
               </button>
             </>
           ) : isOwner ? (
             <>
               {/* 投放入口（2026-08-31 内容投流暂未开放，已摘除；恢复时在此还原按钮，跳 /boost?post=<id> 预选本帖） */}
-              <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setConfirming(true); }}>
+              <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setConfirming(true); }}>
                 删除
               </button>
-              <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpen(false); onEdit?.(); }}>
+              <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpen(false); onEdit?.(); }}>
                 修改
               </button>
             </>
           ) : reporting ? (
             <>
-              <div className="comment-menu-confirm">选择举报原因</div>
+              <div className="px-3 pb-[2px] pt-2 text-[12px] text-muted">选择举报原因</div>
               {REPORT_REASONS.map((reason) => (
                 <button
                   key={reason}
                   type="button"
                   role="menuitem"
+                  className={MENU_ITEM_CLASS}
                   disabled={busy}
                   onClick={(event) => { event.preventDefault(); event.stopPropagation(); void submitReport(reason); }}
                 >
                   {reason}
                 </button>
               ))}
-              <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setReporting(false); }}>
+              <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setReporting(false); }}>
                 取消
               </button>
             </>
           ) : (
-            <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setReporting(true); }}>
+            <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setReporting(true); }}>
               举报
             </button>
           )}
-          <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void copy(); }}>
+          <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); void copy(); }}>
             复制
           </button>
-          <button type="button" role="menuitem" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void onShare(); }}>
+          <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); void onShare(); }}>
             分享
           </button>
         </div>

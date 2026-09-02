@@ -31,6 +31,7 @@
 
   /* 语义色（用到再加） */
   --error: #c0392b;
+  --on-error: #ffffff;
   --accent-warn: #a32d2d;
 
   /* 认证徽标专用色（021 官方蓝 V / 金牌发现者；2026-09-02 收编自 verify.css 直写） */

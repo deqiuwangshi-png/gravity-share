@@ -21,8 +21,9 @@ const PublishModal = dynamic(() => import("./publish-modal"), { ssr: false, load
 type NavItem = readonly [string, string, string];
 
 /* 2026-09-02 P2-home+P3-壳 批次：shell.css 布局全量 Tailwind 化（255 行 → 原子类）。
- * 保留装饰挂靠类名（styles/app/decor.css 承载）：app-shell（CSS 变量宿主，notification.css 依赖）、
- * app-topbar（毛玻璃 rgba）、global-search（聚焦光晕）、app-logo（logo-mark 30px 覆盖）。
+ * 保留装饰挂靠类名（styles/app/decor.css 承载）：app-shell（CSS 变量宿主，通知抽屉原子类 var() 引用，
+ * notification.css 已于同日通知批次迁删）、app-topbar（毛玻璃 rgba）、global-search（聚焦光晕）、
+ * app-logo（logo-mark 30px 覆盖）。
  * 断点 800（侧栏隐藏/main 全宽/顶栏收窄/操作区隐藏）、480（kbd 隐藏）逐像素保留。 */
 export default function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const [publishOpen, setPublishOpen] = useState(false);

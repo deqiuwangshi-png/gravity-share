@@ -1,5 +1,5 @@
-/* (app) 装饰/特殊段收容（CSS→Tailwind 迁移系列多批次累积：P2-home+P3-壳 → profile → 设置族 → 分类页+发布页，2026-09-02）
- * 保留理由：① CSS 变量宿主（notification.css 依赖 --app-sidebar-w/--app-topbar-h 定位抽屉）；
+/* (app) 装饰/特殊段收容（CSS→Tailwind 迁移系列多批次累积：P2-home+P3-壳 → profile → 设置族 → 分类页+发布页 → 通知，2026-09-02）
+ * 保留理由：① CSS 变量宿主（通知抽屉原子类引用 --app-sidebar-w/--app-topbar-h 定位，notification.css 已迁删）；
  * ② 非令牌 rgba 半透明色（毛玻璃/光晕/hover 阴影/遮罩，规则：颜色唯一真相在 :root，未入令牌的保留原值）；
  * ③ 伪元素（::before 导航竖条 / ::-webkit-scrollbar，Tailwind 无对应）；
  * ④ .app-logo 内 logo-mark 尺寸覆盖（globals 基础 32px 缩 30px）。
@@ -7,8 +7,8 @@
  */
 
 /* ---------- ① 壳变量宿主（AppShell 根 .app-shell，类名由 app-shell.tsx 保留） ----------
- * notification.css .notify-layer/.notify-overlay/.notify-drawer 依赖：
- * left = --app-sidebar-w（≤800 收 0，抽屉全宽）、top = --app-topbar-h（顶栏下方开始） */
+ * 通知抽屉 atomic 任意值引用：left = --app-sidebar-w（≤800 收 0，抽屉全宽）、
+ * top = --app-topbar-h（顶栏下方开始）；notification.css 已于 2026-09-02 迁删 */
 .app-shell {
   --app-sidebar-w: 230px;
   --app-topbar-h: 68px;
@@ -113,13 +113,83 @@
 
 /* ---------- ⑦ 发布弹窗壳 + 破坏性确认（2026-09-02 分类页+发布页批次：自 modal.css / publish-form.css 迁出收容）
  * .modal-box：面板阴影为非令牌 rgba（类名由 publish-modal.tsx 保留，宽度/内边距/圆角/背景已原子类化）；
- * .close-confirm-discard:hover：放弃确认「放弃并关闭」hover 实心红底 + #fff 白字——#fff 未入令牌
- *   （无 --on-error），按「非令牌色收容」规则保留原值；base 描边红样式已原子类化 */
+ * .close-confirm-discard:hover：放弃确认「放弃并关闭」hover 实心红底 + 白字——2026-09-02 起走
+ *   --on-error 令牌（text-on-error，白字语义收口）；base 描边红样式已原子类化 */
 .modal-box {
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
 }
 
 .close-confirm-discard:hover {
   background: var(--error);
+  color: var(--on-error);
+}
+
+/* ---------- ⑧ 通知抽屉（2026-09-02 通知批次：自 notification.css 迁出收容）
+ * .notify-overlay：遮罩半透明背景为非令牌 rgba（absolute 定位 / opacity 进出动画已原子类化 +
+ *   open 条件类切换，类名由 notification-drawer.tsx 保留）；
+ * .notify-drawer：面板左侧投影为非令牌 rgba（布局 / translateX 进出动画已原子类化，同上） */
+.notify-overlay {
+  background: rgba(17, 24, 22, 0.28);
+}
+
+.notify-drawer {
+  box-shadow: -18px 0 40px rgba(17, 24, 22, 0.06);
+}
+
+/* ---------- ⑨ 用户菜单/toast 动画 + 富文本图集浮层（2026-09-02 菜单·toast·富文本批次：自 user-menu.css / toast.css / rich-editor.css 迁出收容）
+ * @keyframes ×2：user-menu-in（下拉入场 150ms）/ toast-cycle（toast 淡入停留淡出，总时长与 TOAST_DURATION 对齐）——
+ *   keyframes 无 Tailwind 对应（组件用 animate-[user-menu-in_150ms_ease] / animate-[toast-cycle_2.2s_ease_forwards] 任意值引用）；
+ * .rich-gallery-status / .rich-gallery-actions：编辑端图集条图片浮层——非令牌 rgba 黑底 + 白字家族
+ *   （图片上操作条语义，非 error 语义 → 不入 --on-error；宿主类名由 rich-editor.tsx 保留，条目/按钮布局已原子类化） */
+@keyframes user-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-cycle {
+  0%   { opacity: 0; transform: translateY(10px); }
+  8%   { opacity: 1; transform: translateY(0); }
+  86%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+.rich-gallery-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
   color: #fff;
+  font-size: 11px;
+}
+
+.rich-gallery-actions {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+}
+
+.rich-gallery-actions button {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 3px 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+
+.rich-gallery-actions button:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+/* 图集排序（037 左移/右移）：首尾位置对应按钮禁用 */
+.rich-gallery-actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.rich-gallery-actions button:disabled:hover {
+  background: rgba(0, 0, 0, 0.55);
 }

@@ -1,5 +1,10 @@
 /**
  * 富文本编辑器（2026-08-29，TipTap）——富文本帖发布 / 编辑共用
+ * 2026-09-02：rich-editor.css 全量 Tailwind 化（318 行 → 原子类，文件已删）；正文区排版并入
+ *   共享排版层 rich-content.css（编辑/渲染双宿主并列选择器一处维护）；正文容器保留宿主类
+ *   rich-editor-content（TipTap ProseMirror，非 JSX 元素 → 排版层 CSS 承载）；根保留宿主类
+ *   rich-editor（供 .rich-editor.compact .rich-editor-content 组合选择器）；
+ *   图集浮层非令牌 rgba 宿主类（rich-gallery-status/rich-gallery-actions）收 decor.css ⑨
  */
 "use client";
 
@@ -31,13 +36,6 @@ type GalleryItem = {
   /** 来源：upload=本次新上传（孤儿，删即清 storage）；existing=编辑预载的存量图（删后延迟到保存才清 storage） */
   origin: "upload" | "existing";
 };
-
-/** 图集条目状态 → 容器类（显式映射：check-styles 静态扫描需要字面量类名，勿改回模板拼接） */
-const GALLERY_STATUS_CLASS = {
-  uploading: "is-uploading",
-  done: "is-done",
-  error: "is-error",
-} as const;
 
 export function RichEditor({
   value,
@@ -136,9 +134,41 @@ export function RichEditor({
     onRemovedExistingChange?.(removedExisting);
   }, [removedExisting, onRemovedExistingChange]);
 
-  if (!editor) return <div className="rich-editor" aria-label="编辑器加载中" />;
+  if (!editor) return <div className="rich-editor min-w-0 max-w-full overflow-hidden rounded-control border border-line bg-surface" aria-label="编辑器加载中" />;
 
   const uploadingCount = gallery.filter((it) => it.status === "uploading").length;
+
+  /* 工具栏按钮（原 .rich-tool-btn：30×30 圆角 6 透明底；active「on」态主色软底——
+   * 原 CSS .on 定义于 :hover 之后同特异性 → active 时悬停不变色，故 on 分支不带 hover 类） */
+  const btn = (active: boolean, onClick: () => void, title: string, icon: React.ReactNode) => (
+    <button
+      type="button"
+      className={`flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[6px] border-0 bg-transparent p-0 text-muted transition-[background-color,color] duration-[180ms] [font:inherit]${
+        active ? " bg-primary-soft text-primary" : " hover:bg-hover hover:text-foreground"
+      }`}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+    >
+      {icon}
+    </button>
+  );
+
+  /** 图片按钮（upload 凭证存在时显示；上传中禁用） */
+  const imageBtn = upload && (
+    <button
+      type="button"
+      className="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[6px] border-0 bg-transparent p-0 text-muted transition-[background-color,color] duration-[180ms] hover:bg-hover hover:text-foreground"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => fileRef.current?.click()}
+      disabled={uploadingCount > 0}
+      title="添加图片（可多选，最多 9 张）"
+      aria-label="添加图片"
+    >
+      <ImagePlus size={15} />
+    </button>
+  );
 
   /** 链接：prompt 输入（留空清除） */
   function toggleLink() {
@@ -235,39 +265,13 @@ export function RichEditor({
     editor.view.dispatch(tr);
   }
 
-  const btn = (active: boolean, onClick: () => void, title: string, icon: React.ReactNode) => (
-    <button
-      type="button"
-      className={`rich-tool-btn${active ? " on" : ""}`}
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={onClick}
-      title={title}
-      aria-label={title}
-    >
-      {icon}
-    </button>
-  );
-
-  /** 图片按钮（upload 凭证存在时显示；上传中禁用） */
-  const imageBtn = upload && (
-    <button
-      type="button"
-      className="rich-tool-btn"
-      onMouseDown={(event) => event.preventDefault()}
-      onClick={() => fileRef.current?.click()}
-      disabled={uploadingCount > 0}
-      title="添加图片（可多选，最多 9 张）"
-      aria-label="添加图片"
-    >
-      <ImagePlus size={15} />
-    </button>
-  );
-
   return (
-    <div className={`rich-editor${compact ? " compact" : ""}`}>
+    /* 根保留宿主类 rich-editor（共享排版层 .rich-editor.compact .rich-editor-content 组合选择器用） */
+    <div className={`rich-editor min-w-0 max-w-full ${compact ? "relative overflow-visible border-0 bg-transparent" : "overflow-hidden rounded-control border border-line bg-surface"}`}>
       {compact ? (
-        /* 轻量模式（2026-08-31 起常显，不再聚焦浮出——更易被发现；点击按钮不夺焦） */
-        <div className="rich-toolbar rich-toolbar-compact" role="toolbar" aria-label="文本格式工具栏">
+        /* 轻量模式（2026-08-31 起常显，不再聚焦浮出——更易被发现；点击按钮不夺焦）；
+         * 原 .rich-toolbar + .rich-toolbar-compact 双类共存（后者仅覆盖 padding，border/bg 仍在）→ 原子类等效合并 */
+        <div className="flex flex-wrap items-center gap-[2px] border-b border-line bg-raised p-[0_0_8px]" role="toolbar" aria-label="文本格式工具栏">
           {btn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), "加粗", <Bold size={15} />)}
           {btn(editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), "斜体", <Italic size={15} />)}
           {/* 列表：早期固定无序（2026-09-02 文案明示，避免用户误以为可选类型；未来迭代再提供选择） */}
@@ -276,7 +280,7 @@ export function RichEditor({
           {imageBtn}
         </div>
       ) : (
-        <div className="rich-toolbar" role="toolbar" aria-label="富文本工具栏">
+        <div className="flex flex-wrap items-center gap-[2px] border-b border-line bg-raised p-[6px]" role="toolbar" aria-label="富文本工具栏">
           {btn(editor.isActive("heading", { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), "标题", <Heading2 size={15} />)}
           {btn(editor.isActive("heading", { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run(), "小标题", <Heading3 size={15} />)}
           {btn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), "加粗", <Bold size={15} />)}
@@ -289,7 +293,7 @@ export function RichEditor({
           {btn(editor.isActive("link"), toggleLink, "链接", <Link2 size={15} />)}
           <button
             type="button"
-            className="rich-tool-btn"
+            className="flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-[6px] border-0 bg-transparent p-0 text-muted transition-[background-color,color] duration-[180ms] hover:bg-hover hover:text-foreground"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => editor.chain().focus().setHorizontalRule().run()}
             title="分割线"
@@ -303,9 +307,9 @@ export function RichEditor({
       {/* 正文容器：EditorContent 必须始终渲染（2026-08-31 回归修复——若按 isEmpty 条件渲染整个容器，
           用户一输入 isEmpty 变 false → 容器卸载 → 编辑区消失且内容丢失）；
           占位文案只是 overlay，按 isEmpty 单独显隐 */}
-      <div className="rich-editor-body">
+      <div className="relative">
         {compact && editor.isEmpty && (
-          <span className="rich-placeholder" aria-hidden="true">分享你发现的好东西，或介绍你的内容…</span>
+          <span className="pointer-events-none absolute left-[2px] top-2 z-0 select-none text-[15px] leading-[1.9] text-soft" aria-hidden="true">分享你发现的好东西，或介绍你的内容…</span>
         )}
         <EditorContent editor={editor} />
       </div>
@@ -322,19 +326,21 @@ export function RichEditor({
 
       {/* 图集条（2026-08-31：多图管理区；图片不自动插入正文，编辑区保持干净） */}
       {(gallery.length > 0 || galleryHint) && (
-        <div className="rich-gallery" role="list" aria-label="已上传图片">
+        <div className="mt-[10px] flex items-center gap-2 overflow-x-auto rounded-[10px] border border-dashed border-line p-2" role="list" aria-label="已上传图片">
           {gallery.map((item, i) => (
-            <div className={`rich-gallery-item ${GALLERY_STATUS_CLASS[item.status]}`} key={item.key} role="listitem">
+            <div className="relative h-16 w-16 flex-none overflow-hidden rounded-lg bg-hover" key={item.key} role="listitem">
               {item.src && (
                 /* eslint-disable-next-line @next/next/no-img-element -- 用户上传图走公开 URL */
-                <img src={item.src} alt="" />
+                <img src={item.src} alt="" className={`h-full w-full object-cover${item.status === "uploading" ? " opacity-40" : ""}`} />
               )}
+              {/* 上传中遮罩：非令牌 rgba 黑底白字，宿主类 rich-gallery-status 由 decor.css ⑨ 承载 */}
               {item.status === "uploading" && <span className="rich-gallery-status">上传中…</span>}
               {item.status === "error" && (
-                <span className="rich-gallery-error">
-                  <button type="button" onClick={() => void retryUpload(item)}>重试</button>
+                <span className="absolute inset-0 grid place-items-center bg-surface">
+                  <button type="button" className="cursor-pointer rounded-[6px] border border-line bg-transparent px-[10px] py-[3px] text-[11px] text-muted [font:inherit]" onClick={() => void retryUpload(item)}>重试</button>
                 </span>
               )}
+              {/* 完成态操作条（左移/右移/删除）：非令牌 rgba 黑底白字家族，宿主类 rich-gallery-actions 由 decor.css ⑨ 承载 */}
               {item.status === "done" && (
                 <span className="rich-gallery-actions">
                   <button type="button" title="左移" aria-label="左移" disabled={i === 0} onClick={() => moveItem(i, -1)}>
@@ -353,7 +359,7 @@ export function RichEditor({
           {gallery.length < GALLERY_MAX && (
             <button
               type="button"
-              className="rich-gallery-add"
+              className="flex h-16 w-16 flex-none cursor-pointer items-center justify-center rounded-lg border border-dashed border-line-primary bg-transparent p-0 text-primary disabled:cursor-default disabled:opacity-50"
               disabled={uploadingCount > 0}
               onClick={() => fileRef.current?.click()}
               aria-label="继续添加图片"
@@ -361,7 +367,7 @@ export function RichEditor({
               <ImagePlus size={14} />
             </button>
           )}
-          {galleryHint && <span className="rich-gallery-hint">{galleryHint}</span>}
+          {galleryHint && <span className="ml-auto whitespace-nowrap pr-1 text-[11px] text-muted">{galleryHint}</span>}
         </div>
       )}
     </div>

@@ -1,62 +1,82 @@
-/* 富文本渲染端排版（2026-08-29，TipTap 输出 → sanitize 后展示，详情页正文）
- * 2026-09-02：自 rich.css 拆出（原文件 410 行超 400 红线）；编辑器样式见 rich-editor.css */
+/* 富文本共享排版层（2026-08-29 TipTap；2026-09-02 合并去重：原 rich-editor.css 排版段 + 本文件双写合一）
+ * 消费两端：编辑端正文区（.rich-editor-content，class 由 rich-editor.tsx editorProps 挂载到 ProseMirror）
+ *           + 渲染端正文（.rich-content，class 由 rich-content.tsx JSX 挂载，sanitize 后 dangerouslySetInnerHTML）
+ * 本层作用于库/内容生成的动态 HTML（用户输入内容，子元素不在 JSX 中 → 无法原子类化，属元素级排版层，
+ * 同 marketing legal.css 先例「瘦身保留 CSS」）；子元素规则全部并列选择器一处维护。
+ * 差异覆盖（有意）：编辑端 img 压缩小图 + compact 轻量字号；渲染端 img 大图原样。
+ * rich-editor.tsx 其余组件专属样式（壳/工具栏/图集条）已原子类化，rich-editor.css 已删除（2026-09-02）。
+ */
 
-/* --- 渲染端排版（与编辑区同款，详情页正文） --- */
-.rich-content {
+/* --- 共享基础：容器字体/行高 + 长 URL 换行保护（编辑/渲染同款；compact 覆盖见文末） --- */
+.rich-content,
+.rich-editor-content {
   font-size: 14px;
   line-height: 1.8;
-  /* 2026-08-31 修复：与编辑区同规则，长 URL 在详情页正文内换行（防 flex/grid 容器被 min-content 撑破） */
   word-break: break-word;
   overflow-wrap: anywhere;
 }
 
-.rich-content p {
+/* --- 共享排版族（一处维护，两端同变） --- */
+.rich-content p,
+.rich-editor-content p {
   margin: 0 0 10px;
 }
 
-.rich-content p:last-child {
+.rich-content p:last-child,
+.rich-editor-content p:last-child {
   margin-bottom: 0;
 }
 
-.rich-content h2 {
+.rich-content h2,
+.rich-editor-content h2 {
   margin: 18px 0 8px;
   font-size: 19px;
   line-height: 1.4;
 }
 
-.rich-content h3 {
+/* h3 margin 已统一为 16px（2026-09-02 合并去重：原编辑端 18px 为历史 2px 偏差，拍板以渲染端为准） */
+.rich-content h3,
+.rich-editor-content h3 {
   margin: 16px 0 8px;
   font-size: 16px;
   line-height: 1.4;
 }
 
 .rich-content ul,
-.rich-content ol {
+.rich-content ol,
+.rich-editor-content ul,
+.rich-editor-content ol {
   margin: 0 0 10px;
   padding-left: 22px;
 }
 
-/* 列表 marker（2026-09-02 修复：同编辑区，渲染端同样需显式恢复 list-style） */
-.rich-content ul {
+/* 列表 marker（2026-09-02 修复：Tailwind v4 preflight 全局 list-style:none，此处显式恢复；
+ * 嵌套列表当前编辑器无法生成，统一 disc/decimal，层级细化留待列表能力迭代） */
+.rich-content ul,
+.rich-editor-content ul {
   list-style-type: disc;
 }
 
-.rich-content ol {
+.rich-content ol,
+.rich-editor-content ol {
   list-style-type: decimal;
 }
 
-.rich-content li {
+.rich-content li,
+.rich-editor-content li {
   margin-bottom: 3px;
 }
 
-.rich-content blockquote {
+.rich-content blockquote,
+.rich-editor-content blockquote {
   margin: 0 0 10px;
   padding: 6px 14px;
   border-left: 3px solid var(--border-primary);
   color: var(--text-muted);
 }
 
-.rich-content pre {
+.rich-content pre,
+.rich-editor-content pre {
   margin: 0 0 10px;
   padding: 10px 12px;
   border-radius: 8px;
@@ -65,30 +85,64 @@
   font-size: 13px;
 }
 
-.rich-content code {
+.rich-content code,
+.rich-editor-content code {
   padding: 1px 5px;
   border-radius: 5px;
   background: var(--bg-hover);
   font-size: 0.92em;
 }
 
-.rich-content pre code {
+.rich-content pre code,
+.rich-editor-content pre code {
   padding: 0;
   background: transparent;
 }
 
-.rich-content hr {
+.rich-content hr,
+.rich-editor-content hr {
   margin: 14px 0;
   border: 0;
   border-top: 1px solid var(--border);
 }
 
-.rich-content a {
+.rich-content a,
+.rich-editor-content a {
   color: var(--primary);
   text-decoration: underline;
 }
 
+/* --- 图片差异（有意）：渲染端大图原样；编辑端压缩为小图（写字优先，2026-08-31） --- */
 .rich-content img {
   max-width: 100%;
   border-radius: 8px;
+}
+
+.rich-editor-content img {
+  max-width: 100%;
+  max-height: 140px;
+  width: auto;
+  border-radius: 8px;
+}
+
+/* --- 编辑端正文容器专属（TipTap ProseMirror 布局；class 由组件 editorProps 挂载，非 JSX 元素） --- */
+.rich-editor-content {
+  /* 2026-08-31 修复：grid 子项 min-width:auto + 长 URL 不换行会把父容器撑破 → 允许收缩 + 锁死自身宽度 */
+  min-width: 0;
+  max-width: 100%;
+  min-height: 180px;
+  padding: 12px 14px;
+  outline: 0;
+  color: var(--foreground);
+}
+
+/* compact 轻量模式覆盖（短帖发布；.rich-editor.compact 根宿主类由 rich-editor.tsx 保留，仅作此组合选择器）：
+ * 对齐原 textarea 视觉 15px/1.9 透明底；max-height + overflow：输入超限后在区域内滚动（contenteditable 默认随内容长高） */
+.rich-editor.compact .rich-editor-content {
+  min-height: 180px;
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 4px 2px;
+  font-size: 15px;
+  line-height: 1.9;
 }

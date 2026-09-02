@@ -242,7 +242,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
               <p className="m-0 mb-5 text-[13px] leading-[1.7] text-muted">标题、正文与已上传的图片将不会被保存，离开后无法恢复。</p>
               <div className="flex justify-center gap-[10px]">
                 <button type="button" className="cursor-pointer rounded-full border-0 bg-primary px-5 py-[9px] text-[13px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark [font:inherit]" autoFocus onClick={() => setConfirmClose(false)}>继续编辑</button>
-                {/* close-confirm-discard 宿主类保留：hover 实心红 + #fff 白字收容于 decor.css（非令牌色） */}
+                {/* close-confirm-discard 宿主类保留：hover 实心红 + 白字收容于 decor.css ⑦（白字走 --on-error 令牌） */}
                 <button
                   type="button"
                   className="close-confirm-discard cursor-pointer rounded-full border border-error bg-transparent px-[18px] py-2 text-[13px] font-semibold text-error transition-[background-color,color] duration-[180ms] [font:inherit]"
