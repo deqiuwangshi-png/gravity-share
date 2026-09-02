@@ -136,30 +136,38 @@
   }
 }
 
-* {
-  box-sizing: border-box;
-}
+/*
+ * 元素级基础样式（2026-09-03 收进 @layer base：此前裸写在顶层未分层——按层叠规范未分层
+ * 样式优先于 @layer 内一切样式（无视特异性），会压掉 a 元素上的 text-* 颜色类，
+ * 造成落地页登录按钮黑字（text-on-primary 失效）、CTA 按钮白底白字（text-primary-dark
+ * 失效→继承父级 text-surface）的回归。收层后 Tailwind utilities 恢复优先，原子文字色类全数生效。）
+ */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-body {
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-}
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-button,
-input {
-  font: inherit;
-}
+  button,
+  input {
+    font: inherit;
+  }
 
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 /* 占位元素（功能未实现，链接治理规则 R2）：不显示手型，避免误导可点击 */
