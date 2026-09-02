@@ -3,6 +3,8 @@
  * 承载：头像（选文件即上传，BUG-14 回滚/清旧图）+ 昵称（保存时更新）
  * 用户设置「用户设置」tab 保留：邮箱 / 简介 / 加入时间（简介仍在设置里编辑）
  * 封面编辑在主页（profile-view 的「更换封面」），与本弹窗无重复
+ * 2026-09-02 迁移：profile-edit-* 框架原子类化（原 styles/app/profile.css）；
+ * 内部 settings-* 行控件仍由 settings.css 提供；遮罩壳/面板阴影见 styles/app/decor.css ⑤
  */
 "use client";
 
@@ -91,14 +93,15 @@ export function ProfileEditModal({
   }
 
   return (
+    /* 遮罩壳（grid 居中覆盖）见 decor.css；点击遮罩关闭 */
     <div className="app-modal profile-edit-overlay" onClick={onClose}>
-      <div className="profile-edit-modal" onClick={(event) => event.stopPropagation()}>
-        <header className="profile-edit-head">
-          <h3>编辑个人资料</h3>
+      <div className="profile-edit-modal w-[min(420px,100%)] overflow-hidden rounded-[14px] bg-background" onClick={(event) => event.stopPropagation()}>
+        <header className="flex items-center justify-between border-b border-line px-5 py-[14px]">
+          <h3 className="m-0 text-[15px]">编辑个人资料</h3>
           <button type="button" className="settings-close" onClick={onClose} aria-label="关闭">×</button>
         </header>
 
-        <div className="profile-edit-body">
+        <div className="grid gap-1 px-5 py-[18px]">
           <div className="settings-row">
             <span className="settings-row-label">头像</span>
             {avatar ? (
@@ -136,9 +139,19 @@ export function ProfileEditModal({
           {error && <p className="settings-edit-error">{error}</p>}
         </div>
 
-        <footer className="profile-edit-foot">
-          <button type="button" onClick={onClose} disabled={saving}>取消</button>
-          <button type="button" className="save" onClick={() => void save()} disabled={saving || !displayName.trim()}>
+        <footer className="flex justify-end gap-2 border-t border-line px-5 py-[14px]">
+          <button
+            type="button"
+            className="cursor-pointer rounded-full border border-line bg-surface px-4 py-[6px] text-[12px] text-muted transition-[border-color,color] duration-[180ms] hover:border-line-primary hover:text-primary disabled:cursor-default disabled:text-disabled disabled:hover:border-line disabled:hover:text-disabled"
+            onClick={onClose}
+            disabled={saving}
+          >取消</button>
+          <button
+            type="button"
+            className="cursor-pointer rounded-full border-0 bg-primary px-4 py-[6px] text-[12px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark hover:text-on-primary disabled:cursor-default disabled:text-disabled disabled:hover:text-on-primary"
+            onClick={() => void save()}
+            disabled={saving || !displayName.trim()}
+          >
             {saving ? "保存中…" : "保存"}
           </button>
         </footer>

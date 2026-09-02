@@ -3,6 +3,7 @@
  * 封面/头像 → 昵称/简介/数据 → 胶囊导航（推荐 / 评论）→ 内容流
  * 2026-08-23 重构：Tab 统一为「推荐」（我发布的推荐+推广）与「评论」（我发表过的评论）
  * 2c：支持他人主页（isSelf=false 显示关注按钮 + 粉丝数）
+ * 2026-09-02 迁移：profile-* 系列原子类化（原 styles/app/profile.css），封面交互用 group 变体
  */
 "use client";
 
@@ -122,14 +123,16 @@ export default function ProfileView({
   /* 2026-08-23：Tab 统一为 推荐/评论，无多数据源筛选逻辑 */
 
   return (
-    <div className="profile-layout">
+    <div className="grid grid-cols-[1fr_220px] items-start gap-[22px] max-[900px]:grid-cols-1">
       {/* 中间栏：个人主页主体 */}
-      <div className="profile">
+      <div className="min-w-0">
+        {/* 封面横幅：宽高比 4:1（2026-08-22 从 3:1 降低高度，保持头像骑跨衔接自然）；底色 bg-hover 占位，图走内联 backgroundImage */}
         <div
-          className="profile-cover"
+          className="group relative z-[1] aspect-[4/1] rounded-[14px] bg-hover bg-cover bg-center"
           style={cover ? { backgroundImage: `url(${safeCoverUrl(cover)})` } : undefined}
         >
-          <div className="profile-cover-actions">
+          {/* 更换封面按钮：默认隐藏，封面 hover/聚焦显示（触屏恒显兜底） */}
+          <div className="absolute right-3 top-3 opacity-0 transition-[opacity] duration-[180ms] group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100!">
             {isSelf && (
               <>
                 <input
@@ -139,25 +142,37 @@ export default function ProfileView({
                   hidden
                   onChange={(event) => void onCoverChange(event)}
                 />
-                <label className="profile-cover-btn" htmlFor="cover-file" role="button">
+                <label className="cursor-pointer rounded-full border border-line bg-surface px-[14px] py-[7px] text-[12px] text-muted transition-[border-color,color] duration-[180ms] hover:border-line-primary hover:text-primary" htmlFor="cover-file" role="button">
                   {coverBusy ? "上传中…" : "更换封面"}
                 </label>
               </>
             )}
           </div>
         </div>
-        {coverError && <p className="profile-cover-error">{coverError}</p>}
+        {coverError && <p className="mt-2 text-[12px] text-error">{coverError}</p>}
 
         {/* 头像 → 昵称行（右侧操作按钮）→ 统计行（头像正下方，垂直布局） */}
-        <div className="profile-head">
-          <AvatarBox path={avatarUrl} name={name} className="profile-avatar" badge={badge} />
-          <div className="profile-name-row">
-            <h1 className="profile-name">{name}<AuthorBadge badge={badge} /></h1>
+        <div className="relative z-[2] px-[18px]">
+          {/* 头像 88px：负边距 -44px 下沉骑跨封面底边，白描边 3px 与页面底色衔接 */}
+          <AvatarBox
+            path={avatarUrl}
+            name={name}
+            className="-mt-11 flex size-[88px] shrink-0 items-center justify-center rounded-full border-[3px] border-surface bg-primary-soft text-[30px] font-semibold text-primary"
+            badge={badge}
+          />
+          <div className="mt-[10px] flex min-w-0 items-center gap-[14px]">
+            <h1 className="m-0 whitespace-nowrap text-[22px] font-semibold tracking-[-0.3px]">{name}<AuthorBadge badge={badge} /></h1>
             {isSelf ? (
-              <button className="profile-edit-btn" type="button" onClick={() => setShowEdit(true)}>编辑个人资料</button>
+              <button
+                className="ml-auto cursor-pointer rounded-full border border-line bg-surface px-4 py-2 text-[12px] text-muted transition-[border-color,color] duration-[180ms] hover:border-line-primary hover:text-primary"
+                type="button"
+                onClick={() => setShowEdit(true)}
+              >编辑个人资料</button>
             ) : (
               <button
-                className={`profile-follow-btn${following ? " following" : ""}`}
+                className={following
+                  ? "ml-auto cursor-pointer rounded-full bg-hover px-5 py-2 text-[12px] font-normal text-muted transition-[background-color] duration-[180ms]"
+                  : "ml-auto cursor-pointer rounded-full bg-primary px-5 py-2 text-[12px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark"}
                 type="button"
                 onClick={() => void onFollow()}
                 disabled={followBusy}
@@ -165,21 +180,21 @@ export default function ProfileView({
               >{following ? "已关注" : "关注"}</button>
             )}
           </div>
-          <div className="profile-stats">
-            <span><b>{myPosts.length}</b>发布</span>
+          <div className="mt-[10px] flex gap-[18px] whitespace-nowrap text-[13px] text-muted">
+            <span><b className="font-semibold text-foreground">{myPosts.length}</b>发布</span>
             {isSelf ? (
               <>
-                <Link className="profile-stat-link" href="/profile/following"><b>{followingCount}</b>关注</Link>
-                <Link className="profile-stat-link" href="/profile/followers"><b>{followerCount}</b>粉丝</Link>
+                <Link className="no-underline hover:[&_b]:text-primary" href="/profile/following"><b className="font-semibold text-foreground">{followingCount}</b>关注</Link>
+                <Link className="no-underline hover:[&_b]:text-primary" href="/profile/followers"><b className="font-semibold text-foreground">{followerCount}</b>粉丝</Link>
               </>
             ) : (
-              <span><b>{followerCount}</b>粉丝</span>
+              <span><b className="font-semibold text-foreground">{followerCount}</b>粉丝</span>
             )}
           </div>
         </div>
 
         {/* 简介：统计行下方，左对齐纯文本（非卡片），行高 1.7 弱层级；可空 */}
-        <div className="profile-bio-row">{bio ? <p className="profile-bio">{bio}</p> : null}</div>
+        <div className="px-[18px] pb-4 pt-[14px]">{bio ? <p className="m-0 max-w-[560px] text-[13px] leading-[1.7] text-muted">{bio}</p> : null}</div>
 
         {showEdit && (
           <ProfileEditModal
@@ -193,26 +208,26 @@ export default function ProfileView({
 
         <ProfileTabs active={tab} onChange={setTab} />
 
-        <div className="profile-tab-panel">
+        <div className="pt-1">
           {tab === "推荐" && (myPosts.length > 0
             ? myPosts.map((item) => <ProfileSquarePost post={item} key={item.id} isSelf={isSelf} onChanged={load} />)
-            : <p className="profile-empty">还没有发布内容，点右上角「+ 发布」分享好东西。</p>)}
+            : <p className="px-[18px] py-10 text-center text-[13px] text-soft">还没有发布内容，点右上角「+ 发布」分享好东西。</p>)}
 
           {tab === "评论" && (myComments.length > 0
             ? myComments.map((comment) => <ProfileComment comment={comment} key={comment.id} onChanged={load} />)
-            : <p className="profile-empty">还没有发表过评论。</p>)}
+            : <p className="px-[18px] py-10 text-center text-[13px] text-soft">还没有发表过评论。</p>)}
         </div>
       </div>
 
-      {/* 右栏：站点信息占位 */}
-      <aside className="profile-aside">
-        <div className="profile-aside-links">
-          <Link href="/guidelines">引力社区规范</Link>
-          <Link href="/privacy">隐私政策</Link>
-          <Link href="/terms">用户协议</Link>
-          <Link href="/enforcement">举报与处罚细则</Link>
+      {/* 右栏：站点信息占位（≤900px 单列隐藏） */}
+      <aside className="sticky top-4 max-[900px]:hidden">
+        <div className="flex flex-wrap gap-x-[14px] gap-y-[6px] border-b border-line pb-3">
+          <Link className="text-[12px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/guidelines">引力社区规范</Link>
+          <Link className="text-[12px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/privacy">隐私政策</Link>
+          <Link className="text-[12px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/terms">用户协议</Link>
+          <Link className="text-[12px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/enforcement">举报与处罚细则</Link>
         </div>
-        <p className="profile-aside-meta">
+        <p className="mt-3 text-[11px] leading-[1.9] text-soft">
           {SITE_INFO.icp}<br />
           {SITE_INFO.police}<br />
           {SITE_INFO.copyright}. All rights reserved.

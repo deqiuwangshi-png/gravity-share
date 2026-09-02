@@ -54,7 +54,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ```
 **禁止**：为单一组件新建配套 CSS 文件（Component.tsx + Component.css 模式）；大量堆积自定义 utility 类（.red-text/.my-card 等）；页面间创造相似而不同的颜色尺寸（颜色只用令牌变量，见上）。
 **AI 新增 CSS 文件前必答 5 问**：为什么 Tailwind 无法合理解决？是否已有公共组件可复用？是否应沉淀为 Token？是否已有 CSS 可扩展？此 CSS 是否被其他组件复用？无明确理由不允许新建 CSS 文件。
-**存量边界（2026-09-02 用户决策，同日多批已迁删）**：现有 styles/ 下 **27 个 CSS 文件**（按路由区扁平拆分，已含 ≤400 行治理；P0 落地页 2 文件、P3 认证区 2 文件、P2-home+P3-壳 app 区 2 文件（shell.css/home.css）、P2-详情页 3 文件（square.css 剩余三件套 + square-detail.css + square-comments.css）已迁删，装饰段分别并入 styles/app/decor.css 与 styles/auth/decor.css）默认不动；仅当 ① 属于审计迁移计划分批（P0-P4，见 deliverables/css-architecture-audit-2026-09-02.md）② 组件被功能级大改时可就手迁移（色彩仍走令牌）；迁移必须遵守下方「UI 迁移颜色保护规则」。
+**存量边界（2026-09-02 用户决策，同日多批已迁删）**：现有 styles/ 下 **24 个 CSS 文件**（按路由区扁平拆分，已含 ≤400 行治理；P0 落地页 2 文件、P3 认证区 2 文件、P2-home+P3-壳 app 区 2 文件（shell.css/home.css）、P2-详情页 3 文件（square.css 剩余三件套 + square-detail.css + square-comments.css）、P-profile 区 3 文件（profile.css/profile-posts.css/relation.css）已迁删，装饰段分别并入 styles/app/decor.css 与 styles/auth/decor.css）默认不动；仅当 ① 属于审计迁移计划分批（P0-P4，见 deliverables/css-architecture-audit-2026-09-02.md）② 组件被功能级大改时可就手迁移（色彩仍走令牌）；迁移必须遵守下方「UI 迁移颜色保护规则」。
 
 ## UI 迁移颜色保护规则（2026-09-02 用户铁律，CSS → Tailwind / shadcn 迁移必守）
 **核心**：迁移 = 改变实现方式，不是重新设计。视觉（颜色/层级/对比度/明暗）必须与迁移前一致；任何颜色定义不得凭变量名或视觉猜测，必须基于已确认的 Token 映射。

@@ -56,3 +56,16 @@
   width: 30px;
   height: 30px;
 }
+
+/* ---------- ⑤ profile 编辑弹窗：遮罩壳 + 面板阴影（2026-09-02 profile 批次：自 profile.css 迁出收容）
+ * .profile-edit-overlay：叠加在 modal.css .app-modal 之上，grid 居中取代 flex、留白 15→24px；
+ * .profile-edit-modal：面板阴影为非令牌 rgba（同 modal.css 家族阴影），其余布局已 Tailwind 化 */
+.profile-edit-overlay {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.profile-edit-modal {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}

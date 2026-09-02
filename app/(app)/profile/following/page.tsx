@@ -24,7 +24,7 @@ export default async function FollowingPage() {
   const followingIds = users.map((u) => u.id);
 
   return (
-    <div className="app-content relation-page">
+    <div className="app-content">
       <Link className="category-back" href="/profile">← 返回个人主页</Link>
       <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
         <h1 className="m-0 text-2xl tracking-[-0.5px]">我的关注</h1>
