@@ -1,7 +1,5 @@
 import "@/styles/app/modal.css";
-import "@/styles/app/announcement.css";
 import "@/styles/app/rich-content.css";
-import "@/styles/app/gallery.css";
 import "@/styles/app/promo.css";
 import "@/styles/app/boost.css";
 import "@/styles/app/ad.css";

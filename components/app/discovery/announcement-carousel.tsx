@@ -4,6 +4,7 @@
  * - event / ad 海报卡：image_url 大图（整卡可点），无图时回落文字卡
  * - 链接：站内路径 next/link；外链 http(s) 走 /go 安全网关（safeHref）
  * - 轮播：自动 4s + Hover 暂停 + 圆点手动切换；单条不轮播
+ * 样式：2026-09-03 自 styles/app/announcement.css 迁 Tailwind（动画 keyframes 收 decor⑩）
  */
 "use client";
 
@@ -16,21 +17,21 @@ import type { Announcement } from "@/lib/types";
 /** 自动轮播间隔（毫秒） */
 const INTERVAL = 4000;
 
-/** 文字卡图标标识 → 内联 SVG（数据层只存标识，图形由组件渲染） */
+/** 文字卡图标标识 → 内联 SVG（数据层只存标识，图形由组件渲染；尺寸原子类化） */
 const ICONS = {
   spark: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 3 L14.5 9.5 L21 12 L14.5 14.5 L12 21 L9.5 14.5 L3 12 L9.5 9.5 Z" />
     </svg>
   ),
   gem: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M6 3 L18 3 L22 9 L12 21 L2 9 Z" />
       <path d="M2 9 L22 9" />
     </svg>
   ),
   ring: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+    <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
       <circle cx="12" cy="12" r="9" />
       <circle cx="12" cy="12" r="4" />
     </svg>
@@ -63,6 +64,11 @@ function AnnounceLink({ item, children, className }: { item: Announcement; child
   return <a className={className} href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
 }
 
+/** 卡片淡入（keyframes 见 decor⑩ announce-fade）；海报分支不带 flex——原 CSS 靠 .announce-poster
+ * 后定义 display:block 覆盖 .announce-card 的 flex，原子类需两分支各自整串防同属性冲突 */
+const CARD_TEXT = "flex animate-[announce-fade_300ms_ease] items-center gap-[14px]";
+const CARD_POSTER = "relative block animate-[announce-fade_300ms_ease] overflow-hidden rounded-[10px] no-underline";
+
 export function AnnouncementCarousel({ items }: { items: Announcement[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -86,35 +92,35 @@ export function AnnouncementCarousel({ items }: { items: Announcement[] }) {
 
   return (
     <section
-      className="announce-carousel"
+      className="mb-[42px] rounded-[12px] border border-line bg-background p-[18px_22px_14px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
       {isPoster ? (
-        <AnnounceLink item={item} className="announce-card announce-poster">
+        <AnnounceLink item={item} className={CARD_POSTER}>
           {/* eslint-disable-next-line @next/next/no-img-element -- 运营海报（storage 或 https 外链） */}
-          <img src={posterSrc!} alt={item.title} referrerPolicy="no-referrer" />
-          <span className="announce-poster-tag">{item.kind === "ad" ? "广告" : "活动"}</span>
+          <img src={posterSrc!} alt={item.title} referrerPolicy="no-referrer" className="block max-h-[260px] w-full bg-hover object-cover" />
+          <span className="absolute left-[10px] top-[10px] rounded-full bg-black/55 px-[10px] py-[3px] text-[11px] font-semibold text-white">{item.kind === "ad" ? "广告" : "活动"}</span>
         </AnnounceLink>
       ) : (
-        <article className="announce-card" key={item.id}>
-          {item.icon && <span className="announce-icon">{ICONS[item.icon]}</span>}
-          <div className="announce-text">
-            <h3>{item.title}</h3>
-            {item.desc && <p>{item.desc}</p>}
+        <article className={CARD_TEXT} key={item.id}>
+          {item.icon && <span className="grid h-9 w-9 flex-none place-items-center rounded-[10px] bg-surface text-primary">{ICONS[item.icon]}</span>}
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[15px]">{item.title}</h3>
+            {item.desc && <p className="mt-[3px] text-[12px] text-soft max-[800px]:hidden">{item.desc}</p>}
           </div>
           {item.link && (
-            <AnnounceLink item={item} className="announce-link">查看详情 →</AnnounceLink>
+            <AnnounceLink item={item} className="flex-none whitespace-nowrap text-[12px] font-semibold text-primary transition-colors duration-[180ms] hover:text-primary-dark">查看详情 →</AnnounceLink>
           )}
         </article>
       )}
       {items.length > 1 && (
-        <div className="announce-dots" role="tablist" aria-label="公告切换">
+        <div className="mt-3 flex justify-center gap-2" role="tablist" aria-label="公告切换">
           {items.map((_, i) => (
             <button
               key={i}
               type="button"
-              className={`announce-dot${i === safeIndex ? " active" : ""}`}
+              className={`h-[6px] w-[6px] cursor-pointer rounded-full border-0 p-0 transition-[background-color] duration-[180ms] ${i === safeIndex ? "bg-primary" : "bg-muted"}`}
               onClick={() => setIndex(i)}
               aria-label={`第 ${i + 1} 条公告`}
             />

@@ -7,11 +7,12 @@
  * - 020 阶段二：白/黑名单迁库（Table Editor 维护）；每次进入记录一条 url_audit（可审计）
  * - 2026-08-25 M5 安全加固：safeRedirectTarget 严格校验（拒 userinfo @ 伪装 / 反斜杠混淆 / 非 http(s)），
  *   确认页展示完整目标地址供核对；展示与跳转共用同一规范化 href，天然保证 host 一致性
+ * - 2026-09-03：样式自 styles/app/go.css 迁 Tailwind（go-card 宿主类保留，大投影收 decor⑩）；
+ *   高危「返回引力」按代码注释意图补成大按钮（原 CSS 漏配布局规则，仅主色 inline 文字）
  * 开放重定向缓解：仅白名单域名服务端直接跳；未知/高危必须用户确认且展示真实域名
  */
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import "@/styles/app/go.css";
 import { riskOf, safeRedirectTarget } from "@/lib/links";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -62,23 +63,28 @@ export default async function GoPage({
   if (risk === "low") redirect(href);
 
   return (
-    <main className="go-page">
+    <main className="grid min-h-screen place-items-center bg-foreground/55 p-[24px_16px] backdrop-blur-[10px]">
       {risk === "high" ? (
-        <div className="go-card">
-          <p className="go-kicker">引力安全提示</p>
-          <h1>已禁止访问</h1>
-          <p className="go-domain">{host}</p>
-          <p className="go-url">{href}</p>
-          <p className="go-desc">该网站被检测到存在安全风险，平台已阻止访问。</p>
-          <Link className="go-continue go-home" href="/home">返回引力</Link>
+        <div className="go-card w-full max-w-[420px] rounded-[18px] bg-surface p-[48px_36px] text-center">
+          <p className="mb-[10px] text-[12px] tracking-[0.08em] text-soft">引力安全提示</p>
+          <h1 className="mb-[18px] text-[22px] font-semibold text-foreground">已禁止访问</h1>
+          <p className="mb-[18px] break-all text-[28px] font-semibold text-primary">{host}</p>
+          <p className="-mt-2 mb-[18px] select-text break-all text-[12px] leading-[1.6] text-soft">{href}</p>
+          <p className="text-[13px] leading-[1.7] text-muted">该网站被检测到存在安全风险，平台已阻止访问。</p>
+          <Link
+            className="mt-[30px] inline-flex h-12 items-center justify-center rounded-[12px] bg-primary px-8 text-[15px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark"
+            href="/home"
+          >
+            返回引力
+          </Link>
         </div>
       ) : (
-        <div className="go-card">
-          <p className="go-kicker">引力安全提示</p>
-          <h1>即将离开引力</h1>
-          <p className="go-domain">{host}</p>
-          <p className="go-url">{href}</p>
-          <p className="go-desc">您即将访问外部网站，引力无法保证其内容与安全，请确认目标网址。</p>
+        <div className="go-card w-full max-w-[420px] rounded-[18px] bg-surface p-[48px_36px] text-center">
+          <p className="mb-[10px] text-[12px] tracking-[0.08em] text-soft">引力安全提示</p>
+          <h1 className="mb-[18px] text-[22px] font-semibold text-foreground">即将离开引力</h1>
+          <p className="mb-[18px] break-all text-[28px] font-semibold text-primary">{host}</p>
+          <p className="-mt-2 mb-[18px] select-text break-all text-[12px] leading-[1.6] text-soft">{href}</p>
+          <p className="text-[13px] leading-[1.7] text-muted">您即将访问外部网站，引力无法保证其内容与安全，请确认目标网址。</p>
           <GoActions url={href} />
         </div>
       )}

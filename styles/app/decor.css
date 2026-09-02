@@ -193,3 +193,17 @@
 .rich-gallery-actions button:disabled:hover {
   background: rgba(0, 0, 0, 0.55);
 }
+
+/* ---------- ⑩ 公告走马灯动画 + /go 闸门卡投影（2026-09-03 公告·图集·go 批次：自 announcement.css / go.css 迁出收容）
+ * @keyframes announce-fade：走马灯切条 300ms 淡入（文字卡 key 重挂 / 海报卡分支重挂触发）——
+ *   keyframes 无 Tailwind 对应，组件用 animate-[announce-fade_300ms_ease] 任意值引用；
+ * .go-card：/go 全屏闸门中央白卡投影为非令牌 rgba（同 modal-box 家族大投影，类名由 go/page.tsx 保留，
+ *   宽高/圆角/内边距/底色已原子类化） */
+@keyframes announce-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.go-card {
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+}
