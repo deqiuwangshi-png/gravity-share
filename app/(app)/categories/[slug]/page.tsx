@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { fetchSquarePosts } from "@/lib/queries-posts";
+import { fetchSquarePostsByCategory } from "@/lib/queries-posts";
 import { SQUARE_CATEGORIES, SQUARE_CATEGORY_META } from "@/lib/config";
 import { SITE_URL, buildCollectionPage, jsonLd } from "@/lib/seo";
 import { SquareCard } from "@/components/app/common/square-card";
@@ -47,9 +47,10 @@ export default async function CategoryDetailPage({ params }: PageProps) {
   const meta = catName ? SQUARE_CATEGORY_META[catName] : null;
   if (!catName || !meta) notFound();
 
-  /* 服务端预取（RLS 公开读）+ 客户端过滤（分类是内容属性） */
+  /* 服务端预取（2026-09-02 B：按 category 直查走 026 (category, created_at) 复合索引，
+   * 取代「拉最新 100 再内存 filter」——旧实现窗口锁死，分类在最新 100 里只有几条就只显示几条） */
   const supabase = await createClient();
-  const posts = (await fetchSquarePosts(supabase, 100)).filter((post) => post.category === catName);
+  const posts = await fetchSquarePostsByCategory(supabase, catName);
 
   return <div className="app-content">
     <SquareRefreshWatcher />

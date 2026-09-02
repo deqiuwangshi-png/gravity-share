@@ -30,7 +30,13 @@ export interface SquarePostDTO {
   authorAvatar?: string;
   /** 作者标识（021：official 蓝V / discoverer 发现者 / none 无） */
   authorBadge?: UserBadge;
+  /** 正文全文（富文本 HTML / 纯文本）。2026-09-02 payload 优化（首页规模化分析 A）：
+   * 仅详情路径（fetchSquarePostById）与个人主页（fetchSquarePostsByAuthor，编辑需全文）携带；
+   * 首页/分类/tag 大列表路径 content 为空串（不随行传输）——列表消费方一律走 preview */
   content: string;
+  /** 卡片摘要（服务端生成，2026-09-02 A）：富文本已剥标签 → 折叠空白 → 截断 ≤160 字；
+   * 纯文本帖同样折叠截断；空正文帖为空串。列表卡片/横幅/窗口搜索统一消费此字段 */
+  preview: string;
   /** 用户标题（选填，038；SEO 标题提炼 L1 优先，空 = 未填写走 L2-L4 提炼） */
   title?: string;
   /** 发布类型（2026-08-23 三入口：share 分享 / opportunity 机会 / content 内容） */

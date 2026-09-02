@@ -9,13 +9,12 @@ import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { hasUrl } from "@/components/app/common/linkified-text";
 import { hostOf } from "@/lib/links";
-import { stripHtml } from "@/lib/text";
-import { isRichText } from "@/lib/rich-content";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquareCard({ post }: { post: SquarePostDTO }) {
-  /* 富文本帖卡片预览：去标签纯文本截断；短帖纯文本原样（3 行截断由 CSS 承担） */
-  const preview = isRichText(post.content) ? stripHtml(post.content) : post.content;
+  /* 正文预览（2026-09-02 A：统一消费服务端生成 preview——纯文本 160 字截断/富文本已剥标签，
+   * 客户端不再逐卡 stripHtml；3 行截断由 CSS line-clamp 承担） */
+  const preview = post.preview;
   return (
     <Link className="home-card" href={`/square/${post.id}`}>
       <div className="home-card-head">
@@ -40,7 +39,8 @@ export function SquareCard({ post }: { post: SquarePostDTO }) {
       <div className="home-card-stats">
         <span><Heart size={14} />{post.likes}</span>
         <span><MessageCircle size={14} />{post.comments}</span>
-        {(hasUrl(post.content) || post.url) && (
+        {/* 含链接标记：preview（富文本已剥标签，URL 文字保留）里带 http 链接或独立 url 字段（旧帖） */}
+        {(hasUrl(post.preview) || post.url) && (
           <span className="home-card-link-mark">{post.url ? hostOf(post.url) : "含链接"}</span>
         )}
       </div>

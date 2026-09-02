@@ -2,11 +2,12 @@
  * 登录设备管理（GET/DELETE /api/auth/devices，2026-08-23）
  * GET：security definer RPC list_user_sessions（auth.sessions，PostgREST 不暴露 auth schema，见迁移 018）→ 解析 UA 返回设备列表
  * DELETE：撤销指定设备（body { sessionId }）或缺省全部；一律按 uid 绑定本人，无越权面
- * 安全：service_role 仅服务端（lib/supabase/admin.ts）；SameSite cookie 防 CSRF
+ * 安全：service_role 仅服务端（lib/supabase/admin.ts）；DELETE 走 assertSameOrigin 同源校验（R2 2026-09-02）
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertSameOrigin } from "@/lib/origin-guard";
 
 type SessionRow = {
   id: string;
@@ -59,6 +60,10 @@ export async function GET() {
 }
 
 export async function DELETE(request: Request) {
+  /* R2：同源校验（cookie 态状态变更 API 统一防线） */
+  const originBlock = assertSameOrigin(request);
+  if (originBlock) return originBlock;
+
   const supabase = await createClient();
   const {
     data: { user },

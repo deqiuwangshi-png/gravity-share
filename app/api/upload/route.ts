@@ -5,11 +5,12 @@
  *   ③ target 白名单（avatar/cover/post）④ postId 字符集校验（防路径注入）
  *   ⑤ 大小 ≤5MB ⑥ 内容嗅探（魔术字节 → 服务端定 contentType，不信客户端 file.type）
  *   ⑦ 路径绑定 uid（post 追加 postId）⑧ 成功/失败均写 upload_audit（审计 + 计入风控）
- * 依赖迁移 022（upload_audit 表）；表未执行时限流自动放行（部署容错），上线顺序：先执行 022 SQL。
+ * 依赖迁移 022（upload_audit 表）；001-041 已全量落库，限流查询失败按部署事故 fail closed（R2）。
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertSameOrigin } from "@/lib/origin-guard";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 const TARGETS = ["avatar", "cover", "post"] as const;
@@ -69,6 +70,10 @@ async function auditUpload(
 }
 
 export async function POST(request: Request) {
+  /* R2：同源校验（cookie 态状态变更 API 统一防线） */
+  const originBlock = assertSameOrigin(request);
+  if (originBlock) return originBlock;
+
   /* 1. 鉴权（本人） */
   const supabase = await createClient();
   const {
@@ -78,7 +83,7 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
-  /* 2. 用户级限流 + 配额（upload_audit 计数；022 未执行时 catch 放行） */
+  /* 2. 用户级限流 + 配额（upload_audit 计数；依赖缺失 fail closed，见下方 catch） */
   const now = Date.now();
   const since60s = new Date(now - RATE_LIMIT_WINDOW_MS).toISOString();
   const since24h = new Date(now - DAILY_WINDOW_MS).toISOString();
@@ -102,7 +107,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "daily_quota_exceeded" }, { status: 429 });
     }
   } catch {
-    /* upload_audit 不存在（022 未执行）：放行，避免部署期上传全挂 */
+    /* R2（2026-09-02）：限流依赖缺失 = 部署事故，fail closed 拒绝上传——022 已随 001-041 全量落库 */
+    return NextResponse.json({ error: "rate_limit_unavailable" }, { status: 500 });
   }
 
   /* 3. 表单解析 */

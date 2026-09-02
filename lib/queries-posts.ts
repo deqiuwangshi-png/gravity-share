@@ -5,7 +5,8 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SquarePostDTO } from "@/lib/types";
-import { formatRelativeTime, safeName } from "@/lib/text";
+import { formatRelativeTime, safeName, stripHtml } from "@/lib/text";
+import { isRichText } from "@/lib/rich-content";
 
 const SQUARE = "square_posts";
 
@@ -33,14 +34,27 @@ export type SquarePostRow = {
   users: { id: string; name: string; avatar_url: string | null; badge: string | null } | null;
 };
 
-export function toSquarePostDTO(row: SquarePostRow): SquarePostDTO {
+/** 卡片摘要（服务端生成，2026-09-02 规模化分析 A）：
+ * 富文本帖剥标签 → 折叠空白 → 截 ≤160 字；纯文本帖只折叠截断（不经 stripHtml，避免误剥纯文本里的 <xxx> 片段）。
+ * 与详情页 meta description（page.tsx 160 字）同长度口径 */
+function cardPreview(content: string): string {
+  const text = isRichText(content) ? stripHtml(content) : content;
+  return text.replace(/\s+/g, " ").trim().slice(0, 160);
+}
+
+export function toSquarePostDTO(
+  row: SquarePostRow,
+  opts?: { content?: boolean },
+): SquarePostDTO {
   return {
     id: row.id,
     authorId: row.users?.id ?? "",
     authorName: safeName(row.users?.name),
     authorAvatar: row.users?.avatar_url ?? undefined,
     authorBadge: (row.users?.badge as SquarePostDTO["authorBadge"]) ?? "none",
-    content: row.content,
+    /* 详情/作者流路径带全文；首页/分类/tag 大列表传 { content: false } 剥离（payload 优化，卡片消费 preview） */
+    content: opts?.content === false ? "" : row.content,
+    preview: cardPreview(row.content),
     title: row.title ?? undefined,
     postType: (row.post_type as "share" | "opportunity" | "content") ?? "share",
     commission: row.commission ?? undefined,
@@ -82,8 +96,8 @@ export async function fetchSquarePosts(supabase: SupabaseClient, limit?: number)
     .order("created_at", { ascending: false })
     .limit(limit ?? 100);
   return [
-    ...((featured as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? []),
-    ...((normal as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? []),
+    ...((featured as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? []),
+    ...((normal as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? []),
   ];
 }
 
@@ -97,14 +111,46 @@ export async function fetchSquarePostById(supabase: SupabaseClient, id: string):
   return data ? toSquarePostDTO(data as SquarePostRow) : null;
 }
 
-/** 某用户发布的广场帖（个人主页「推荐」Tab，时间倒序） */
+/** 某用户发布的广场帖（个人主页「推荐」Tab，时间倒序）
+ * 保留 content 全文：ProfileSquarePost 内联编辑（SquarePostEditForm）与卡片正文都消费 content */
 export async function fetchSquarePostsByAuthor(supabase: SupabaseClient, userId: string): Promise<SquarePostDTO[]> {
   const { data } = await supabase
     .from(SQUARE)
     .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
     .eq("author_id", userId)
     .order("created_at", { ascending: false });
-  return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
+  return (data as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row)) ?? [];
+}
+
+/** 某分类下的公开帖（/categories/[slug] 用，2026-09-02 规模化分析 B）
+ * 直接按 category 过滤走 026 现成 (category, created_at) 索引——取代旧的「拉最新 100 再内存 filter」
+ * （窗口锁死：该分类在最新 100 里只有几条就只显示几条）；与 fetchSquarePosts 同款置顶语义 */
+export async function fetchSquarePostsByCategory(
+  supabase: SupabaseClient,
+  category: string,
+  limit?: number,
+): Promise<SquarePostDTO[]> {
+  const now = new Date().toISOString();
+  /* 置顶中（该分类，数量少） */
+  const { data: featured } = await supabase
+    .from(SQUARE)
+    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
+    .eq("category", category)
+    .gt("featured_until", now)
+    .order("featured_until", { ascending: true })
+    .limit(limit ?? 100);
+  /* 普通帖（该分类，未置顶 + 已过期），走 (category, created_at) 复合索引 */
+  const { data: normal } = await supabase
+    .from(SQUARE)
+    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
+    .eq("category", category)
+    .or(`featured_until.is.null,featured_until.lte.${now}`)
+    .order("created_at", { ascending: false })
+    .limit(limit ?? 100);
+  return [
+    ...((featured as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? []),
+    ...((normal as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? []),
+  ];
 }
 
 /** 某标签下的公开帖（/tag/[tag] 用，P0-7；Postgres 数组包含查询，精确匹配 tags 元素） */
@@ -114,7 +160,7 @@ export async function fetchSquarePostsByTag(supabase: SupabaseClient, tag: strin
     .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
     .contains("tags", [tag])
     .order("created_at", { ascending: false });
-  return (data as SquarePostRow[] | null)?.map(toSquarePostDTO) ?? [];
+  return (data as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? [];
 }
 
 /** 用户主页 id 清单（2026-08-25 sitemap 用：/profile/[id] 动态条目，时间倒序限条数） */

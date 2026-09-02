@@ -8,6 +8,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertSameOrigin } from "@/lib/origin-guard";
 
 /** 举报原因枚举（与 /guidelines 红线、/enforcement 专项对齐） */
 const REPORT_REASONS = ["违法内容", "侵权内容", "广告推广", "骚扰攻击", "虚假信息", "其他"] as const;
@@ -59,6 +60,10 @@ async function feishuAppendRecord(token: string, appToken: string, tableId: stri
 }
 
 export async function POST(request: Request) {
+  /* R2：同源校验（cookie 态状态变更 API 统一防线） */
+  const originBlock = assertSameOrigin(request);
+  if (originBlock) return originBlock;
+
   /* 1. 登录校验（举报人身份） */
   const supabase = await createClient();
   const {
@@ -84,8 +89,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
-  /* 3. 24h 同目标去重：已有 pending 记录则不再写入飞书（DB 留档不受影响） */
+  /* 3. 目标存在性校验（R2 2026-09-02：防伪造 targetId 制造运营垃圾 / 污染 24h 去重窗口） */
   const admin = createAdminClient();
+  const { data: target } = targetType === "square"
+    ? await admin.from("square_posts").select("id").eq("id", targetId).maybeSingle()
+    : await admin.from("comments").select("id").eq("id", targetId).maybeSingle();
+  if (!target) {
+    return NextResponse.json({ error: "目标不存在" }, { status: 404 });
+  }
+
+  /* 4. 24h 同目标去重：已有 pending 记录则不再写入飞书（DB 留档不受影响） */
   const since = new Date(Date.now() - DEDUP_WINDOW_MS).toISOString();
   const { data: dup } = await admin
     .from("reports")
@@ -99,7 +112,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, duplicated: true });
   }
 
-  /* 4. 飞书凭证缺失：优雅降级（举报已写库，仅不同步工作台） */
+  /* 5. 飞书凭证缺失：优雅降级（举报已写库，仅不同步工作台） */
   const appId = process.env.FEISHU_APP_ID;
   const appSecret = process.env.FEISHU_APP_SECRET;
   const appToken = process.env.FEISHU_BITABLE_APP_TOKEN;
@@ -108,7 +121,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "feishu_not_configured" }, { status: 501 });
   }
 
-  /* 5. 同步到飞书多维表格（失败不抛给前端：举报主流程已完成） */
+  /* 6. 同步到飞书多维表格（失败不抛给前端：举报主流程已完成） */
   try {
     const token = await feishuToken(appId, appSecret);
     await feishuAppendRecord(token, appToken, tableId, {

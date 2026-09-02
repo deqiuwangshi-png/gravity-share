@@ -16,7 +16,7 @@ import { ProfileEditModal } from "@/components/app/shell/profile-edit-modal";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { AuthorBadge } from "@/components/app/common/author-badge";
 import { createClient } from "@/lib/supabase/client";
-import { publicImageUrl, removeImage, uploadImage, validateImage } from "@/lib/storage";
+import { removeImage, safeCoverUrl, uploadImage, validateImage } from "@/lib/storage";
 import { SITE_INFO } from "@/lib/config";
 import { SQUARE_UPDATED_EVENT } from "@/lib/events";
 import { fetchCommentsByAuthor } from "@/lib/queries-comments";
@@ -127,7 +127,7 @@ export default function ProfileView({
       <div className="profile">
         <div
           className="profile-cover"
-          style={cover ? { backgroundImage: `url(${publicImageUrl("cover", cover)})` } : undefined}
+          style={cover ? { backgroundImage: `url(${safeCoverUrl(cover)})` } : undefined}
         >
           <div className="profile-cover-actions">
             {isSelf && (

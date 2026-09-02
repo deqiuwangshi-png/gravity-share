@@ -67,6 +67,8 @@ export default function ResetForm({ isRecovery }: { isRecovery: boolean }) {
     }
     /* 改密成功：撤销全部设备会话（兜底，防旧会话残留），再清本地会话回登录 */
     await fetch("/api/auth/devices", { method: "DELETE" }).catch(() => {});
+    /* R2：recovery 豁免 cookie 为 httpOnly，客户端无法删除 → 服务端清除（成功/退出路径均清理） */
+    await fetch("/api/auth/recovery-clear", { method: "POST" }).catch(() => {});
     /* N1 修复：清掉 recovery session 再跳登录，否则 proxy 守卫会把登录页弹回 /home */
     await supabase.auth.signOut();
     router.push("/login");

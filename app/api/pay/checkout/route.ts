@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TaxCategory } from "@waffo/pancake-ts";
 import { createClient } from "@/lib/supabase/server";
+import { assertSameOrigin } from "@/lib/origin-guard";
 import {
   waffoConfigured,
   getWaffoClient,
@@ -17,6 +18,10 @@ import {
 } from "@/lib/waffo";
 
 export async function POST(req: NextRequest) {
+  /* R2：同源校验（cookie 态状态变更 API 统一防线） */
+  const originBlock = assertSameOrigin(req);
+  if (originBlock) return originBlock;
+
   const supabase = await createClient();
   const {
     data: { user },

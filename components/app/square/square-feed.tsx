@@ -34,7 +34,10 @@ export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) 
   const filtered = (category === "全部" ? normalPosts : normalPosts.filter((post) => post.category === category)).filter(
     (post) =>
       !q ||
-      post.content.toLowerCase().includes(q) ||
+      /* 窗口搜索：preview（服务端摘要）+ 标题 + 标签 + 作者（2026-09-02 A：列表不再携带 content 全文，
+       * 弱搜索以摘要/标题/标签覆盖，正文超 160 字尾部关键词不再命中——可接受降级） */
+      post.preview.toLowerCase().includes(q) ||
+      (post.title ?? "").toLowerCase().includes(q) ||
       post.tags.some((tag) => tag.toLowerCase().includes(q)) ||
       post.authorName.toLowerCase().includes(q),
   );

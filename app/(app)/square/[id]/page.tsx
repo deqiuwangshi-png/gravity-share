@@ -55,6 +55,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: pageTitle,
     description: desc,
+    /* 索引策略显式声明（2026-09-02，GSC noindex 排查收尾）：
+       帖子存在且 anon 可读（200 + 全文 SSR）→ index, follow；
+       null（不存在/已删/读不到，走 notFound 404）→ noindex, nofollow（双保险：Next 对 404 已自动注入 noindex） */
+    robots: post ? { index: true, follow: true } : { index: false, follow: false },
     alternates: { canonical: `/square/${id}` },
     openGraph: {
       title: pageTitle,

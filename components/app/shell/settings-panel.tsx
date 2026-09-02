@@ -261,7 +261,12 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
       return;
     }
     try {
-      const res = await fetch("/api/account/delete", { method: "POST" });
+      /* R2：当前密码随请求提交，服务端复核（前端 verifyCurrentPassword 仅 UX，非安全边界） */
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword }),
+      });
       if (!res.ok) throw new Error();
       await supabase.auth.signOut();
       router.push("/");

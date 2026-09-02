@@ -6,9 +6,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertSameOrigin } from "@/lib/origin-guard";
 import { waffoConfigured, getWaffoClient } from "@/lib/waffo";
 
 export async function POST(req: NextRequest) {
+  /* R2：同源校验（cookie 态状态变更 API 统一防线） */
+  const originBlock = assertSameOrigin(req);
+  if (originBlock) return originBlock;
+
   const supabase = await createClient();
   const {
     data: { user },

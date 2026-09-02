@@ -34,6 +34,23 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
     expect(dto.authorName).toBe("张三");
   });
 
+  it("2026-09-02 A：preview 服务端生成（纯文本折叠截断；富文本剥标签）", () => {
+    /* 纯文本短帖：preview 即正文 */
+    expect(toSquarePostDTO(row).preview).toBe("推荐一个好用的 AI 工具");
+    /* 富文本帖：标签剥除、换行折叠为空格 */
+    const rich = toSquarePostDTO({ ...row, content: "<p>你好<b>世界</b></p>\n<p>第二行</p>" });
+    expect(rich.preview).toBe("你好 世界 第二行");
+    /* 超 160 字截断 */
+    const long = toSquarePostDTO({ ...row, content: "字".repeat(300) });
+    expect(long.preview.length).toBe(160);
+  });
+
+  it("2026-09-02 A：{ content: false } 剥离正文全文（大列表路径），preview 仍在", () => {
+    const listDto = toSquarePostDTO(row, { content: false });
+    expect(listDto.content).toBe("");
+    expect(listDto.preview).toBe("推荐一个好用的 AI 工具");
+  });
+
   it("038 标题映射：非空 → title，空 → undefined", () => {
     expect(toSquarePostDTO({ ...row, title: "我的标题" }).title).toBe("我的标题");
     expect(toSquarePostDTO({ ...row, title: null }).title).toBeUndefined();

@@ -22,7 +22,7 @@
     "@tiptap/react": "^3.30.5",
     "@tiptap/starter-kit": "^3.30.5",
     "@waffo/pancake-ts": "^0.19.1",
-    "dompurify": "^3.4.14",
+    "isomorphic-dompurify": "^4.0.0",
     "lucide-react": "^1.33.0",
     "next": "16.3.1",
     "react": "19.2.8",

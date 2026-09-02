@@ -84,6 +84,15 @@ export function safeAvatarUrl(path: string): string {
   return publicImageUrl("avatar", path);
 }
 
+/** 封面安全 URL（审计 P1，2026-09-02）：封面无第三方来源（仅本地上传，path 形如 {uid}/{stamp}.ext），
+ * 任何 http 外链一律拒绝——users.cover_url 可被直写为任意外链，若原样进 backgroundImage，
+ * 每位访客浏览器会向攻击者服务器发请求（泄露 IP/UA/Referer）。返回空串 = 渲染层不设封面（背景色兜底）。 */
+export function safeCoverUrl(path: string): string {
+  if (!path) return "";
+  if (path.startsWith("http")) return "";
+  return publicImageUrl("cover", path);
+}
+
 /** 删除存储对象（BUG-14：孤儿文件回滚 / 换图后旧图清理） */
 export async function removeImage(target: UploadTarget, path: string): Promise<void> {
   const supabase = createClient();

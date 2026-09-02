@@ -135,7 +135,9 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
         return;
       }
       submittedRef.current = true;
-      window.dispatchEvent(new Event(SQUARE_UPDATED_EVENT));
+      /* D（2026-09-02 规模化分析）：事件携带新帖 id —— 列表监听方「拉单条插头 + 裁尾」增量刷新，
+       * 替代旧的全量重拉 100 替换（消除重复请求与滚动跳变） */
+      window.dispatchEvent(new CustomEvent(SQUARE_UPDATED_EVENT, { detail: { postId: id } }));
       /* 方案 B（2026-08-29）：发布成功即关弹窗并跳到新帖详情页——省掉"已发布/完成"冗余确认态 */
       onClose();
       router.push(`/square/${id}`);
