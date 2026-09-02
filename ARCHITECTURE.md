@@ -213,7 +213,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 内容池归一（016） | ✅ | discoveries 退役并入 square_posts：发布统一广场、分类页/个人主页改读 square、`/discover/[id]` 重定向到 `/square/[id]` |
 | vitest 冒烟 | ✅ | 纯函数测试（lib/text.test.ts / lib/links.test.ts / lib/url-policy.test.ts 等）落地 |
 | 安全收口（027） | ✅ | users.badge 列级收写 / promo_orders 加固（状态/定价/归属）/ 举报与认证限频 / 内容长度 CHECK（2026-08-29） |
-| 富文本内容（028） | ✅ | content 放宽至 20000 + TipTap 编辑器（B/斜体/列表/链接/图片 + 图集条，第1张作封面）+ DOMPurify 双防线 + 富文本链接走 /go 网关（2026-08-29） |
+| 富文本内容（028） | ✅ | content 放宽至 20000 + TipTap 编辑器（B/斜体/列表/链接/图片 + 图集条，第1张作封面）+ sanitize-html 双防线 + 富文本链接走 /go 网关（2026-08-29；2026-09-02 由 DOMPurify → isomorphic-dompurify → sanitize-html 迁移：Vercel Serverless 无法运行时加载 jsdom，sanitize-html 为纯 JS 解析器，Node/浏览器双端同语义净化） |
 | 图片模型统一（P1，2026-08-31） | ✅ | 发布/编辑/详情三端图片模型统一：编辑页预载存量图进图集条（可管理/删）；删除存量图延迟到保存才清 storage（避免取消编辑 → content 回滚仍引用已删文件 → 404）；取消仅清新上传孤儿；详情页封面用精确 URL 匹配替代 `<img` 字符串判断，与 feed 对齐 |
 | 帖子图集化（037，2026-08-31） | ✅ | 图片从正文 HTML 剥离为结构化 `gallery jsonb`（有序 path 数组，第 1 张 = 封面 image_url，≤9 张 CHECK）；发布/编辑写 gallery，保存时 stripImages 剥离正文 img（旧帖保存一次即升级新模型）；图集条左移/右移排序（顺序 = 展示顺序 + 封面）；详情/个人主页渲染 1/2/3 列网格（3 列封顶多行）+ 零依赖 lightbox 点击放大（ESC/左右键/遮罩关闭）；删帖联动清理图集全部文件；旧帖（gallery 空）回退正文内联图 + 封面 |
 | 发布标注移除 + 定价区下线（2026-08-31） | ✅ | 发布页删除「包含推广/我的原创」两个可选标注（新帖统一 post_type=share，存量机会/来源标识保留渲染，库 015 不动）；落地页定价三卡整体下线，改为免费口径文案（「目前完全免费，未来付费会提前公告」），pricing.css 与 PRICING_TIERS 一并删除 |
