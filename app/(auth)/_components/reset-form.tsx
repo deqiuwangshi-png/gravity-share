@@ -6,6 +6,11 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { verifyCurrentPassword } from "@/lib/queries-misc";
+import { AuthSubmit, authButtonClass } from "./auth-submit";
+import { AuthField, AuthInput } from "./auth-field";
+
+/** 提交主按钮样式串（Link 版按钮：原 .auth-submit 用于 <Link> 的场景） */
+const submitLinkClass = `${authButtonClass} mt-1 justify-between pl-5 pr-[17px]`;
 
 type FormState = "checking" | "ready" | "invalid";
 
@@ -77,40 +82,37 @@ export default function ResetForm({ isRecovery }: { isRecovery: boolean }) {
 
   if (state === "checking") {
     return (
-      <div className="auth-card">
-        <div className="auth-heading">
-          <h2>正在验证链接…</h2>
-        </div>
+      <div className="mx-auto w-full max-w-[414px]">
+        <h2 className="m-0 text-[34px] tracking-[-1.5px]">正在验证链接…</h2>
       </div>
     );
   }
 
   if (state === "invalid") {
     return (
-      <div className="auth-card">
-        <div className="auth-heading">
-          <p className="auth-kicker">链接无效</p>
-          <h2>重置链接无效或已过期</h2>
-          <p>请重新获取重置链接，链接自发出起 30 分钟内有效。</p>
+      <div className="mx-auto w-full max-w-[414px]">
+        <div>
+          <p className="mb-3 text-[13px] font-bold text-primary">链接无效</p>
+          <h2 className="m-0 text-[34px] tracking-[-1.5px]">重置链接无效或已过期</h2>
+          <p className="mt-3 text-sm text-muted">请重新获取重置链接，链接自发出起 30 分钟内有效。</p>
         </div>
-        <Link className="auth-submit" href="/forgot-password">重新获取链接<span aria-hidden="true">→</span></Link>
+        <Link className={submitLinkClass} href="/forgot-password">重新获取链接<span aria-hidden="true">→</span></Link>
       </div>
     );
   }
 
   return (
-    <div className="auth-card">
-      <div className="auth-heading">
-        <p className="auth-kicker">{isRecovery ? "设置新密码" : "修改密码"}</p>
-        <h2>重置密码</h2>
-        <p>{isRecovery ? "输入你的新密码，至少 8 位。" : "请先输入当前密码确认身份，再设置新密码（至少 8 位）。"}</p>
+    <div className="mx-auto w-full max-w-[414px]">
+      <div>
+        <p className="mb-3 text-[13px] font-bold text-primary">{isRecovery ? "设置新密码" : "修改密码"}</p>
+        <h2 className="m-0 text-[34px] tracking-[-1.5px]">重置密码</h2>
+        <p className="mt-3 text-sm text-muted">{isRecovery ? "输入你的新密码，至少 8 位。" : "请先输入当前密码确认身份，再设置新密码（至少 8 位）。"}</p>
       </div>
-      <form className="auth-form" onSubmit={handleSubmit}>
+      <form className="mt-[22px] grid gap-[15px]" onSubmit={handleSubmit}>
         {!isRecovery && (
-          <label>
-            <span>当前密码</span>
+          <AuthField label="当前密码">
             <span className="password-field">
-              <input
+              <AuthInput
                 type={showCurrent ? "text" : "password"}
                 autoComplete="current-password"
                 value={currentPassword}
@@ -120,12 +122,11 @@ export default function ResetForm({ isRecovery }: { isRecovery: boolean }) {
               />
               <button type="button" onClick={() => setShowCurrent(!showCurrent)} aria-label={showCurrent ? "隐藏当前密码" : "显示当前密码"} aria-pressed={showCurrent}>{showCurrent ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button>
             </span>
-          </label>
+          </AuthField>
         )}
-        <label>
-          <span>新密码</span>
+        <AuthField label="新密码">
           <span className="password-field">
-            <input
+            <AuthInput
               name="password"
               type={showNew ? "text" : "password"}
               autoComplete="new-password"
@@ -137,11 +138,10 @@ export default function ResetForm({ isRecovery }: { isRecovery: boolean }) {
             />
             <button type="button" onClick={() => setShowNew(!showNew)} aria-label={showNew ? "隐藏新密码" : "显示新密码"} aria-pressed={showNew}>{showNew ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button>
           </span>
-        </label>
-        <label>
-          <span>确认新密码</span>
+        </AuthField>
+        <AuthField label="确认新密码">
           <span className="password-field">
-            <input
+            <AuthInput
               name="confirm"
               type={showConfirm ? "text" : "password"}
               autoComplete="new-password"
@@ -153,11 +153,11 @@ export default function ResetForm({ isRecovery }: { isRecovery: boolean }) {
             />
             <button type="button" onClick={() => setShowConfirm(!showConfirm)} aria-label={showConfirm ? "隐藏确认密码" : "显示确认密码"} aria-pressed={showConfirm}>{showConfirm ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button>
           </span>
-        </label>
-        {error && <p className="auth-mock-note auth-error" role="alert">{error}</p>}
-        <button className="auth-submit" type="submit" disabled={saving}>
+        </AuthField>
+        {error && <p className="-mt-1 text-xs text-primary" role="alert">{error}</p>}
+        <AuthSubmit className="mt-1 justify-between pl-5 pr-[17px]" disabled={saving}>
           {saving ? "保存中…" : "更新密码"}<span aria-hidden="true">→</span>
-        </button>
+        </AuthSubmit>
       </form>
     </div>
   );

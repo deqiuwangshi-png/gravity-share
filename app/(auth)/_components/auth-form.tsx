@@ -8,6 +8,8 @@ import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { OAUTH_PROVIDERS } from "@/lib/config";
 import { safeNextPath } from "@/lib/links";
+import { AuthSubmit } from "./auth-submit";
+import { AuthField, AuthInput } from "./auth-field";
 
 type Channel = "email" | "phone";
 
@@ -24,7 +26,7 @@ const PHONE_AUTH_ENABLED = false;
 function ProviderIcon({ id }: { id: string }) {
   if (id === "google") {
     return (
-      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <svg className="shrink-0" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
         <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z" />
         <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
         <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
@@ -33,7 +35,7 @@ function ProviderIcon({ id }: { id: string }) {
     );
   }
   return (
-    <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    <svg className="shrink-0" width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
       <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
     </svg>
   );
@@ -184,46 +186,66 @@ export default function AuthForm() {
 
   return (
     <>
-      <div className="auth-card">
-        <div className="auth-heading">
-        <h2>欢迎来到引力</h2>
-        {/* 新用户注册引导（登录即注册：无独立注册页，2026-08-27 新增，命中 .auth-heading p:last-child 样式） */}
-        <p>没有账号？输入邮箱和密码即可注册。</p>
-      </div>
+      <div className="mx-auto w-full max-w-[414px]">
+        <div>
+          <h2 className="m-0 text-[34px] tracking-[-1.5px]">欢迎来到引力</h2>
+          {/* 新用户注册引导（登录即注册：无独立注册页，2026-08-27 新增） */}
+          <p className="mt-3 text-sm text-muted">没有账号？输入邮箱和密码即可注册。</p>
+        </div>
 
       {PHONE_AUTH_ENABLED && (
-        <div className="auth-mode-switch" role="tablist" aria-label="账号通道">
-          <button type="button" className={channel === "email" ? "active" : ""} role="tab" aria-selected={channel === "email"} onClick={() => setChannel("email")}>邮箱</button>
-          <button type="button" className={channel === "phone" ? "active" : ""} role="tab" aria-selected={channel === "phone"} onClick={() => setChannel("phone")}>手机号</button>
+        <div className="mt-[26px] flex gap-[26px] border-b border-line" role="tablist" aria-label="账号通道">
+          <button type="button" className={`relative px-0.5 pb-[13px] text-sm text-soft ${channel === "email" ? "font-bold text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-primary" : ""}`} role="tab" aria-selected={channel === "email"} onClick={() => setChannel("email")}>邮箱</button>
+          <button type="button" className={`relative px-0.5 pb-[13px] text-sm text-soft ${channel === "phone" ? "font-bold text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-primary" : ""}`} role="tab" aria-selected={channel === "phone"} onClick={() => setChannel("phone")}>手机号</button>
         </div>
       )}
 
       {channel === "email" ? (
         /* key 隔离：邮箱表单（非受控输入）与手机号表单（受控 value）切换时必须重建，
          * 否则 React 复用 DOM 触发「非受控 → 受控」冲突警告 */
-        <form key="email" className="auth-form" onSubmit={submitEmail}>
-          <label><span>邮箱</span><input name="email" type="email" autoComplete="email" placeholder="name@example.com" required /></label>
-          <label><span>密码</span><span className="password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="至少 8 位字符" minLength={8} required /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "隐藏密码" : "显示密码"} aria-pressed={showPassword}>{showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button></span></label>
-          <div className="auth-form-options"><Link href="/forgot-password">忘记密码？</Link></div>
-          {error && <p className="auth-mock-note auth-error" role="alert">{error}</p>}
-          <button className="auth-submit" type="submit" disabled={submitting}>{submitting ? "登录中…" : "登录 / 注册"}<span aria-hidden="true">→</span></button>
+        <form key="email" className="mt-[22px] grid gap-[15px]" onSubmit={submitEmail}>
+          <AuthField label="邮箱">
+            <AuthInput name="email" type="email" autoComplete="email" placeholder="name@example.com" required />
+          </AuthField>
+          <AuthField label="密码">
+            <span className="password-field">
+              <AuthInput name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="至少 8 位字符" minLength={8} required />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "隐藏密码" : "显示密码"} aria-pressed={showPassword}>{showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button>
+            </span>
+          </AuthField>
+          <div className="-mt-[3px] flex items-center justify-between text-xs text-muted">
+            <Link href="/forgot-password" className="font-semibold text-primary">忘记密码？</Link>
+          </div>
+          {error && <p className="-mt-1 text-xs text-primary" role="alert">{error}</p>}
+          <AuthSubmit className="mt-1 justify-between pl-5 pr-[17px]" disabled={submitting}>{submitting ? "登录中…" : "登录 / 注册"}<span aria-hidden="true">→</span></AuthSubmit>
         </form>
       ) : (
-        <form key="phone" className="auth-form" onSubmit={submitPhone}>
-          <label><span>手机号</span><input name="phone" type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+86 13800138000" required /></label>
-          <label><span>验证码</span><span className="otp-field"><input name="otp" type="text" inputMode="numeric" autoComplete="one-time-code" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="6 位验证码" required /><button type="button" className="otp-send" onClick={() => void sendOtp()} disabled={submitting || otpCooldown > 0}>{otpCooldown > 0 ? `${otpCooldown}s 后重发` : "获取验证码"}</button></span></label>
-          {error && <p className="auth-mock-note auth-error" role="alert">{error}</p>}
-          {info && <p className="auth-mock-note auth-info" role="status">{info}</p>}
-          <button className="auth-submit" type="submit" disabled={submitting || !otpSent}>{submitting ? "验证中…" : "登录 / 注册"}<span aria-hidden="true">→</span></button>
+        <form key="phone" className="mt-[22px] grid gap-[15px]" onSubmit={submitPhone}>
+          <AuthField label="手机号">
+            <AuthInput name="phone" type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+86 13800138000" required />
+          </AuthField>
+          <AuthField label="验证码">
+            <span className="flex items-center gap-2">
+              <AuthInput name="otp" type="text" inputMode="numeric" autoComplete="one-time-code" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="6 位验证码" className="min-w-0 flex-1" required />
+              <button type="button" className="shrink-0 whitespace-nowrap rounded-control border border-line-primary bg-primary-subtle px-3 py-[9px] text-xs text-primary enabled:hover:border-primary enabled:hover:bg-primary-soft disabled:border-line disabled:bg-hover disabled:text-disabled" onClick={() => void sendOtp()} disabled={submitting || otpCooldown > 0}>{otpCooldown > 0 ? `${otpCooldown}s 后重发` : "获取验证码"}</button>
+            </span>
+          </AuthField>
+          {error && <p className="-mt-1 text-xs text-primary" role="alert">{error}</p>}
+          {info && <p className="-mt-1 text-xs text-primary" role="status">{info}</p>}
+          <AuthSubmit className="mt-1 justify-between pl-5 pr-[17px]" disabled={submitting || !otpSent}>{submitting ? "验证中…" : "登录 / 注册"}<span aria-hidden="true">→</span></AuthSubmit>
         </form>
       )}
 
-      <div className="auth-divider"><span>或者使用</span></div>
-      <div className="auth-social-row">
+      <div className="mb-[14px] mt-5 flex items-center gap-[14px] text-xs text-soft">
+        <span className="h-px flex-1 bg-line" aria-hidden="true" />
+        <span>或者使用</span>
+        <span className="h-px flex-1 bg-line" aria-hidden="true" />
+      </div>
+      <div className="flex gap-[10px]">
         {OAUTH_PROVIDERS.filter((p) => p.enabled).map((provider) => (
           <button
             key={provider.id}
-            className="auth-social"
+            className="flex h-12 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-control border border-line bg-surface text-[13px] font-semibold text-foreground transition-[border-color,background-color] duration-[180ms] hover:border-primary hover:bg-primary-subtle"
             type="button"
             onClick={() => void handleOAuth(provider.id)}
           >
@@ -243,7 +265,7 @@ export default function AuthForm() {
             </div>
             <h2 id="verify-title">验证邮件已发送</h2>
             <p>我们已向 <strong>{verifyModal.email}</strong> 发送了一封验证邮件，请查收并点击邮件中的链接激活账号。激活后即可使用邮箱登录。</p>
-            <button type="button" className="auth-submit" onClick={closeVerifyModal}>我知道了</button>
+            <AuthSubmit type="button" className="justify-center" onClick={closeVerifyModal}>我知道了</AuthSubmit>
           </div>
         </div>
       )}

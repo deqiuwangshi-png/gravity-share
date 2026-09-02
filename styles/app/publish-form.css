@@ -153,3 +153,82 @@
   font-size: 12px;
 }
 
+/* ---------- 放弃确认（2026-09-02 交互保护：dirty 关闭二次确认） ----------
+ * 覆盖在表单之上（absolute 定位需 .publish-box 为包含块；仅发布弹窗生效，不影响其它 modal） */
+
+.publish-box {
+  position: relative;
+}
+
+.modal-close-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border-radius: inherit;
+  background: var(--surface);
+}
+
+.modal-close-confirm-card {
+  max-width: 300px;
+  text-align: center;
+}
+
+.modal-close-confirm h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.modal-close-confirm p {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.modal-close-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* 安全默认项（继续编辑）：实心主色，autoFocus 落在此 */
+.close-confirm-keep {
+  padding: 9px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 180ms ease;
+}
+
+.close-confirm-keep:hover {
+  background: var(--primary-dark);
+}
+
+/* 破坏性项（放弃并关闭）：描边红，需明确点击 */
+.close-confirm-discard {
+  padding: 8px 18px;
+  border: 1px solid var(--error);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--error);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.close-confirm-discard:hover {
+  background: var(--error);
+  color: #fff;
+}
+

@@ -1,0 +1,58 @@
+/* (app) 装饰/特殊段收容（2026-09-02 P2-home+P3-壳 批次：自 shell.css / home.css / square.css 迁出瘦身保留）
+ * 保留理由：① CSS 变量宿主（notification.css 依赖 --app-sidebar-w/--app-topbar-h 定位抽屉）；
+ * ② 非令牌 rgba 半透明色（毛玻璃/光晕/hover 阴影，规则：颜色唯一真相在 :root，未入令牌的保留原值）；
+ * ③ ::-webkit-scrollbar 伪元素（Tailwind 无对应）；④ .app-logo 内 logo-mark 尺寸覆盖（globals 基础 32px 缩 30px）。
+ * 布局/令牌色一律走组件 Tailwind 类，本文件不承担布局职责。
+ */
+
+/* ---------- ① 壳变量宿主（AppShell 根 .app-shell，类名由 app-shell.tsx 保留） ----------
+ * notification.css .notify-layer/.notify-overlay/.notify-drawer 依赖：
+ * left = --app-sidebar-w（≤800 收 0，抽屉全宽）、top = --app-topbar-h（顶栏下方开始） */
+.app-shell {
+  --app-sidebar-w: 230px;
+  --app-topbar-h: 68px;
+}
+
+@media (max-width: 800px) {
+  .app-shell {
+    --app-sidebar-w: 0px;
+  }
+}
+
+/* ---------- ② 顶栏毛玻璃（.app-topbar 类名由 app-shell.tsx 保留，布局已 Tailwind 化） ---------- */
+.app-topbar {
+  border-bottom: 1px solid rgba(229, 233, 231, 0.8);
+  background: rgba(246, 247, 245, 0.9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* ② 搜索框聚焦光晕（.global-search 类名由 app-shell.tsx 保留） */
+.global-search:focus-within {
+  box-shadow: 0 0 0 3px rgba(0, 104, 85, 0.06);
+}
+
+/* ② 卡片 hover 阴影（.home-card 类名由 square-card.tsx 保留，hover 位移/描边已 Tailwind 化） */
+.home-card:hover {
+  box-shadow: 0 8px 24px rgba(25, 45, 38, 0.06);
+}
+
+/* ---------- ③ 分类导航细滚动条（.square-cats 类名由 square-feed.tsx 保留） ---------- */
+.square-cats {
+  scrollbar-width: thin; /* Firefox 细滚动条（webkit 细条见下） */
+}
+
+.square-cats::-webkit-scrollbar {
+  height: 4px;
+}
+
+.square-cats::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: var(--border);
+}
+
+/* ---------- ④ app 侧栏 Logo 标记尺寸覆盖（globals .logo-mark 32px → 壳内 30px） ---------- */
+.app-logo .logo-mark {
+  width: 30px;
+  height: 30px;
+}

@@ -4,7 +4,7 @@
 export default function AppLoading() {
   return (
     <div className="app-content">
-      <p className="feed-loading">加载中…</p>
+      <p className="px-[18px] py-12 text-center text-[13px] text-soft">加载中…</p>
     </div>
   );
 }

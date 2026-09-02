@@ -4,7 +4,7 @@
  * 作为 pnpm check 的一部分（校验规则见 AGENTS.md「维护与完成定义」）
  * 1) 每个 CSS 文件 ≤400 行（硬失败）
  * 2) 迁移文件数（001-0NN）与 ARCHITECTURE.md 声明一致（硬失败）
- * 3) CSS 孤儿类（styles 定义但 app/components 的 tsx 未引用）→ 提示级（动态类名易误报）
+ * 3) CSS 孤儿类（styles 定义但 app/components 的 tsx 未引用）→ 提示级（提取前先剥离块注释，迁移说明里提及的已删类名不算 CSS 定义，避免误报孤儿；动态类名仍易误报）
  * 退出码：有硬失败项 → 1
  */
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
@@ -69,7 +69,8 @@ const tsxFiles = walk(join(ROOT, "app"))
 const tsxSrc = tsxFiles.map((f) => readFileSync(f, "utf8")).join("\n");
 const cssClasses = new Set();
 for (const f of cssFiles) {
-  const css = readFileSync(f, "utf8");
+  // 2026-09-02 修复：先剥离块注释再提取类名（迁移说明中提及的已删类名不算 CSS 定义，否则误报孤儿）
+  const css = readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
   for (const m of css.matchAll(/\.([a-zA-Z][a-zA-Z0-9_-]*)/g)) cssClasses.add(m[1]);
 }
 let orphanCount = 0;

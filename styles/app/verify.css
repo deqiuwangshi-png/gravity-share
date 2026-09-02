@@ -11,7 +11,7 @@
 
 /* 官方蓝 V（机构/企业认证） */
 .badge-official {
-  color: #2b7bff;
+  color: var(--verify-blue);
 }
 
 .badge-official svg {
@@ -23,8 +23,8 @@
 .badge-discoverer {
   padding: 1px 6px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #f6c453, #e8a33d);
-  color: #5b3a00;
+  background: linear-gradient(90deg, var(--verify-gold), var(--verify-gold-deep));
+  color: var(--verify-gold-ink);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -32,7 +32,7 @@
 
 /* 官方头像相框（AvatarBox badge=official 时叠加） */
 .avatar-official {
-  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px #2b7bff;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--verify-blue);
   border-radius: 50%;
 }
 

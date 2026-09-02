@@ -16,11 +16,11 @@ export default async function CategoriesPage() {
   const supabase = await createClient();
   const posts = await fetchSquarePosts(supabase);
 
-  return <div className="app-content app-layout">
-    <div className="app-feed">
-      <header className="feed-head">
-        <h1>全部分类</h1>
-        <p>按方向浏览所有内容分类</p>
+  return <div className="app-content">
+    <div className="min-w-0">
+      <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
+        <h1 className="m-0 text-2xl tracking-[-0.5px]">全部分类</h1>
+        <p className="m-0 text-[13px] text-muted">按方向浏览所有内容分类</p>
       </header>
 
       <div className="category-grid">{SQUARE_CATEGORIES.map((name) => {

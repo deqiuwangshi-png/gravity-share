@@ -1,16 +1,5 @@
 /**
  * 富文本编辑器（2026-08-29，TipTap）——富文本帖发布 / 编辑共用
- * 全量模式：标题 H2/H3、加粗/斜体/删除线、有序/无序列表、引用、代码块、分割线、链接、图片
- * compact 轻量模式（短帖发布，2026-08-29 起工具栏常显，2026-08-31 改）：B/斜体/列表/链接/图片
- * 图片（2026-08-31 重构，037 图集化）：
- *   ① 多选上传（input multiple，逐张串行走 /api/upload），上限 GALLERY_MAX 张
- *   ② 上传后进「图集条」（编辑器底部缩略图带）——图片统一进图集（正文纯文字，不再插入正文）
- *   ③ 图集第 1 张自动作为帖子封面（image_url，由外层通过 onUploadedChange 取 done 列表）
- *   ④ 图集顺序即展示顺序：左移/右移可调（第 1 张 = 封面）
- *   ⑤ 删除条目 = upload（本次新传，孤儿）立即清 storage；existing（存量图）仅标记待删、保存成功才清（防取消编辑 404）
- *   ⑥ 编辑场景预载：galleryPaths（新模型有序图集）优先；空则回退正文已有 <img>（旧帖兼容）
- *   ⑦ 未提交关闭弹窗时由外层（publish-modal）按 onUploadedChange 的 path 列表清理孤儿文件
- * 输出 HTML（editor.getHTML），提交方存 content（037 起保存时 stripImages 剥离正文 img）；渲染端 sanitize 防 XSS
  */
 "use client";
 
@@ -82,9 +71,15 @@ export function RichEditor({
     /* Link 协议白名单（2026-08-29）：编辑器入口即拒绝 javascript:/data: 等危险协议，
      * 与渲染端 sanitizeHtmlForRender 的 URI 白名单形成双保险 */
     extensions: [
-      StarterKit,
+      /* StarterKit v3 默认内含 link：显式 link:false 关闭内建 link，避免与下方 Link.configure 重复注册（duplicate 'link'）；
+       * 链接配置（autolink/linkOnPaste/openOnClick/isAllowedUri 白名单）统一收口在下方 Link.configure 一处 */
+      StarterKit.configure({ link: false }),
       Link.configure({
         openOnClick: false,
+        /* 2026-09-02：正文直接输入/粘贴 URL 自动成链——保留「手动输入链接」唯一通道
+         * （compact 工具栏链接按钮已移除，见下；autolink 产出的 URL 同样过 isAllowedUri 白名单） */
+        autolink: true,
+        linkOnPaste: true,
         isAllowedUri: (url, ctx) => {
           if (!url) return ctx.defaultValidate(url);
           try {
@@ -275,8 +270,9 @@ export function RichEditor({
         <div className="rich-toolbar rich-toolbar-compact" role="toolbar" aria-label="文本格式工具栏">
           {btn(editor.isActive("bold"), () => editor.chain().focus().toggleBold().run(), "加粗", <Bold size={15} />)}
           {btn(editor.isActive("italic"), () => editor.chain().focus().toggleItalic().run(), "斜体", <Italic size={15} />)}
-          {btn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), "列表", <List size={15} />)}
-          {btn(editor.isActive("link"), toggleLink, "链接", <Link2 size={15} />)}
+          {/* 列表：早期固定无序（2026-09-02 文案明示，避免用户误以为可选类型；未来迭代再提供选择） */}
+          {btn(editor.isActive("bulletList"), () => editor.chain().focus().toggleBulletList().run(), "无序列表", <List size={15} />)}
+          {/* 链接按钮已移除（2026-09-02）：正文直接输入/粘贴 URL 自动成链（Link autolink），入口重复不再保留 */}
           {imageBtn}
         </div>
       ) : (
@@ -309,7 +305,7 @@ export function RichEditor({
           占位文案只是 overlay，按 isEmpty 单独显隐 */}
       <div className="rich-editor-body">
         {compact && editor.isEmpty && (
-          <span className="rich-placeholder" aria-hidden="true">分享你发现的好东西，或介绍你的内容…（可加 #标签）</span>
+          <span className="rich-placeholder" aria-hidden="true">分享你发现的好东西，或介绍你的内容…</span>
         )}
         <EditorContent editor={editor} />
       </div>

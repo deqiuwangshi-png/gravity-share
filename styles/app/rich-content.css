@@ -1,0 +1,94 @@
+/* 富文本渲染端排版（2026-08-29，TipTap 输出 → sanitize 后展示，详情页正文）
+ * 2026-09-02：自 rich.css 拆出（原文件 410 行超 400 红线）；编辑器样式见 rich-editor.css */
+
+/* --- 渲染端排版（与编辑区同款，详情页正文） --- */
+.rich-content {
+  font-size: 14px;
+  line-height: 1.8;
+  /* 2026-08-31 修复：与编辑区同规则，长 URL 在详情页正文内换行（防 flex/grid 容器被 min-content 撑破） */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.rich-content p {
+  margin: 0 0 10px;
+}
+
+.rich-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-content h2 {
+  margin: 18px 0 8px;
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.rich-content h3 {
+  margin: 16px 0 8px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.rich-content ul,
+.rich-content ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+/* 列表 marker（2026-09-02 修复：同编辑区，渲染端同样需显式恢复 list-style） */
+.rich-content ul {
+  list-style-type: disc;
+}
+
+.rich-content ol {
+  list-style-type: decimal;
+}
+
+.rich-content li {
+  margin-bottom: 3px;
+}
+
+.rich-content blockquote {
+  margin: 0 0 10px;
+  padding: 6px 14px;
+  border-left: 3px solid var(--border-primary);
+  color: var(--text-muted);
+}
+
+.rich-content pre {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  overflow-x: auto;
+  font-size: 13px;
+}
+
+.rich-content code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--bg-hover);
+  font-size: 0.92em;
+}
+
+.rich-content pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.rich-content hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.rich-content a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.rich-content img {
+  max-width: 100%;
+  border-radius: 8px;
+}

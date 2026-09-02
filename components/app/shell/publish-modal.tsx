@@ -1,12 +1,17 @@
 /**
  * 发布弹窗（client，2026-08-27 三入口合并改版；2026-08-29 正文升级轻量富文本；2026-08-31 移除可选标注）
  * 统一发布到广场（square_posts）——广场 = 全量供给池，首页从广场精选推荐
- * 表单字段：正文（必填，RichEditor compact：B/斜体/列表/链接/图片，工具栏常显；图片多选进图集条，第 1 张自动作封面）+ 内容分类（12 选 1 默认「其他」）
+ * 表单字段：标题（必填，2026-09-02 由「可选」改必填——SEO L1 + 搜索/分享展示；纯图片帖也须填）+ 正文（必填，
+ *   RichEditor compact：B/斜体/无序列表/图片，工具栏常显；链接由正文直接输入/粘贴自动识别，不再单设按钮；图片多选进图集条，第 1 张自动作封面）
+ *   + 内容分类（12 选 1 默认「其他」）
  * 链接（2026-08-29 收口）：移除独立「链接」字段——链接统一由富文本正文 <a> 承载（url 字段新帖恒 null）
  * 标注（2026-08-31 移除）：「包含推广/返佣信息」「我的原创内容」两个复选框已删除（用户判定多余非必要），
  *   新帖统一 post_type=share（存量 opportunity/content 帖标识仍正常渲染，库字段 015 保留）
- * 安全：正文 HTML 入库前 sanitizeHtml（DOMPurify 白名单主防线），字数按纯文本（stripHtml）≤2000 校验
+ * 安全：正文 HTML 入库前 sanitizeHtml（sanitize-html 白名单主防线，2026-09-02 由 DOMPurify 迁移），字数按纯文本（stripHtml）≤2000 校验
  * 提交成功后 dispatch SQUARE_UPDATED_EVENT，广场重新拉取（刷新不丢）
+ * 交互保护（2026-09-02）：编辑器属持续交互态，关闭只由明确意图触发——X / Esc / 点遮罩统一走 attemptClose；
+ *   dirty（标题/正文/图集任一非空）时先弹「放弃确认」，绝不因鼠标滑出/拖选越界/误触直关丢内容；
+ *   遮罩用 onMouseDown + 目标自检（非 onClick 冒泡）——杜绝「编辑器内按下、遮罩上松手」的跨边界 click 误关。
  */
 "use client";
 
@@ -35,7 +40,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
   /* 提交错误文案（空 = 无错误） */
   const [submitError, setSubmitError] = useState("");
 
-  /* 共用字段：正文 = 富文本 HTML（轻量格式：B/斜体/列表/链接）；标题（038，可选，SEO L1） */
+  /* 共用字段：正文 = 富文本 HTML（轻量格式：B/斜体/列表/图片，链接输入自动识别）；标题（038，2026-09-02 前端必填，SEO L1；库列仍可空兼容存量帖） */
   const [html, setHtml] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<string>("其他");
@@ -51,6 +56,14 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
   /* 提交中状态（防重复提交：ref 同步锁 + state 驱动按钮禁用/文案） */
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  /* 交互保护（2026-09-02）：有未发布内容（dirty）时关闭须二次确认——禁止鼠标滑出/误触直关丢内容 */
+  const [confirmClose, setConfirmClose] = useState(false);
+  /* dirty = 标题/正文/图集任一非初始（纯改分类不拦截——空表单不值得确认）；
+     提交成功后 submittedRef 置 true → dirty 归 false，发布跳转直关无确认 */
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => {
+    setDirty(!submittedRef.current && (title.trim() !== "" || stripHtml(html) !== "" || galleryPaths.length > 0));
+  }, [title, html, galleryPaths]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -62,21 +75,34 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
   /** 编辑器上传成功列表回调（稳定引用，避免 RichEditor effect 反复触发） */
   const onGalleryChange = useCallback((paths: string[]) => setGalleryPaths(paths), []);
 
-  /** 关闭弹窗（未提交成功时清理本次上传的图片，防孤儿文件） */
-  function handleClose() {
+  /** 统一关闭入口（2026-09-02）：X / Esc / 点遮罩全走此守卫
+   * dirty 时先弹放弃确认（继续编辑 = 保留现场），仅明确「放弃并关闭」才真正退出；
+   * 提交中禁止关闭（防提交竞态——旧实现提交间隙点 X 会关弹窗丢请求） */
+  function attemptClose() {
+    if (submittingRef.current) return;
+    if (dirty) {
+      setConfirmClose(true);
+      return;
+    }
+    doClose();
+  }
+
+  /** 真正关闭：未提交成功时清理本次上传的图片，防孤儿文件 */
+  function doClose() {
     if (!submittedRef.current) {
       galleryPaths.forEach((path) => void removeImage("post", path).catch(() => {}));
     }
     onClose();
   }
 
+  /* Esc = 明确取消意图，但同样过 dirty 守卫（无依赖数组：每次渲染重绑，保证监听器拿到最新 attemptClose/dirty） */
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") attemptClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  });
 
   /* 两个标注已移除（2026-08-31）：发布性质恒为普通分享，无互斥切换逻辑 */
 
@@ -85,6 +111,11 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     /* 防重复提交（2026-08-31 BUG 修复）：ref 同步锁，双击/连点只放行一次；
      * 必须用 ref 而非 state——state 更新有渲染延迟，两次快速点击可能都读到旧值 */
     if (submittingRef.current) return;
+    /* 标题必填（2026-09-02）：trim 为空即拦截——纯图片帖也须填标题（SEO L1 + 搜索/分享展示） */
+    if (!title.trim()) {
+      setSubmitError("请填写标题");
+      return;
+    }
     /* 富文本：剥标签取纯文本做校验与提取（HTML 标签不计入 2000 字感知）
      * 空校验放宽（2026-08-31）：允许纯图片帖——正文与图集都为空才拦截，且给出明确提示（不再静默） */
     const plain = stripHtml(html);
@@ -112,10 +143,10 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       const base = {
         id,
         author_id: user.id,
-        /* 主防线：入库前 DOMPurify 白名单清洗（渲染端另有二次清洗纵深） */
+        /* 主防线：入库前 sanitize-html 白名单清洗（渲染端另有二次清洗纵深） */
         content: sanitizeHtml(html),
-        /* 038 可选标题：trim 后非空才写入（空 = 未填写，SEO 走提炼） */
-        title: title.trim() ? title.trim() : null,
+        /* 038 标题必填（2026-09-02）：校验已拦空，恒写入 trim 结果（不再写 null；存量空标题帖不受影响） */
+        title: title.trim(),
         category,
         tags: extractTags(plain),
         /* 2026-08-29 收口：独立链接字段已移除，新帖 url 恒 null（链接统一由正文 <a> 承载） */
@@ -149,25 +180,35 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="app-modal" role="dialog" aria-modal="true" aria-labelledby="publish-title" onClick={handleClose}>
-      <div className="modal-box publish-box" onClick={(event) => event.stopPropagation()}>
+    /* 遮罩关闭（2026-09-02 修复）：onMouseDown + 目标自检——只有按下瞬间光标落在遮罩本体才算「点外部关闭」；
+     * 编辑器内拖选文字滑出到遮罩松手的 click（派发到共同祖先）不再触发关闭（onClick 冒泡式会误关） */
+    <div
+      className="app-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="publish-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) attemptClose();
+      }}
+    >
+      <div className="modal-box publish-box">
         <div className="modal-header">
           <h2 id="publish-title">发布</h2>
-          <button type="button" onClick={handleClose} aria-label="关闭"><X size={16} /></button>
+          <button type="button" onClick={attemptClose} aria-label="关闭"><X size={16} /></button>
         </div>
 
         <form className="publish-immersive" onSubmit={handleSubmit}>
-            {/* 标题（038，可选）：SEO 标题提炼 L1 优先使用；空则自动从正文提炼 */}
+            {/* 标题（038）：必填（2026-09-02）；SEO 标题提炼 L1 优先使用（存量空标题帖仍走正文提炼兜底） */}
             <input
               className="publish-title-input"
               type="text"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="标题（可选，便于搜索与分享展示）"
+              placeholder="请输入标题"
               maxLength={60}
-              aria-label="标题（可选）"
+              aria-label="标题"
             />
-            {/* 轻量富文本正文（compact：工具栏常显 B/斜体/列表/链接/图片；图片多选进图集条，第 1 张自动作封面） */}
+            {/* 轻量富文本正文（compact：工具栏常显 B/斜体/无序列表/图片；链接靠正文输入/粘贴自动识别；图片多选进图集条，第 1 张自动作封面） */}
             <RichEditor compact value={html} onChange={setHtml} upload={uid ? { userId: uid, postId: draftId } : undefined} onUploadedChange={onGalleryChange} />
 
             {/* 内容分类（固定枚举，默认「其他」可改；分类是内容属性，与 #标签 分离） */}
@@ -190,6 +231,27 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
               {submitting ? "发布中…" : "发布"}
             </button>
           </form>
+
+        {/* 放弃确认（2026-09-02）：dirty 时覆盖在表单之上——返回「继续编辑」组件不卸载、输入不丢失 */}
+        {confirmClose && (
+          <div className="modal-close-confirm" role="alertdialog" aria-label="放弃未发布的内容">
+            <div className="modal-close-confirm-card">
+              <h3>放弃未发布的内容？</h3>
+              <p>标题、正文与已上传的图片将不会被保存，离开后无法恢复。</p>
+              <div className="modal-close-confirm-actions">
+                <button type="button" className="close-confirm-keep" autoFocus onClick={() => setConfirmClose(false)}>继续编辑</button>
+                <button
+                  type="button"
+                  className="close-confirm-discard"
+                  onClick={() => {
+                    setConfirmClose(false);
+                    doClose();
+                  }}
+                >放弃并关闭</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

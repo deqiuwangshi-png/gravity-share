@@ -26,9 +26,9 @@ export default async function FollowingPage() {
   return (
     <div className="app-content relation-page">
       <Link className="category-back" href="/profile">← 返回个人主页</Link>
-      <header className="feed-head">
-        <h1>我的关注</h1>
-        <p>共 {users.length} 人</p>
+      <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
+        <h1 className="m-0 text-2xl tracking-[-0.5px]">我的关注</h1>
+        <p className="m-0 text-[13px] text-muted">共 {users.length} 人</p>
       </header>
       <RelationList users={users} initialFollowingIds={followingIds} emptyText="还没有关注任何人，去他人主页点「关注」吧。" />
     </div>

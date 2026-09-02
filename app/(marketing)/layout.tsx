@@ -1,5 +1,3 @@
-import "@/styles/marketing/site.css";
-import "@/styles/marketing/sections.css";
 import "@/styles/marketing/legal.css";
 import "@/styles/marketing/notice.css";
 

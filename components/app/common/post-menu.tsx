@@ -1,6 +1,6 @@
 /**
- * 内容三点菜单（统一复用，2026-08-23 合并 CommentMenu）——覆盖【+发布】三入口 + 评论：
- * 推荐好东西 / 商业推广 → discoveries；话题帖子 → square_posts；评论 → comments
+ * 内容三点菜单（统一复用，2026-08-23 合并 CommentMenu）——服务 square_posts 帖子 + comments 评论：
+ * targetType：square 帖子 / comment 评论（discoveries 已随 016 内容池归一退役，无写入路径）
  * - 本人：删除（菜单内联确认，无弹窗二次确认）/ 修改（仅内容）/ 复制 / 分享
  * - 他人：举报（MVP 反馈）/ 复制 / 分享
  * 操作反馈统一走全局 toast（底部居中，淡入淡出自动消失）

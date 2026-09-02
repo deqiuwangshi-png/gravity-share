@@ -1,0 +1,144 @@
+/* (auth) 认证区纯装饰/动画保留段（2026-09-02 迁移瘦身）
+ * 来源：原 auth/shell.css 装饰段 + auth/card.css 弹窗动画段并入；其余布局已 Tailwind 化。
+ * 保留理由（STYLE-SYSTEM §4）：伪元素装饰（::before/::after 双圆环）、纯装饰轨道图形
+ * （scaleY 椭圆 + 多层光晕阴影）、@keyframes 动画、非令牌 rgba 遮罩/阴影色。
+ * 消费方仍持原类名（auth-brand-panel / auth-brand-logo / auth-orbit / orbit-* /
+ * auth-modal-*），仅作 CSS 选择器锚点，不承担布局。 */
+
+/* ===== 品牌面板背景装饰双圆（需 .auth-brand-panel 保持 position:relative 锚点） ===== */
+.auth-brand-panel::before,
+.auth-brand-panel::after {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.auth-brand-panel::before {
+  width: 620px;
+  height: 620px;
+  right: -260px;
+  bottom: -220px;
+}
+
+.auth-brand-panel::after {
+  width: 420px;
+  height: 420px;
+  left: -270px;
+  top: 24%;
+}
+
+/* 深绿品牌面板上的 Logo 白徽章场景覆盖（globals .logo-mark 基础是 primary 底，此处叠加白 16%） */
+.auth-brand-logo .logo-mark {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ===== orbit 轨道装饰（纯图形：椭圆环 + 核心 + 节点） ===== */
+.auth-orbit {
+  position: relative;
+  width: min(320px, 60vw);
+  aspect-ratio: 1;
+  margin: 32px 0 -56px auto;
+}
+
+.orbit-ring,
+.orbit-core,
+.orbit-node {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.orbit-ring {
+  inset: 9%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  transform: rotate(-26deg) scaleY(0.34);
+}
+
+.orbit-ring-small {
+  inset: 22%;
+  transform: rotate(58deg) scaleY(0.34);
+}
+
+.orbit-core {
+  inset: 42%;
+  background: var(--accent);
+  box-shadow: 0 0 0 14px rgba(243, 201, 105, 0.12), 0 0 46px rgba(243, 201, 105, 0.35);
+}
+
+.orbit-node {
+  width: 13px;
+  height: 13px;
+  background: var(--surface);
+  box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.12);
+}
+
+.orbit-node-one { top: 19%; left: 22%; }
+.orbit-node-two { right: 11%; top: 38%; background: var(--accent); }
+.orbit-node-three { left: 29%; bottom: 12%; }
+
+@media (max-width: 820px) {
+  .auth-orbit {
+    position: absolute;
+    right: -80px;
+    bottom: -120px;
+    width: 300px;
+    margin: 0;
+    opacity: 0.7;
+  }
+}
+
+/* ===== 注册验证轻弹窗（遮罩/壳/图标 + 入场动画） ===== */
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 25, 22, 0.42);
+  backdrop-filter: blur(3px);
+}
+
+.auth-modal-box {
+  width: min(380px, 100%);
+  padding: 30px 26px 26px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  text-align: center;
+  animation: auth-modal-in 160ms ease;
+}
+
+@keyframes auth-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.auth-modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.auth-modal-icon svg { display: block; }
+
+.auth-modal-box h2 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  letter-spacing: -0.3px;
+}
+
+.auth-modal-box p {
+  margin: 0 0 22px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}

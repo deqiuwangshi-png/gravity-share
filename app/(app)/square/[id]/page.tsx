@@ -5,7 +5,7 @@ import { cache } from "react";
 import { SquareActions } from "@/components/app/square/square-actions";
 import { SquarePostView } from "@/components/app/square/square-post-view";
 import { CommentSection } from "@/components/app/square/comment-section";
-import { SquareCard } from "@/components/app/common/square-card";
+import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
 import { AdSlot } from "@/components/common/ad-slot";
 import { AD_SLOTS } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
@@ -101,7 +101,7 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
   const coverSrc = post.imageUrl ? publicImageUrl("post", post.imageUrl) : undefined;
 
   return (
-    <div className="app-content square-detail-wrap">
+    <div className="app-content">
       {/* Article 结构化数据（UGC 长尾词入口，2026-08-25 SEO；P1-1 补 description/image/mainEntityOfPage，headline 与 H1/metadata 同源） */}
       <script
         type="application/ld+json"
@@ -118,12 +118,12 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
           ),
         }}
       />
-      <article className="square-detail">
+      <article className="mx-auto w-full max-w-[720px] px-1 pb-10">
         {/* 2026-08-27 方案A：广场并入首页，返回目标 /square → /home，文案同步 */}
-        <Link className="square-back" href="/home">← 返回首页</Link>
+        <Link className="mb-[22px] inline-block text-[13px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/home">← 返回首页</Link>
 
         {/* P0-2 H1：标题提炼结果（server 渲染，SSR 首帧可见；正文首行与之同文属正常，靠字号/字重区分层级） */}
-        <h1 className="square-detail-title">{headline}</h1>
+        <h1 className="m-0 mb-[14px] break-words text-[22px] font-bold leading-[1.45] tracking-[-0.2px]">{headline}</h1>
 
         {/* 帖子主体：发帖头 + 三点菜单（本人 删/改/复/享，他人 举报/复/享）+ 正文（可编辑）+ 配图 */}
         <SquarePostView post={post} isOwner={post.authorId === myId} />
@@ -132,9 +132,9 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
 
         {/* P0-6 相关内容：同分类优先内链（帖子→帖子，形成内容网络；纯 server 渲染，爬虫可沿链接深入） */}
         {related.length > 0 && (
-          <section className="square-related">
-            <h2>相关内容</h2>
-            <div className="home-grid">{related.map((item) => <SquareCard post={item} key={item.id} />)}</div>
+          <section className="mt-[30px] border-t border-line pt-[18px]">
+            <h2 className="m-0 mb-[14px] text-[15px] font-semibold text-muted">相关内容</h2>
+            <div className={homeGridClass}>{related.map((item) => <SquareCard post={item} key={item.id} />)}</div>
           </section>
         )}
 

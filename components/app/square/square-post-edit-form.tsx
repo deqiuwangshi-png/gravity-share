@@ -1,6 +1,6 @@
 /**
  * 广场帖编辑表单（client，详情页 / 个人主页共用）
- * 可改：正文（必填）+ 图集图片（037：与发布一致第 1 张作封面；编辑打开预载存量图集 + 旧帖正文存量图；
+ * 可改：标题（必填，2026-09-02 与发布同步——不允许清空，存量空标题帖编辑时须补填）+ 正文（必填）+ 图集图片（037：与发布一致第 1 张作封面；编辑打开预载存量图集 + 旧帖正文存量图；
  *   删除存量图延迟到保存才清 storage；保存时 stripImages 剥离正文 img，旧帖保存一次即升级新模型）
  * 链接（2026-08-29 收口）：与发布一致移除独立链接字段——链接统一由富文本正文 <a> 承载；
  *   update 不写 url（存量帖 url 保留，防误删历史链接）
@@ -26,7 +26,7 @@ export function SquarePostEditForm({
   onCancel: () => void;
 }) {
   const [content, setContent] = useState(post.content);
-  /* 标题（038，可选）：随帖展示模型传入；空 = 未填写（SEO 走提炼） */
+  /* 标题（038，2026-09-02 必填）：随帖展示模型传入；空 = 存量无标题帖，编辑保存时须补填 */
   const [title, setTitle] = useState(post.title ?? "");
   /* 富文本帖：编辑器编辑（2026-08-29）；纯文本帖：textarea */
   const isRich = isRichText(post.content);
@@ -54,6 +54,11 @@ export function SquarePostEditForm({
     event.preventDefault();
     /* 富文本空态：剥标签后无文字视为空 */
     const text = content.replace(/<[^>]*>/g, "").trim();
+    /* 标题必填（2026-09-02 与发布同步）：trim 为空即拦截（存量无标题帖也不允许清空/留空保存） */
+    if (!title.trim()) {
+      setError("请填写标题");
+      return;
+    }
     if (!text || busy) return;
     setBusy(true);
     setError("");
@@ -66,8 +71,8 @@ export function SquarePostEditForm({
          旧帖正文存量图已由预载进 galleryPaths，保存即升级新模型）；url 不再写入（存量帖 url 保留，防误删历史链接） */
       .update({
         content: isRich ? stripImages(sanitizeHtml(content)) : content.trim(),
-        /* 038 可选标题：trim 后非空才写入（空 = 清空标题，SEO 走提炼） */
-        title: title.trim() ? title.trim() : null,
+        /* 038 标题必填（2026-09-02 与发布同步）：校验已拦空，恒写入 trim 结果（不再写 null 清空标题） */
+        title: title.trim(),
         image_url: nextImage,
         gallery: galleryPaths,
         category,
@@ -101,16 +106,16 @@ export function SquarePostEditForm({
   }
 
   return (
-    <form className="square-post-edit" onSubmit={(event) => void save(event)} onClick={(event) => event.stopPropagation()}>
-      {/* 标题（038，可选）：与发布一致，SEO 标题提炼 L1 */}
+    <form className="mb-[14px] grid gap-[10px]" onSubmit={(event) => void save(event)} onClick={(event) => event.stopPropagation()}>
+      {/* 标题（038，2026-09-02 必填）：与发布一致 */}
       <input
         className="publish-title-input"
         type="text"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
-        placeholder="标题（可选，便于搜索与分享展示）"
+        placeholder="请输入标题"
         maxLength={60}
-        aria-label="标题（可选）"
+        aria-label="标题"
       />
       {isRich ? (
         <RichEditor value={content} onChange={setContent} upload={{ userId: post.authorId, postId: post.id }} onUploadedChange={onGalleryChange} onRemovedExistingChange={onRemovedExistingChange} galleryPaths={post.gallery} />
@@ -121,6 +126,7 @@ export function SquarePostEditForm({
           onChange={(event) => setContent(event.target.value)}
           aria-label="编辑正文"
           autoFocus
+          className="w-full min-h-[88px] resize-y rounded-[10px] border border-line-primary bg-surface px-3 py-[10px] text-[13px] leading-[1.6] text-foreground outline-none [font:inherit]"
         />
       )}
 
@@ -141,11 +147,11 @@ export function SquarePostEditForm({
 
       {/* 图片管理已统一到正文 RichEditor 图集条（第 1 张作封面），无独立封面区 */}
 
-      {error && <p className="square-post-edit-error" role="alert">{error}</p>}
+      {error && <p className="m-0 text-[12px] text-error" role="alert">{error}</p>}
 
-      <div className="square-post-edit-actions">
-        <button type="button" onClick={handleCancel}>取消</button>
-        <button type="submit" disabled={busy || !content.replace(/<[^>]*>/g, "").trim()}>{busy ? "保存中…" : "保存"}</button>
+      <div className="flex justify-end gap-2">
+        <button type="button" className="cursor-pointer rounded-full border border-line bg-surface px-4 py-[6px] text-[12px] text-muted transition-[border-color,color] duration-[180ms] hover:border-line-primary hover:text-primary [font:inherit]" onClick={handleCancel}>取消</button>
+        <button type="submit" disabled={busy || !content.replace(/<[^>]*>/g, "").trim()} className="cursor-pointer rounded-full border-0 bg-primary px-4 py-[6px] text-[12px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark disabled:cursor-default disabled:text-disabled disabled:hover:text-on-primary [font:inherit]">{busy ? "保存中…" : "保存"}</button>
       </div>
     </form>
   );

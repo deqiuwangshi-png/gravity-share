@@ -4,6 +4,7 @@
  * 与自然流分离：列表已排除置顶帖（SquareFeed 拆分），此处不重复
  * 轮播：多条 4s 自动切换 + hover 暂停 + 圆点手动；单条静态不轮播
  * 正文（2026-09-02）：消费服务端生成 post.preview（富文本已剥标签，横幅单行截断）
+ * 2026-09-02 P2-home 批次：square.css banner 段 Tailwind 化（AvatarBox 透传尺寸类）
  */
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -30,21 +31,21 @@ export function FeaturedBanner({ posts }: { posts: SquarePostDTO[] }) {
 
   return (
     <section
-      className="square-banner"
+      className="mb-[14px] rounded-[14px] border border-accent bg-accent-soft p-[14px_16px]"
       aria-label="全服通告"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="square-banner-head">
-        <span className="square-banner-tag">全服通告</span>
-        <span className="square-banner-sub">付费展示位 · 置顶中</span>
+      <div className="mb-[10px] flex items-center gap-2">
+        <span className="rounded-full bg-accent px-[10px] py-[2px] text-[11px] font-semibold text-on-accent">全服通告</span>
+        <span className="text-[11px] text-soft">付费展示位 · 置顶中</span>
         {posts.length > 1 && (
-          <div className="square-banner-dots" role="tablist" aria-label="通告切换">
+          <div className="ml-auto flex gap-1" role="tablist" aria-label="通告切换">
             {posts.map((_, i) => (
               <button
                 key={i}
                 type="button"
-                className={`square-banner-dot${i === safeIndex ? " active" : ""}`}
+                className={`size-[6px] cursor-pointer rounded-full border-0 p-0 transition-colors duration-[180ms] ${i === safeIndex ? "bg-accent" : "bg-line-primary"}`}
                 onClick={() => setIndex(i)}
                 aria-label={`第 ${i + 1} 条通告`}
               />
@@ -52,13 +53,13 @@ export function FeaturedBanner({ posts }: { posts: SquarePostDTO[] }) {
           </div>
         )}
       </div>
-      <Link className="square-banner-card" href={`/square/${post.id}`}>
-        <AvatarBox path={post.authorAvatar} name={post.authorName} className="square-banner-avatar" badge={post.authorBadge} />
-        <div className="square-banner-text">
-          <p className="square-banner-content">{post.preview}</p>
-          <small>{post.authorName} · {post.time}</small>
+      <Link className="flex items-center gap-3" href={`/square/${post.id}`}>
+        <AvatarBox path={post.authorAvatar} name={post.authorName} className="size-[34px] shrink-0" badge={post.authorBadge} />
+        <div className="min-w-0 flex-1">
+          <p className="m-0 mb-[2px] truncate text-[13px] font-medium">{post.preview}</p>
+          <small className="text-[11px] text-soft">{post.authorName} · {post.time}</small>
         </div>
-        <span className="square-banner-arrow">查看 →</span>
+        <span className="shrink-0 text-xs text-accent">查看 →</span>
       </Link>
     </section>
   );

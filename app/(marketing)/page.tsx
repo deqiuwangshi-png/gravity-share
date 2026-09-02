@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Logo } from "@/components/common/logo";
-import { Search } from "lucide-react";
-import { SITE_INFO } from "@/lib/config";
-import { LANDING_CARDS, MARKETING_CATEGORIES, MARKETING_SEARCH_HINTS } from "@/lib/data";
+import { LandingHeader } from "@/components/marketing/landing-header";
+import { LandingHero } from "@/components/marketing/landing-hero";
+import { LandingFooter } from "@/components/marketing/landing-footer";
+import { LANDING_CARDS, MARKETING_CATEGORIES } from "@/lib/data";
 
 const problems = [
   ["平台割裂", "内容分散在几十个平台，每个都要单独逛一遍"],
@@ -16,141 +16,163 @@ const steps = [
   ["分享", "把你发现的好东西发布出来，让更多人看见"],
 ];
 
+/* section-head 左标题组（h2+p）：page 内 6 处复用同构，按 P0 方案就地类化不抽组件 */
+function SectionHead({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div>
+      <h2 className="text-[30px] tracking-[-1px] max-[520px]:text-[26px]">{title}</h2>
+      <p className="mt-[9px] text-sm text-muted">{desc}</p>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
-    <div className="site-shell">
-      <header className="site-header">
-        <nav className="container nav" aria-label="主导航">
-          <Logo className="logo" />
-          <div className="nav-links">
-            <Link href="/">首页</Link>
-            <Link href="#pricing">定价</Link>
-            <Link href="/about">关于</Link>
-            <Link href="/help">帮助</Link>
-          </div>
-          <div className="nav-actions">
-            <Link href="/login" className="btn btn-primary">登录</Link>
-          </div>
-        </nav>
-      </header>
+    <div className="min-h-screen overflow-x-clip">
+      <LandingHeader />
 
       <main>
-        <section className="hero container">
-          <div className="eyebrow"><span className="eyebrow-dot" />一个开放的发现与连接平台</div>
-          <h1>让好东西有地方摆，<br /><span>让有需求的人找得到。</span></h1>
-          <p className="hero-desc">好文章、好工具、好作品、好课程、好服务，不应该只存在于某一个平台。引力，让分散在互联网各处的价值被更多人发现。</p>
-          <div className="search-box" role="search">
-            <span className="search-icon" aria-hidden="true"><Search size={22} /></span>
-            <input name="q" type="search" placeholder="你正在寻找什么？例如：AI工具、Python教程、3D模型……" aria-label="搜索资源" readOnly />
-          </div>
-          <div className="search-hints">大家正在找：{MARKETING_SEARCH_HINTS.map((hint) => <span className="search-hint" data-placeholder key={hint}>{hint}</span>)}</div>
-        </section>
+        <LandingHero />
 
-        <section className="section container" id="problem">
-          <div className="section-head">
-            <div><h2 className="section-title">好东西很多，但都散落在各自的角落。</h2><p className="section-desc">好文章、好工具、好作品、好课程，各自待在各自的平台里，被孤岛隔开。你常常记得“有这么个好东西”，却想不起在哪里见过。</p></div>
+        <section className="container py-[75px]" id="problem">
+          <div className="mb-7 flex items-end justify-between gap-5 max-[800px]:items-start">
+            <SectionHead title="好东西很多，但都散落在各自的角落。" desc="好文章、好工具、好作品、好课程，各自待在各自的平台里，被孤岛隔开。你常常记得“有这么个好东西”，却想不起在哪里见过。" />
           </div>
-          <div className="problem-grid">{problems.map(([tag, desc]) => <article className="problem-card" key={tag}>
-            <span className="problem-tag">{tag}</span>
-            <p>{desc}</p>
-          </article>)}</div>
-        </section>
-
-        <section className="section container" id="who">
-          <div className="two-side">
-            <div className="side-card find"><div className="side-label">如果你正在寻找</div><h2>不用再到处找。</h2><p>不需要打开十几个平台。从一个地方开始发现互联网中真正值得关注的东西。</p><div className="side-list">{["工具", "教程", "课程", "作品", "服务", "资源", "活动"].map((item) => <span key={item}>{item}</span>)}</div></div>
-            <div className="side-card share"><div className="side-label">如果你有好东西</div><h2>让它被更多人看见。</h2><p>一个链接，一段介绍。把你做过的、发现的、正在使用的分享出来。</p><Link className="side-action" href="/register">发布一个发现 <span aria-hidden="true">→</span></Link></div>
+          <div className="grid grid-cols-3 gap-[18px] max-[800px]:grid-cols-1">
+            {problems.map(([tag, desc]) => (
+              <article className="rounded-card border border-line bg-surface px-6 py-[26px]" key={tag}>
+                <span className="mb-4 inline-block rounded-md bg-primary-soft px-[9px] py-[5px] text-xs font-semibold text-primary">{tag}</span>
+                <p className="text-sm leading-[1.7] text-muted">{desc}</p>
+              </article>
+            ))}
           </div>
         </section>
 
-        <section className="categories container" id="categories" aria-label="资源分类">
-          <div className="category-list">{MARKETING_CATEGORIES.map((category) => <span className="category" data-placeholder key={category}>{category}</span>)}</div>
-        </section>
-
-        <section className="section container" id="discover">
-          <div className="section-head">
-            <div><h2 className="section-title">正在被发现</h2><p className="section-desc">来自互联网不同角落的好东西</p></div>
+        <section className="container py-[75px]" id="who">
+          <div className="grid grid-cols-2 gap-5 max-[800px]:grid-cols-1">
+            <div className="min-h-[300px] rounded-section bg-primary-soft p-[42px] max-[800px]:min-h-0 max-[800px]:p-[30px]">
+              <div className="mb-5 text-[13px] font-bold text-primary">如果你正在寻找</div>
+              <h2 className="mb-[15px] text-[30px] tracking-[-1px]">不用再到处找。</h2>
+              <p className="max-w-[430px] leading-[1.8] text-muted">不需要打开十几个平台。从一个地方开始发现互联网中真正值得关注的东西。</p>
+              <div className="mt-[25px] flex flex-wrap gap-2">
+                {["工具", "教程", "课程", "作品", "服务", "资源", "活动"].map((item) => (
+                  <span key={item} className="rounded-lg bg-white/75 px-3 py-2 text-[13px]">{item}</span>
+                ))}
+              </div>
+            </div>
+            <div className="min-h-[300px] rounded-section border border-line bg-surface p-[42px] max-[800px]:min-h-0 max-[800px]:p-[30px]">
+              <div className="mb-5 text-[13px] font-bold text-primary">如果你有好东西</div>
+              <h2 className="mb-[15px] text-[30px] tracking-[-1px]">让它被更多人看见。</h2>
+              <p className="max-w-[430px] leading-[1.8] text-muted">一个链接，一段介绍。把你做过的、发现的、正在使用的分享出来。</p>
+              <Link className="mt-7 inline-block text-sm font-semibold whitespace-nowrap text-primary transition-colors duration-[180ms] hover:text-primary-dark" href="/register">
+                发布一个发现 <span aria-hidden="true">→</span>
+              </Link>
+            </div>
           </div>
-          <div className="cards">{LANDING_CARDS.map((card) => (
-            <Link className="card" href={card.link} key={card.title}>
-              <div className="card-top"><span className="type">{card.type}</span></div>
-              <h3>{card.title}</h3><p>{card.summary}</p>
-              <div className="card-meta"><span>来自：{card.source}</span><span className="card-link">查看 <span aria-hidden="true">→</span></span></div>
-            </Link>
-          ))}</div>
         </section>
 
-        <section className="section container" id="how">
-          <div className="section-head">
-            <div><h2 className="section-title">三步，让好东西相遇。</h2><p className="section-desc">从发现到分享，整个过程只需要三步。</p></div>
+        <section className="container pt-5 pb-[75px]" id="categories" aria-label="资源分类">
+          <div className="flex flex-wrap justify-center gap-2.5">
+            {MARKETING_CATEGORIES.map((category) => (
+              <span
+                className="rounded-full border border-line bg-surface px-[17px] py-2.5 text-sm text-muted transition-[border-color,color,transform] duration-[180ms] hover:-translate-y-px hover:border-primary hover:text-primary"
+                data-placeholder
+                key={category}
+              >
+                {category}
+              </span>
+            ))}
           </div>
-          <div className="steps">{steps.map(([title, desc], index) => <article className="step" key={title}>
-            <span className="step-num">{String(index + 1).padStart(2, "0")}</span>
-            <h3>{title}</h3>
-            <p>{desc}</p>
-          </article>)}</div>
         </section>
 
-        <section className="section container" id="pricing">
+        <section className="container py-[75px]" id="discover">
+          <div className="mb-7 flex items-end justify-between gap-5 max-[800px]:items-start">
+            <SectionHead title="正在被发现" desc="来自互联网不同角落的好东西" />
+          </div>
+          <div className="grid grid-cols-3 gap-[18px] max-[800px]:grid-cols-1">
+            {LANDING_CARDS.map((card) => (
+              <Link
+                className="flex flex-col rounded-card border border-line bg-surface p-6 transition-[transform,box-shadow] duration-[220ms] hover:-translate-y-[3px] hover:shadow-card"
+                href={card.link}
+                key={card.title}
+              >
+                <div className="mb-[22px] flex items-center justify-between">
+                  <span className="rounded-[7px] bg-primary-soft px-[9px] py-1.5 text-xs text-primary">{card.type}</span>
+                </div>
+                <h3 className="mb-2.5 truncate text-[19px] tracking-[-0.3px]">{card.title}</h3>
+                <p className="mb-[22px] line-clamp-2 min-h-12 text-sm leading-[1.7] text-muted">{card.summary}</p>
+                <div className="mt-auto flex items-center justify-between gap-3 border-t border-line pt-4 text-xs text-soft">
+                  <span>来自：{card.source}</span>
+                  <span className="whitespace-nowrap font-semibold text-primary">查看 <span aria-hidden="true">→</span></span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="container py-[75px]" id="how">
+          <div className="mb-7 flex items-end justify-between gap-5 max-[800px]:items-start">
+            <SectionHead title="三步，让好东西相遇。" desc="从发现到分享，整个过程只需要三步。" />
+          </div>
+          <div className="grid grid-cols-3 gap-[18px] max-[800px]:grid-cols-1">
+            {steps.map(([title, desc], index) => (
+              <article className="rounded-card border border-line bg-surface px-6 py-[26px]" key={title}>
+                <span className="mb-4 block text-[22px] font-extrabold tracking-[1px] text-primary">{String(index + 1).padStart(2, "0")}</span>
+                <h3 className="mb-2.5 text-[18px]">{title}</h3>
+                <p className="text-sm leading-[1.7] text-muted">{desc}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="container py-[75px]" id="pricing">
           {/* 定价（2026-08-31：订阅/投流已下线 → 三卡移除，改为免费口径文案；
               未来付费能力上线前会提前公告并公示方案与价格） */}
-          <div className="section-head">
-            <div><h2 className="section-title">目前完全免费，先放心用。</h2><p className="section-desc">本网站目前免费；未来如需付费功能（如展示位、会员），会提前公告并公示方案与价格。</p></div>
-            <Link className="more" href="/register">加入引力 <span aria-hidden="true">→</span></Link>
+          <div className="mb-7 flex items-end justify-between gap-5 max-[800px]:items-start">
+            <SectionHead title="目前完全免费，先放心用。" desc="本网站目前免费；未来如需付费功能（如展示位、会员），会提前公告并公示方案与价格。" />
+            <Link className="text-sm text-primary transition-colors duration-[180ms] hover:text-primary-dark" href="/register">加入引力 <span aria-hidden="true">→</span></Link>
           </div>
         </section>
 
-        <section className="principle container" id="about"><p className="principle-kicker">引力的原则</p><h2>互联网不缺好东西，缺的是让它们相遇的地方。</h2><p>我们相信，真正有价值的内容不应该被平台和算法隔开。引力把发现和分享连接在一起，让每一个好东西都有机会抵达真正需要它的人。</p></section>
+        <section className="container border-t border-line py-[105px] text-center" id="about">
+          <p className="mb-[18px] text-[13px] font-bold text-primary">引力的原则</p>
+          <h2 className="mx-auto mb-5 max-w-[800px] text-[clamp(34px,4vw,52px)] leading-[1.15] tracking-[-2px]">互联网不缺好东西，缺的是让它们相遇的地方。</h2>
+          <p className="mx-auto max-w-[620px] leading-[1.8] text-muted">我们相信，真正有价值的内容不应该被平台和算法隔开。引力把发现和分享连接在一起，让每一个好东西都有机会抵达真正需要它的人。</p>
+        </section>
 
-        <section className="section container" id="help">
-          <div className="section-head"><div><h2 className="section-title">常见问题</h2><p className="section-desc">还有什么想了解的？</p></div></div>
-          <div className="faq-list">
-            <div className="faq-item"><h3>引力和原平台是什么关系？</h3><p>引力只做展示与连接。内容在哪里发布、交易与交付，仍由原平台负责。</p></div>
-            <div className="faq-item"><h3>发布需要什么条件？</h3><p>注册后即可发布，提供一条链接和一段介绍就够了。</p></div>
-            <div className="faq-item"><h3>有收费计划吗？</h3><p>目前完全免费。未来如需付费功能（如展示位、会员），会提前公告并公示方案与价格。</p></div>
+        <section className="container py-[75px]" id="help">
+          <div className="mb-7 flex items-end justify-between gap-5 max-[800px]:items-start">
+            <SectionHead title="常见问题" desc="还有什么想了解的？" />
+          </div>
+          <div className="grid grid-cols-3 gap-[18px] max-[800px]:grid-cols-1">
+            <div className="rounded-card border border-line bg-surface px-6 py-5">
+              <h3 className="mb-2 text-[15px]">引力和原平台是什么关系？</h3>
+              <p className="text-sm leading-[1.7] text-muted">引力只做展示与连接。内容在哪里发布、交易与交付，仍由原平台负责。</p>
+            </div>
+            <div className="rounded-card border border-line bg-surface px-6 py-5">
+              <h3 className="mb-2 text-[15px]">发布需要什么条件？</h3>
+              <p className="text-sm leading-[1.7] text-muted">注册后即可发布，提供一条链接和一段介绍就够了。</p>
+            </div>
+            <div className="rounded-card border border-line bg-surface px-6 py-5">
+              <h3 className="mb-2 text-[15px]">有收费计划吗？</h3>
+              <p className="text-sm leading-[1.7] text-muted">目前完全免费。未来如需付费功能（如展示位、会员），会提前公告并公示方案与价格。</p>
+            </div>
           </div>
         </section>
 
-        <section className="container cta"><h2>从一个发现开始。</h2><p>加入引力，让你找到的和你创造的都更容易被看见。</p><Link className="btn" href="/register">加入引力</Link></section>
+        <section className="container rounded-[28px] bg-primary px-10 py-[65px] text-center text-surface max-[520px]:px-6 max-[520px]:py-12">
+          <h2 className="mb-[15px] text-[38px] tracking-[-1px] max-[520px]:text-[32px]">从一个发现开始。</h2>
+          <p className="mb-7 text-white/72">加入引力，让你找到的和你创造的都更容易被看见。</p>
+          <Link
+            className="inline-block cursor-pointer rounded-control bg-surface px-[23px] py-[13px] text-sm text-primary-dark transition-[background,transform] duration-[180ms] hover:-translate-y-px"
+            href="/register"
+          >
+            加入引力
+          </Link>
+        </section>
       </main>
 
-      <footer className="container footer">
-        <div className="footer-grid">
-          <div className="footer-brand">
-            <Logo className="logo" />
-            <p>开放 · 连接 · 发现。</p>
-          </div>
-          <nav className="footer-col" aria-label="站点链接">
-            <h3>服务</h3>
-            <Link href="/about">关于引力</Link>
-            <Link href="/help">帮助中心</Link>
-          </nav>
-          <nav className="footer-col" aria-label="法律链接">
-            <h3>法律</h3>
-            <Link href="/governance">治理规则总纲</Link>
-            <Link href="/guidelines">引力社区规范</Link>
-            <Link href="/enforcement">举报与处罚细则</Link>
-            <Link href="/disclaimer">免责声明</Link>
-            <Link href="/terms">用户协议</Link>
-            <Link href="/privacy">隐私政策</Link>
-          </nav>
-          <nav className="footer-col" aria-label="站点链接">
-            <h3>社区</h3>
-            <Link href="https://github.com/deqiuwangshi-png/gravity-share">引力开源（国际版）</Link>
-            <Link href="https://gitee.com/earth-players/GSWL">引力开源（国内版）</Link>
-            {/* 2026-08-31：飞书社群二维码（静态图 public/images/fileName.png，URL 不带 public 前缀；原先误放 app/images + public 前缀均无法访问） */}
-            <div className="footer-qr">
-              {/* eslint-disable-next-line @next/next/no-img-element -- 运营二维码静态图 */}
-              <img src="/images/fileName.png" alt="飞书社群二维码" width={110} height={110} loading="lazy" />
-              <span>扫码加入飞书社群</span>
-            </div>
-          </nav>
-        </div>
-        <div className="footer-bottom">
-          <span>{SITE_INFO.copyright}</span>
-          <span>{SITE_INFO.icp}</span>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

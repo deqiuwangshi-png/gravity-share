@@ -52,8 +52,8 @@ export function SquareCommentBox({ postId, onCreated }: { postId: string; onCrea
   }
 
   return (
-    <div className="square-comment-wrap">
-      <form className="square-comment-box" onSubmit={handleSubmit}>
+    <div className="mb-4">
+      <form className="flex items-start gap-[10px] rounded-[12px] border border-line bg-surface px-3 py-[10px] focus-within:border-line-primary" onSubmit={handleSubmit}>
         <textarea
           rows={2}
           value={text}
@@ -62,12 +62,13 @@ export function SquareCommentBox({ postId, onCreated }: { postId: string; onCrea
           placeholder="说点什么…（Enter 发送，Shift+Enter 换行）"
           aria-label="评论内容"
           maxLength={1000}
+          className="min-h-10 max-h-[132px] min-w-0 flex-1 resize-y border-0 bg-transparent px-[2px] py-1 text-[13px] leading-[1.6] text-foreground outline-none placeholder:text-soft [font:inherit]"
         />
-        <button className="square-comment-submit" type="submit" disabled={sending || !text.trim()}>
+        <button className="shrink-0 cursor-pointer border-0 bg-transparent text-[13px] font-medium text-primary [font:inherit]" type="submit" disabled={sending || !text.trim()}>
           {sending ? "发送中…" : "发布"}
         </button>
       </form>
-      {error && <p className="square-comment-error" role="alert">发布失败，请重试</p>}
+      {error && <p className="mx-[2px] mt-[6px] text-[12px] text-error" role="alert">发布失败，请重试</p>}
     </div>
   );
 }

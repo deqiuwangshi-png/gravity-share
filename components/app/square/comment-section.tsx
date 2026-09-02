@@ -93,15 +93,15 @@ export function CommentSection({
   }
 
   const commentActions = (comment: CommentDTO) => (
-    <div className="comment-actions">
+    <div className="mt-[6px] flex items-center gap-[14px]">
       {!comment.parentId && (
-        <button type="button" className="comment-reply-btn" onClick={() => startReply(comment)}>
+        <button type="button" className="inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-[12px] text-soft transition-[color] duration-[180ms] hover:text-primary [font:inherit]" onClick={() => startReply(comment)}>
           <MessageCircle size={13} />回复
         </button>
       )}
       <button
         type="button"
-        className={`comment-like${likedMap[comment.id] ? " active" : ""}`}
+        className={`inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-[12px] text-soft transition-[color] duration-[180ms] hover:text-primary [font:inherit]${likedMap[comment.id] ? " text-primary" : ""}`}
         onClick={() => void onToggleLike(comment.id)}
         aria-pressed={likedMap[comment.id] ?? false}
         aria-label={likedMap[comment.id] ? "取消赞" : "赞"}
@@ -112,24 +112,24 @@ export function CommentSection({
   );
 
   return (
-    <section className="square-comments">
-      <h2><MessageCircle size={16} />评论 {comments.length}</h2>
+    <section className="mt-[22px]">
+      <h2 className="m-0 mb-3 flex items-center gap-[6px] text-[15px]"><MessageCircle size={16} />评论 {comments.length}</h2>
       <SquareCommentBox postId={postId} onCreated={refresh} />
-      <div className="square-comment-list">
+      <div className="grid">
         {topComments.map((comment) => (
-          <div className="square-comment" key={comment.id}>
-            <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="square-avatar" badge={comment.authorBadge} authorId={comment.authorId} />
-            <div className="square-comment-body">
-              <div className="square-comment-meta">
-                <strong><AuthorLink authorId={comment.authorId} name={comment.authorName} /><AuthorBadge badge={comment.authorBadge} /></strong>
-                <small>{comment.time}</small>
+          <div className="flex gap-[10px] border-b border-line py-[14px] last:border-b-0" key={comment.id}>
+            <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="grid size-[30px] shrink-0 place-items-center rounded-full bg-primary-soft text-[12px] font-bold text-primary" badge={comment.authorBadge} authorId={comment.authorId} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 [&>.comment-menu]:ml-auto">
+                <strong className="text-[12px]"><AuthorLink authorId={comment.authorId} name={comment.authorName} /><AuthorBadge badge={comment.authorBadge} /></strong>
+                <small className="text-[11px] text-soft">{comment.time}</small>
                 <PostMenu targetType="comment" targetId={comment.id} isOwner={comment.authorId === myId} content={comment.content} onDeleted={refresh} />
               </div>
-              <p>{comment.content}</p>
+              <p className="m-0 mt-1 whitespace-pre-line text-[13px] leading-[1.6] text-muted">{comment.content}</p>
               {commentActions(comment)}
 
               {replyTo?.id === comment.id && (
-                <div className="comment-reply-box">
+                <div className="mt-2 grid gap-2 rounded-[12px] border border-line bg-surface px-3 py-[10px] focus-within:border-line-primary">
                   <textarea
                     rows={2}
                     value={replyText}
@@ -137,10 +137,11 @@ export function CommentSection({
                     placeholder={`回复 @${replyTo.name}…`}
                     aria-label="回复内容"
                     autoFocus
+                    className="min-h-10 resize-y border-0 bg-transparent px-[2px] py-1 text-[13px] leading-[1.6] text-foreground outline-none placeholder:text-soft [font:inherit]"
                   />
-                  <div className="comment-reply-actions">
-                    <button type="button" onClick={() => setReplyTo(null)}>取消</button>
-                    <button type="button" className="primary" disabled={!replyText.trim() || sendingReply} onClick={() => void sendReply()}>
+                  <div className="flex justify-end gap-2">
+                    <button type="button" className="cursor-pointer rounded-full border border-line bg-surface px-[14px] py-[5px] text-[12px] text-muted transition-[border-color,color] duration-[180ms] hover:border-line-primary hover:text-primary [font:inherit]" onClick={() => setReplyTo(null)}>取消</button>
+                    <button type="button" className="cursor-pointer rounded-full border-0 bg-primary px-[14px] py-[5px] text-[12px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark disabled:cursor-default disabled:text-disabled disabled:hover:text-on-primary [font:inherit]" disabled={!replyText.trim() || sendingReply} onClick={() => void sendReply()}>
                       {sendingReply ? "发送中…" : "回复"}
                     </button>
                   </div>
@@ -148,15 +149,15 @@ export function CommentSection({
               )}
 
               {repliesByParent[comment.id]?.map((reply) => (
-                <div className="square-comment square-comment-reply" key={reply.id}>
-                  <AvatarBox path={reply.authorAvatar} name={reply.authorName} className="square-avatar" badge={reply.authorBadge} authorId={reply.authorId} />
-                  <div className="square-comment-body">
-                    <div className="square-comment-meta">
-                      <strong><AuthorLink authorId={reply.authorId} name={reply.authorName} /><AuthorBadge badge={reply.authorBadge} /></strong>
-                      <small>{reply.time}</small>
+                <div className="mt-2 flex gap-[10px] pt-3" key={reply.id}>
+                  <AvatarBox path={reply.authorAvatar} name={reply.authorName} className="grid size-[30px] shrink-0 place-items-center rounded-full bg-primary-soft text-[12px] font-bold text-primary" badge={reply.authorBadge} authorId={reply.authorId} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 [&>.comment-menu]:ml-auto">
+                      <strong className="text-[12px]"><AuthorLink authorId={reply.authorId} name={reply.authorName} /><AuthorBadge badge={reply.authorBadge} /></strong>
+                      <small className="text-[11px] text-soft">{reply.time}</small>
                       <PostMenu targetType="comment" targetId={reply.id} isOwner={reply.authorId === myId} content={reply.content} onDeleted={refresh} />
                     </div>
-                    <p>{reply.content}</p>
+                    <p className="m-0 mt-1 whitespace-pre-line text-[13px] leading-[1.6] text-muted">{reply.content}</p>
                     {commentActions(reply)}
                   </div>
                 </div>

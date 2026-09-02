@@ -15,7 +15,7 @@ export function LinkifiedText({ text }: { text: string }) {
         /^https?:\/\//.test(part) ? (
           <a
             key={index}
-            className="linkified"
+            className="break-all text-primary transition-[color] duration-[180ms] hover:text-primary-dark"
             href={safeHref(part) ?? part}
             target="_blank"
             rel="noopener noreferrer"

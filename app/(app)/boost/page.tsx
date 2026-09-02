@@ -65,9 +65,9 @@ export default function BoostPage() {
 function BoostClosed() {
   return (
     <div className="app-content promo-page">
-      <header className="feed-head">
-        <h1>内容投流</h1>
-        <p>内容投流即将开放；发现与分享永久免费。</p>
+      <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
+        <h1 className="m-0 text-2xl tracking-[-0.5px]">内容投流</h1>
+        <p className="m-0 text-[13px] text-muted">内容投流即将开放；发现与分享永久免费。</p>
       </header>
       <section className="promo-soon">
         <b>即将开放</b>
@@ -192,9 +192,9 @@ function BoostMain() {
 
   return (
     <div className="app-content promo-page">
-      <header className="feed-head">
-        <h1>内容投流</h1>
-        <p>给内容买一次确定的展示（位置 / 时长 / 范围），不承诺点击与收益。会员订阅见 <Link className="legal-link" href="/promo">订阅计划</Link></p>
+      <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
+        <h1 className="m-0 text-2xl tracking-[-0.5px]">内容投流</h1>
+        <p className="m-0 text-[13px] text-muted">给内容买一次确定的展示（位置 / 时长 / 范围），不承诺点击与收益。会员订阅见 <Link className="legal-link" href="/promo">订阅计划</Link></p>
       </header>
 
       {/* ---------- ① 选择帖子 ---------- */}

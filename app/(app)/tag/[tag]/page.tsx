@@ -14,7 +14,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { fetchSquarePostsByTag } from "@/lib/queries-posts";
 import { SITE_URL, buildCollectionPage, jsonLd } from "@/lib/seo";
-import { SquareCard } from "@/components/app/common/square-card";
+import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +46,7 @@ export default async function TagPage({ params }: PageProps) {
 
   return (
     <div className="app-content">
-      <div className="app-feed">
+      <div className="min-w-0">
         <Link className="category-back" href="/home">← 返回首页</Link>
 
         <header className="category-detail-head">
@@ -59,7 +59,7 @@ export default async function TagPage({ params }: PageProps) {
         </header>
 
         {posts.length > 0 ? (
-          <div className="home-grid">{posts.map((post) => <SquareCard post={post} key={post.id} />)}</div>
+          <div className={homeGridClass}>{posts.map((post) => <SquareCard post={post} key={post.id} />)}</div>
         ) : (
           <p className="category-empty">该标签暂无内容，去「+ 发布」分享第一份好东西。</p>
         )}

@@ -27,9 +27,9 @@ export default async function FollowersPage() {
   return (
     <div className="app-content relation-page">
       <Link className="category-back" href="/profile">← 返回个人主页</Link>
-      <header className="feed-head">
-        <h1>我的粉丝</h1>
-        <p>共 {users.length} 人</p>
+      <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
+        <h1 className="m-0 text-2xl tracking-[-0.5px]">我的粉丝</h1>
+        <p className="m-0 text-[13px] text-muted">共 {users.length} 人</p>
       </header>
       <RelationList users={users} initialFollowingIds={followingIds} emptyText="还没有粉丝，把主页分享出去让更多人看到吧。" />
     </div>

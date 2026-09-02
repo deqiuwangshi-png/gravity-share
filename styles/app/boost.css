@@ -34,7 +34,7 @@
 
 .promo-error {
   margin: 8px 0 0;
-  color: var(--danger, #a32d2d);
+  color: var(--accent-warn);
   font-size: 12px;
 }
 

@@ -17,7 +17,7 @@ export function LegalLayout({
   return (
     <div className="legal-page">
       <header className="legal-header">
-        <Logo className="logo" />
+        <Logo className="inline-flex items-center gap-2.5 text-[22px] font-extrabold tracking-[-0.5px]" />
         <Link className="legal-back" href="/">返回首页</Link>
       </header>
       <h1>{title}</h1>

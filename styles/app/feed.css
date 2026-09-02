@@ -1,26 +1,8 @@
-/* (app) 二级页头部与全部分类页（recommend / categories）
+/* (app) 全部分类页（/categories 大卡片）与分类详情页（/categories/[slug] 头部/空态）
+ * 2026-09-02 P2-home 批次缩水：页面标题区（.feed-head*）已 Tailwind 化迁出（首页/分类页/关注粉丝/
+ * boost/promo 页头统一原子类）；内容流加载/失败重试/空态（.feed-loading/.load-retry/.feed-empty）
+ * 已 Tailwind 化迁出（home/loading/load-error/SquareFeed）。本文件保留分类页全套样式。
  * 自原 app.css 拆分（2026-08-21 治理：单文件 ≤ 400 行） */
-
-/* 页面标题区：标题 + 描述同一行水平排列（2026-08-27 首页/分类页统一） */
-.feed-head {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  column-gap: 12px;
-  margin-bottom: 16px;
-}
-
-.feed-head h1 {
-  margin: 0;
-  font-size: 24px;
-  letter-spacing: -0.5px;
-}
-
-.feed-head p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 13px;
-}
 
 /* 全部分类：3 列大卡片 */
 .category-grid {
@@ -164,38 +146,4 @@
   .category-grid {
     grid-template-columns: 1fr;
   }
-}
-
-/* 内容流加载态（2b 读库后列表页异步拉取） */
-.feed-loading {
-  padding: 48px 18px;
-  color: var(--text-soft);
-  font-size: 13px;
-  text-align: center;
-}
-
-/* 加载失败重试（P1-2 兜底，LoadError 组件） */
-.load-retry {
-  margin-left: 10px;
-  padding: 3px 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--primary);
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 180ms ease, border-color 180ms ease;
-}
-
-.load-retry:hover {
-  background: var(--primary-subtle);
-  border-color: var(--primary);
-}
-
-/* 内容流空态（搜索无结果 / 分类无内容，D1 复用） */
-.feed-empty {
-  padding: 48px 18px;
-  color: var(--text-soft);
-  font-size: 13px;
-  text-align: center;
 }

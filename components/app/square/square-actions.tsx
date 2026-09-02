@@ -32,10 +32,10 @@ export function SquareActions({ postId, likes }: { postId: string; likes: number
   }
 
   return (
-    <div className="square-actions">
+    <div className="mt-5 flex items-center gap-[18px] border-y border-line py-[13px]">
       <button
         type="button"
-        className={`square-like${liked ? " active" : ""}`}
+        className={`inline-flex cursor-pointer items-center gap-[5px] border-0 bg-transparent text-[13px] font-medium text-primary transition-[background-color] duration-[180ms] [font:inherit]${liked ? " rounded-full bg-primary-soft px-3 py-[5px]" : ""}`}
         onClick={() => void onToggle()}
         aria-pressed={liked}
         disabled={busy}

@@ -69,9 +69,9 @@ export default function PromoPage() {
 function PromoClosed() {
   return (
     <div className="app-content promo-page">
-      <header className="feed-head">
-        <h1>订阅计划</h1>
-        <p>订阅功能即将开放；发现与分享永久免费。</p>
+      <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
+        <h1 className="m-0 text-2xl tracking-[-0.5px]">订阅计划</h1>
+        <p className="m-0 text-[13px] text-muted">订阅功能即将开放；发现与分享永久免费。</p>
       </header>
       <section className="promo-soon">
         <b>即将开放</b>
@@ -199,9 +199,9 @@ function PromoMain() {
 
   return (
     <div className="app-content promo-page">
-      <header className="feed-head">
-        <h1>订阅计划</h1>
-        <p>订阅解锁更多分发与增长能力；单次内容投放请前往 <Link className="legal-link" href="/boost">内容投流</Link></p>
+      <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
+        <h1 className="m-0 text-2xl tracking-[-0.5px]">订阅计划</h1>
+        <p className="m-0 text-[13px] text-muted">订阅解锁更多分发与增长能力；单次内容投放请前往 <Link className="legal-link" href="/boost">内容投流</Link></p>
       </header>
 
       {/* ---------- 我的订阅状态条 ---------- */}
