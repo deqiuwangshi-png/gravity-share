@@ -25,7 +25,7 @@ export default async function FollowingPage() {
 
   return (
     <div className="app-content">
-      <Link className="category-back" href="/profile">← 返回个人主页</Link>
+      <Link className="mb-4 inline-block text-[13px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/profile">← 返回个人主页</Link>
       <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
         <h1 className="m-0 text-2xl tracking-[-0.5px]">我的关注</h1>
         <p className="m-0 text-[13px] text-muted">共 {users.length} 人</p>

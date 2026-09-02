@@ -3,8 +3,6 @@ import "@/styles/app/announcement.css";
 import "@/styles/app/user-menu.css";
 import "@/styles/app/comment-menu.css";
 import "@/styles/app/notification.css";
-import "@/styles/app/feed.css";
-import "@/styles/app/publish-form.css";
 import "@/styles/app/rich-editor.css";
 import "@/styles/app/rich-content.css";
 import "@/styles/app/gallery.css";

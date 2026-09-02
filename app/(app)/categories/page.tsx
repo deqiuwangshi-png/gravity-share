@@ -23,21 +23,28 @@ export default async function CategoriesPage() {
         <p className="m-0 text-[13px] text-muted">按方向浏览所有内容分类</p>
       </header>
 
-      <div className="category-grid">{SQUARE_CATEGORIES.map((name) => {
-        const meta = SQUARE_CATEGORY_META[name];
-        const count = posts.filter((post) => post.category === name).length;
-        return (
-          <Link className="category-card" href={`/categories/${meta.slug}`} key={name}>
-            <span className="category-icon">{meta.icon}</span>
-            <div>
-              <strong>{name}</strong>
-              <small>{meta.desc}</small>
-              <em>{count} 个内容</em>
-            </div>
-            <span className="category-arrow" aria-hidden="true">→</span>
-          </Link>
-        );
-      })}        </div>
+      {/* 3 列大卡片（≤900 收 2 列、≤480 收 1 列，原 feed.css 断点逐字保留） */}
+      <div className="grid grid-cols-3 gap-[14px] max-[900px]:grid-cols-2 max-[480px]:grid-cols-1">
+        {SQUARE_CATEGORIES.map((name) => {
+          const meta = SQUARE_CATEGORY_META[name];
+          const count = posts.filter((post) => post.category === name).length;
+          return (
+            <Link
+              className="group flex items-center gap-3 rounded-xl border border-line bg-surface p-[22px_18px] transition-[border-color,background-color] duration-[180ms] hover:border-line-primary hover:bg-primary-subtle"
+              href={`/categories/${meta.slug}`}
+              key={name}
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-primary-soft text-[18px] text-primary">{meta.icon}</span>
+              <span className="min-w-0 flex-1">
+                <strong className="block text-[15px]">{name}</strong>
+                <small className="mt-[3px] block text-[12px] text-soft">{meta.desc}</small>
+                <em className="mt-[6px] block text-[12px] not-italic text-muted">{count} 个内容</em>
+              </span>
+              <span className="ml-auto shrink-0 text-[16px] text-soft group-hover:text-primary" aria-hidden="true">→</span>
+            </Link>
+          );
+        })}
+      </div>
       </div>
   </div>;
 }

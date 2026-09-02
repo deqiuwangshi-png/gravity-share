@@ -55,15 +55,15 @@ export default async function CategoryDetailPage({ params }: PageProps) {
   return <div className="app-content">
     <SquareRefreshWatcher />
     <div className="min-w-0">
-      <Link className="category-back" href="/categories">← 返回全部分类</Link>
+      <Link className="mb-4 inline-block text-[13px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/categories">← 返回全部分类</Link>
 
-      <header className="category-detail-head">
-        <span className="category-detail-icon">{meta.icon}</span>
-        <div className="category-detail-meta">
-          <h1>{catName}</h1>
-          <p>{meta.desc}</p>
+      <header className="mb-[18px] flex items-center gap-[14px] rounded-[14px] border border-line bg-surface p-[18px]">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary-soft text-[22px] text-primary">{meta.icon}</span>
+        <div className="min-w-0 flex-1">
+          <h1 className="m-0 mb-1 text-[18px] font-semibold">{catName}</h1>
+          <p className="m-0 text-[13px] text-soft">{meta.desc}</p>
         </div>
-        <span className="category-detail-count">{posts.length} 个内容</span>
+        <span className="shrink-0 text-[13px] text-muted">{posts.length} 个内容</span>
       </header>
 
       {posts.length > 0 ? (
@@ -73,7 +73,7 @@ export default async function CategoryDetailPage({ params }: PageProps) {
           <AdSlot slot={AD_SLOTS.category} variant="multiplex" />
         </>
       ) : (
-        <p className="category-empty">该分类暂无内容，去「+ 发布」分享第一份好东西。</p>
+        <p className="p-[48px_18px] text-center text-[13px] text-soft">该分类暂无内容，去「+ 发布」分享第一份好东西。</p>
       )}
     </div>
 

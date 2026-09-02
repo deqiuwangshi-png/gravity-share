@@ -47,21 +47,21 @@ export default async function TagPage({ params }: PageProps) {
   return (
     <div className="app-content">
       <div className="min-w-0">
-        <Link className="category-back" href="/home">← 返回首页</Link>
+        <Link className="mb-4 inline-block text-[13px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/home">← 返回首页</Link>
 
-        <header className="category-detail-head">
-          <span className="category-detail-icon">#</span>
-          <div className="category-detail-meta">
-            <h1>#{tag}</h1>
-            <p>与「{tag}」相关的公开分享</p>
+        <header className="mb-[18px] flex items-center gap-[14px] rounded-[14px] border border-line bg-surface p-[18px]">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary-soft text-[22px] text-primary">#</span>
+          <div className="min-w-0 flex-1">
+            <h1 className="m-0 mb-1 text-[18px] font-semibold">#{tag}</h1>
+            <p className="m-0 text-[13px] text-soft">与「{tag}」相关的公开分享</p>
           </div>
-          <span className="category-detail-count">{posts.length} 个内容</span>
+          <span className="shrink-0 text-[13px] text-muted">{posts.length} 个内容</span>
         </header>
 
         {posts.length > 0 ? (
           <div className={homeGridClass}>{posts.map((post) => <SquareCard post={post} key={post.id} />)}</div>
         ) : (
-          <p className="category-empty">该标签暂无内容，去「+ 发布」分享第一份好东西。</p>
+          <p className="p-[48px_18px] text-center text-[13px] text-soft">该标签暂无内容，去「+ 发布」分享第一份好东西。</p>
         )}
       </div>
 

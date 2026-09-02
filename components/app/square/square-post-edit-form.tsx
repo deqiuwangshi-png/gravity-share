@@ -109,7 +109,7 @@ export function SquarePostEditForm({
     <form className="mb-[14px] grid gap-[10px]" onSubmit={(event) => void save(event)} onClick={(event) => event.stopPropagation()}>
       {/* 标题（038，2026-09-02 必填）：与发布一致 */}
       <input
-        className="publish-title-input"
+        className="w-full border-0 border-b border-line bg-transparent px-[2px] pb-[10px] pt-[4px] text-[18px] font-semibold leading-[1.5] text-foreground outline-none transition-[border-color] duration-[180ms] placeholder:text-[14px] placeholder:font-normal placeholder:text-soft focus:border-line-primary [font:inherit]"
         type="text"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
@@ -131,14 +131,14 @@ export function SquarePostEditForm({
       )}
 
       {/* 内容分类（固定枚举，分类是内容属性，与 #标签 分离） */}
-      <div className="publish-field publish-type-field">
-        <span>分类</span>
-        <div className="publish-chips">
+      <div className="grid gap-[6px]">
+        <span className="text-[12px] font-semibold text-muted">分类</span>
+        <div className="flex flex-wrap gap-2">
           {SQUARE_CATEGORIES.map((name) => (
             <button
               type="button"
               key={name}
-              className={`publish-chip${category === name ? " active" : ""}`}
+              className={`cursor-pointer rounded-full border border-line bg-surface px-[13px] py-[6px] text-[12px] text-muted transition-[border-color,color,background-color] duration-[180ms] hover:border-line-primary hover:text-primary${category === name ? " border-primary bg-primary-soft font-semibold text-primary" : ""}`}
               onClick={() => setCategory(name)}
             >{name}</button>
           ))}

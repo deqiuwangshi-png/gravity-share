@@ -191,16 +191,17 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
         if (event.target === event.currentTarget) attemptClose();
       }}
     >
-      <div className="modal-box publish-box">
-        <div className="modal-header">
-          <h2 id="publish-title">发布</h2>
-          <button type="button" onClick={attemptClose} aria-label="关闭"><X size={16} /></button>
+      {/* 面板壳：modal-box 宿主类仅承载 decor 阴影（0 30px 80px rgba(0,0,0,.15)，非令牌收容）；relative 为放弃确认覆盖层提供包含块（原 publish-box） */}
+      <div className="modal-box relative w-[min(560px,100%)] min-w-0 rounded-card bg-surface p-7">
+        <div className="mb-[25px] flex items-center justify-between">
+          <h2 id="publish-title" className="m-0 text-[20px]">发布</h2>
+          <button type="button" onClick={attemptClose} aria-label="关闭" className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border-0 bg-hover text-muted"><X size={16} /></button>
         </div>
 
-        <form className="publish-immersive" onSubmit={handleSubmit}>
+        <form className="grid grid-cols-[minmax(0,1fr)] gap-[18px]" onSubmit={handleSubmit}>
             {/* 标题（038）：必填（2026-09-02）；SEO 标题提炼 L1 优先使用（存量空标题帖仍走正文提炼兜底） */}
             <input
-              className="publish-title-input"
+              className="w-full border-0 border-b border-line bg-transparent px-[2px] pb-[10px] pt-[4px] text-[18px] font-semibold leading-[1.5] text-foreground outline-none transition-[border-color] duration-[180ms] placeholder:text-[14px] placeholder:font-normal placeholder:text-soft focus:border-line-primary [font:inherit]"
               type="text"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
@@ -212,37 +213,39 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
             <RichEditor compact value={html} onChange={setHtml} upload={uid ? { userId: uid, postId: draftId } : undefined} onUploadedChange={onGalleryChange} />
 
             {/* 内容分类（固定枚举，默认「其他」可改；分类是内容属性，与 #标签 分离） */}
-            <div className="publish-field publish-type-field">
-              <span>分类</span>
-              <div className="publish-chips">
+            <div className="grid gap-[6px]">
+              <span className="text-[12px] font-semibold text-muted">分类</span>
+              <div className="flex flex-wrap gap-2">
                 {SQUARE_CATEGORIES.map((name) => (
                   <button
                     type="button"
                     key={name}
-                    className={`publish-chip${category === name ? " active" : ""}`}
+                    className={`cursor-pointer rounded-full border border-line bg-surface px-[13px] py-[6px] text-[12px] text-muted transition-[border-color,color,background-color] duration-[180ms] hover:border-line-primary hover:text-primary${category === name ? " border-primary bg-primary-soft font-semibold text-primary" : ""}`}
                     onClick={() => setCategory(name)}
                   >{name}</button>
                 ))}
               </div>
             </div>
 
-            {submitError && <p className="publish-error" role="alert">{submitError}</p>}
-            <button className="publish-immersive-submit" type="submit" disabled={submitting}>
+            {submitError && <p className="-mt-[6px] mb-[10px] text-[12px] text-error" role="alert">{submitError}</p>}
+            <button className="h-[46px] cursor-pointer rounded-full border-0 bg-primary text-[15px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark disabled:cursor-default disabled:opacity-60" type="submit" disabled={submitting}>
               {submitting ? "发布中…" : "发布"}
             </button>
           </form>
 
-        {/* 放弃确认（2026-09-02）：dirty 时覆盖在表单之上——返回「继续编辑」组件不卸载、输入不丢失 */}
+        {/* 放弃确认（2026-09-02）：dirty 时覆盖在表单之上——返回「继续编辑」组件不卸载、输入不丢失
+            覆盖层圆角与面板同源 rounded-card（= --radius-card 18px，替代原 border-radius: inherit） */}
         {confirmClose && (
-          <div className="modal-close-confirm" role="alertdialog" aria-label="放弃未发布的内容">
-            <div className="modal-close-confirm-card">
-              <h3>放弃未发布的内容？</h3>
-              <p>标题、正文与已上传的图片将不会被保存，离开后无法恢复。</p>
-              <div className="modal-close-confirm-actions">
-                <button type="button" className="close-confirm-keep" autoFocus onClick={() => setConfirmClose(false)}>继续编辑</button>
+          <div className="absolute inset-0 z-20 grid place-items-center rounded-card bg-surface p-6" role="alertdialog" aria-label="放弃未发布的内容">
+            <div className="max-w-[300px] text-center">
+              <h3 className="m-0 mb-2 text-[16px] font-semibold">放弃未发布的内容？</h3>
+              <p className="m-0 mb-5 text-[13px] leading-[1.7] text-muted">标题、正文与已上传的图片将不会被保存，离开后无法恢复。</p>
+              <div className="flex justify-center gap-[10px]">
+                <button type="button" className="cursor-pointer rounded-full border-0 bg-primary px-5 py-[9px] text-[13px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark [font:inherit]" autoFocus onClick={() => setConfirmClose(false)}>继续编辑</button>
+                {/* close-confirm-discard 宿主类保留：hover 实心红 + #fff 白字收容于 decor.css（非令牌色） */}
                 <button
                   type="button"
-                  className="close-confirm-discard"
+                  className="close-confirm-discard cursor-pointer rounded-full border border-error bg-transparent px-[18px] py-2 text-[13px] font-semibold text-error transition-[background-color,color] duration-[180ms] [font:inherit]"
                   onClick={() => {
                     setConfirmClose(false);
                     doClose();
