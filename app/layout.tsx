@@ -20,7 +20,8 @@ export const metadata: Metadata = {
     locale: "zh_CN",
   },
   twitter: {
-    card: "summary",
+    /* 2026-09-03：og-image（1200×630）落位后升级为大图卡；图片本身由 app/opengraph-image.tsx 文件约定注入 */
+    card: "summary_large_image",
   },
 };
 

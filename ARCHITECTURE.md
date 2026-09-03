@@ -120,7 +120,7 @@ lib（业务动作 · 读查询 · 类型 · 配置 · 纯工具）—— 最底
 |---|---|---|
 | **Logo 唯一源** | `public/brand/logo.png`（180×180 / 30KB） | `components/common/logo.tsx` 用 `next/image` 引用，marketing / app / auth 三区共用 |
 | favicon 三件套 | `app/favicon.ico` + `app/icon.png`（512×512）+ `app/apple-icon.png`（180×180） | Next.js 文件约定自动注入 `<link rel="icon">`；`app/manifest.ts` 的 icons 指向 `/icon.png` |
-| 社交分享卡片 | ❌ 待补（`app/opengraph-image.tsx`） | 已登记 `docs/DEBTS.md` |
+| 社交分享卡片 | `app/opengraph-image.tsx`（1200×630，next/og build 期静态生成）+ `app/fonts/og-sc-bold.otf`（思源黑体 Bold OFL 子集，~10KB） | Next.js 文件约定自动注入 og:image；**文案改动须同步 `app/fonts/og-chars.txt` 重新生成子集**，否则新字缺字形 |
 
 **换品牌时必须同步替换 4 份**：`public/brand/logo.png`、`app/icon.png`、`app/apple-icon.png`、`app/favicon.ico`（同源人工同步，无构建期派生）。
 
