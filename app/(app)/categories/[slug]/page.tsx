@@ -14,8 +14,6 @@ import { SQUARE_CATEGORIES, SQUARE_CATEGORY_META } from "@/lib/config";
 import { SITE_URL, buildCollectionPage, jsonLd } from "@/lib/seo";
 import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
 import { SquareRefreshWatcher } from "@/components/app/common/square-refresh-watcher";
-import { AdSlot } from "@/components/common/ad-slot";
-import { AD_SLOTS } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -69,8 +67,6 @@ export default async function CategoryDetailPage({ params }: PageProps) {
       {posts.length > 0 ? (
         <>
           <div className={homeGridClass}>{posts.map((post) => <SquareCard post={post} key={post.id} />)}</div>
-          {/* A4 广告位：内容列表底部的原生推荐网格（列数与卡片流一致） */}
-          <AdSlot slot={AD_SLOTS.category} variant="multiplex" />
         </>
       ) : (
         <p className="p-[48px_18px] text-center text-[13px] text-soft">该分类暂无内容，去「+ 发布」分享第一份好东西。</p>

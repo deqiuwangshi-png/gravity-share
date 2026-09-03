@@ -28,8 +28,6 @@ export function SquareCard({ post }: { post: SquarePostDTO }) {
           <b className="overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold"><AuthorLink authorId={post.authorId} name={post.authorName} /><AuthorBadge badge={post.authorBadge} /></b>
           <small className="text-[10px] text-soft">{post.time}</small>
         </span>
-        {/* 024 展示位（大喇叭置顶）：置顶中卡片右上角金色「展示」标 */}
-        {post.featured && <span className="shrink-0 rounded-full bg-accent px-2 py-[2px] text-[10px] font-semibold text-on-accent">展示</span>}
       </div>
 
       <p className="line-clamp-3 m-0 whitespace-pre-line break-words text-[13px] leading-[1.65] text-foreground">{preview}</p>

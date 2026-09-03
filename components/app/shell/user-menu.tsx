@@ -114,8 +114,7 @@ export function UserMenu({
             <span className={iconClass}><User size={13} /></span>个人主页
           </Link>
         </DropdownMenuItem>
-        {/* 商业化入口（订阅计划 /promo 与内容投流 /boost）2026-08-31 起从菜单摘除：
-            页面与逻辑保留（均处「即将开放」占位态），恢复入口见 deliverables/ads-monetization-SOP-2026-08-31.md */}
+        {/* 2026-08-31 商业化入口（/promo /boost）已摘除；2026-09-03 模块整体删除 */}
         <DropdownMenuItem className={itemClass} onSelect={onOpenSettings}>
           <span className={iconClass}><Settings size={13} /></span>用户设置
         </DropdownMenuItem>

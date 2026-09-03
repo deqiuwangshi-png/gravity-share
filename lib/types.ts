@@ -60,10 +60,6 @@ export interface SquarePostDTO {
   imageUrl?: string;
   /** 图集：有序 storage path 数组（037，第 1 张 = 封面 image_url；旧帖为空则回退正文内联图） */
   gallery?: string[];
-  /** 展示位置顶中（024：featured_until > now()；置顶帖列表排最前 + 卡片「展示」角标） */
-  featured: boolean;
-  /** 置顶到期时间（ISO，024；undefined = 未置顶/已过期） */
-  featuredUntil?: string;
 }
 
 /* ---------- 公告正文（marketing 区 /notice/[slug]，lib/data.ts 配置渲染） ---------- */

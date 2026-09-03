@@ -20,7 +20,6 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
     likes_count: 3,
     comments_count: 0,
     created_at: "2026-08-23T00:00:00.000Z",
-    featured_until: null,
     users: { id: "u2", name: "张三", avatar_url: "a.png", badge: null },
   };
 
@@ -54,17 +53,6 @@ describe("toSquarePostDTO（广场帖子映射）", () => {
   it("038 标题映射：非空 → title，空 → undefined", () => {
     expect(toSquarePostDTO({ ...row, title: "我的标题" }).title).toBe("我的标题");
     expect(toSquarePostDTO({ ...row, title: null }).title).toBeUndefined();
-  });
-
-  it("024 展示位：未置顶 featured=false", () => {
-    expect(toSquarePostDTO(row).featured).toBe(false);
-  });
-
-  it("024 展示位：置顶中 featured=true，过期回落 false", () => {
-    const future = new Date(Date.now() + 3600_000).toISOString();
-    const past = new Date(Date.now() - 3600_000).toISOString();
-    expect(toSquarePostDTO({ ...row, featured_until: future }).featured).toBe(true);
-    expect(toSquarePostDTO({ ...row, featured_until: past }).featured).toBe(false);
   });
 });
 

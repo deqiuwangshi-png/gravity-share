@@ -7,7 +7,7 @@
  *         可经服务端 env ALLOWED_ORIGINS（逗号分隔）追加额外来源（如 Vercel Preview 域名）；
  *   开发（NODE_ENV !== production）：放行本机回环 localhost / 127.0.0.1 任意端口，便于换端口 dev。
  * fail closed：头缺失 / 解析失败 / 不在白名单 → 403，不静默放行。
- * 边界：webhooks/waffo 等外部回调无浏览器 Origin，自带验签，不接入本守卫。
+ * 边界：外部服务回调（无浏览器 Origin、自带签名验签的 webhook）不接入本守卫。
  */
 import { NextResponse } from "next/server";
 import { SITE_URL } from "@/lib/seo";

@@ -71,7 +71,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 私有文件 | `_` 前缀（不参与路由） | `(auth)/_components/auth-form.tsx` |
 | 类型 | 组件 Props 用 `XxxProps` 命名（简单组件可内联）；展示模型用 `XxxDTO`（queries-*.ts 统一映射，集中在 lib/types.ts） | `SquarePostDTO` / `Announcement`（均在 lib/types.ts） |
 | 常量 | UPPER_SNAKE_CASE | `MARKETING_CATEGORIES` |
-| 样式文件 | 按访问区归入 `styles/<区>/`，文件名 = 组件/区块维度，单文件 ≤ 400 行 | `styles/app/promo.css` |
+| 样式文件 | 按访问区归入 `styles/<区>/`，文件名 = 组件/区块维度，单文件 ≤ 400 行 | `styles/marketing/legal.css` |
 | 数据库 | 迁移文件 `supabase/migrations/NNN-*.sql`，幂等可重跑，头部注释动机；**手动复制 SQL 到 Supabase Dashboard 执行（不引入 CLI）** | `002-content-seed.sql` |
 
 ### 5.1 Server / Client 边界

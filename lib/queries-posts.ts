@@ -29,8 +29,6 @@ export type SquarePostRow = {
   comments_count: number;
   created_at: string;
   url_status: string;
-  /* 024 展示位：置顶到期时间（NULL = 未置顶） */
-  featured_until: string | null;
   users: { id: string; name: string; avatar_url: string | null; badge: string | null } | null;
 };
 
@@ -70,35 +68,18 @@ export function toSquarePostDTO(
     urlStatus: (row.url_status as SquarePostDTO["urlStatus"]) ?? "normal",
     imageUrl: row.image_url ?? undefined,
     gallery: row.gallery ?? undefined,
-    /* 024 展示位：置顶中 = 到期时间 > 当前时刻（过期自动回落自然流） */
-    featured: !!row.featured_until && new Date(row.featured_until).getTime() > Date.now(),
-    featuredUntil: row.featured_until ?? undefined,
   };
 }
 
 /** 广场话题流（时间倒序；limit 供详情页相关区控制拉取量）
- * 024 展示位：置顶中（featured_until > now()）排最前，置顶内部按到期升序（快到期排前）；
- * 已过期帖视同普通帖（回落自然流，不占置顶位） */
+ * 2026-09-03：商业化模块删除 → 移除 024 置顶位（featured_until 双查询拆分），回归纯自然时间流 */
 export async function fetchSquarePosts(supabase: SupabaseClient, limit?: number): Promise<SquarePostDTO[]> {
-  const now = new Date().toISOString();
-  /* 置顶中（数量少，单独轻量查询） */
-  const { data: featured } = await supabase
+  const { data } = await supabase
     .from(SQUARE)
     .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
-    .gt("featured_until", now)
-    .order("featured_until", { ascending: true })
-    .limit(limit ?? 100);
-  /* 普通帖（未置顶 + 已过期） */
-  const { data: normal } = await supabase
-    .from(SQUARE)
-    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
-    .or(`featured_until.is.null,featured_until.lte.${now}`)
     .order("created_at", { ascending: false })
     .limit(limit ?? 100);
-  return [
-    ...((featured as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? []),
-    ...((normal as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? []),
-  ];
+  return (data as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? [];
 }
 
 /** 广场帖子详情（按 id） */
@@ -124,33 +105,19 @@ export async function fetchSquarePostsByAuthor(supabase: SupabaseClient, userId:
 
 /** 某分类下的公开帖（/categories/[slug] 用，2026-09-02 规模化分析 B）
  * 直接按 category 过滤走 026 现成 (category, created_at) 索引——取代旧的「拉最新 100 再内存 filter」
- * （窗口锁死：该分类在最新 100 里只有几条就只显示几条）；与 fetchSquarePosts 同款置顶语义 */
+ * （窗口锁死：该分类在最新 100 里只有几条就只显示几条）；时间倒序 */
 export async function fetchSquarePostsByCategory(
   supabase: SupabaseClient,
   category: string,
   limit?: number,
 ): Promise<SquarePostDTO[]> {
-  const now = new Date().toISOString();
-  /* 置顶中（该分类，数量少） */
-  const { data: featured } = await supabase
+  const { data } = await supabase
     .from(SQUARE)
     .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
     .eq("category", category)
-    .gt("featured_until", now)
-    .order("featured_until", { ascending: true })
-    .limit(limit ?? 100);
-  /* 普通帖（该分类，未置顶 + 已过期），走 (category, created_at) 复合索引 */
-  const { data: normal } = await supabase
-    .from(SQUARE)
-    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
-    .eq("category", category)
-    .or(`featured_until.is.null,featured_until.lte.${now}`)
     .order("created_at", { ascending: false })
     .limit(limit ?? 100);
-  return [
-    ...((featured as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? []),
-    ...((normal as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? []),
-  ];
+  return (data as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? [];
 }
 
 /** 某标签下的公开帖（/tag/[tag] 用，P0-7；Postgres 数组包含查询，精确匹配 tags 元素） */

@@ -9,8 +9,6 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "waffo:sanity": "node scripts/waffo-sanity.mjs",
-    "waffo:create": "node scripts/waffo-create-products.mjs",
     "check": "eslint && pnpm test && node scripts/check-styles.mjs && knip && pnpm typecheck"
   },
   "dependencies": {
@@ -21,7 +19,6 @@
     "@tiptap/pm": "^3.30.5",
     "@tiptap/react": "^3.30.5",
     "@tiptap/starter-kit": "^3.30.5",
-    "@waffo/pancake-ts": "^0.19.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.33.0",

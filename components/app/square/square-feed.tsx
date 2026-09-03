@@ -5,21 +5,20 @@
  * 2b 起数据读库（RLS 公开读）：挂载拉取；发布后监听 SQUARE_UPDATED_EVENT 重新拉取
  * 2026-08-25 SEO：接收服务端预取 initialPosts 作为首帧（SSR 爬虫可见），交互与增量刷新不变
  * 2026-08-27 方案A：列表区由单列 .square-list 改为四列 .home-grid（复用 SquareCard），
- * 与首页统一内容流布局；分类/搜索/置顶横幅(FeaturedBanner)逻辑不变
+ * 与首页统一内容流布局；分类/搜索逻辑不变
  * 2026-09-02 P2-home 批次：square.css cats 段 Tailwind 化（保留 square-cats 类名供 decor scrollbar 挂靠）
+ * 2026-09-03：商业化模块删除 → 移除置顶分流（FeaturedBanner）与信息流广告位（AdSlot），feed 回归纯自然流
  */
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AD_FEED_INTERVAL, AD_SLOTS, SQUARE_CATEGORIES } from "@/lib/config";
-import { AdSlot } from "@/components/common/ad-slot";
+import { SQUARE_CATEGORIES } from "@/lib/config";
 import { LoadError } from "@/components/app/common/load-error";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
 import { useSquarePosts } from "@/hooks/use-square-posts";
-import { FeaturedBanner } from "./featured-banner";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) {
@@ -30,11 +29,7 @@ export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) 
   const q = (searchParams.get("q") ?? "").trim().toLowerCase();
   const { posts, loading, failed, retry } = useSquarePosts(initialPosts);
 
-  /* 024 展示位：置顶帖进「全服通告」横幅（全部置顶，不分分类），自然流排除置顶避免重复 */
-  const featuredPosts = posts.filter((post) => post.featured);
-  const normalPosts = posts.filter((post) => !post.featured);
-
-  const filtered = (category === "全部" ? normalPosts : normalPosts.filter((post) => post.category === category)).filter(
+  const filtered = (category === "全部" ? posts : posts.filter((post) => post.category === category)).filter(
     (post) =>
       !q ||
       /* 窗口搜索：preview（服务端摘要）+ 标题 + 标签 + 作者（2026-09-02 A：列表不再携带 content 全文，
@@ -47,9 +42,6 @@ export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) 
 
   return (
     <>
-      {/* 024 全服通告：分类导航之上（顶部通告）；搜索时隐藏（搜索结果聚焦） */}
-      {!q && featuredPosts.length > 0 && <FeaturedBanner posts={featuredPosts} />}
-
       <div className="square-cats mb-[22px] flex items-center gap-2 overflow-x-auto pb-1" role="tablist" aria-label="按内容分类筛选">
         {(["全部", ...SQUARE_CATEGORIES] as const).map((name) => (
           <button
@@ -73,12 +65,8 @@ export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) 
         </EmptyState>
       ) : (
         <div className={homeGridClass}>
-          {/* A1 广告位：每 AD_FEED_INTERVAL 条内容后插入一张广告卡（内容不足则不插，避免「广告多于内容」） */}
-          {filtered.map((post, index) => (
-            <Fragment key={post.id}>
-              <SquareCard post={post} />
-              {(index + 1) % AD_FEED_INTERVAL === 0 && <AdSlot slot={AD_SLOTS.homeFeed} variant="feed" />}
-            </Fragment>
+          {filtered.map((post) => (
+            <SquareCard post={post} key={post.id} />
           ))}
         </div>
       )}

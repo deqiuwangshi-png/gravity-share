@@ -29,9 +29,6 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.30.5
         version: 3.30.5
-      '@waffo/pancake-ts':
-        specifier: ^0.19.1
-        version: 0.19.1
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -2242,10 +2239,6 @@ packages:
 
   '@vitest/utils@4.1.11':
     resolution: {integrity: sha512-zTCVGpyFsGWBhllOyKlTw/vnr6D9qxsfSDyfbyZmTyjHw5N/VuvzHpHoQjm2ZJzn4RJgx5w4r7V0er69CmLgPQ==}
-
-  '@waffo/pancake-ts@0.19.1':
-    resolution: {integrity: sha512-X1vCyZcVwbFROZiQQrrDh3OPqm8KvEX3/65PT9xGy10zWTNX1nO+D1cL1ERBe17ot57mI9T5Dhzt/Gf2k/lIdg==}
-    engines: {node: '>=20.0.0'}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -6886,8 +6879,6 @@ snapshots:
       '@vitest/pretty-format': 4.1.11
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.1
-
-  '@waffo/pancake-ts@0.19.1': {}
 
   accepts@2.0.0:
     dependencies:

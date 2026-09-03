@@ -12,8 +12,6 @@ import { SquareActions } from "@/components/app/square/square-actions";
 import { SquarePostView } from "@/components/app/square/square-post-view";
 import { CommentSection } from "@/components/app/square/comment-section";
 import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
-import { AdSlot } from "@/components/common/ad-slot";
-import { AD_SLOTS } from "@/lib/config";
 import { getPost, loadSquareDetail } from "@/lib/square-detail";
 import { buildSquarePostSeo, jsonLd } from "@/lib/seo";
 
@@ -59,9 +57,6 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
             <div className={homeGridClass}>{related.map((item) => <SquareCard post={item} key={item.id} />)}</div>
           </section>
         )}
-
-        {/* A3 广告位：阅读的自然断点（读完内容 → 要么离开要么看评论），不打断任何一种行为 */}
-        <AdSlot slot={AD_SLOTS.squareDetail} variant="detail" />
 
         {/* 评论区（017 起：顶层评论 + 一层回复 + 点赞） */}
         <CommentSection postId={post.id} initialComments={comments} myId={myId} />
