@@ -9,13 +9,16 @@
  *  - 昵称输入换通用 Input（ui/input，同串来源）；行内布局类（ml-auto/flex-1/max-w）留在消费方
  *  - profile-edit-modal 宿主类仍承载 decor.css 阴影；overlay grid 居中/padding24 随自研壳删除
  *    （Radix Content 自身居中，decor ⑤ .profile-edit-overlay 规则同步清理）
+ * 2026-09-03 职责分层：头像上传编排 → hooks/use-profile-image（与 profile-view 封面共用，
+ *    BUG-14 回滚/清旧图单源化），本弹窗只留预览渲染 + 昵称保存
  */
 "use client";
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { safeAvatarUrl, uploadImage, validateImage } from "@/lib/storage";
-import { saveProfileImage, updateUserProfile } from "@/lib/user-actions";
+import { safeAvatarUrl } from "@/lib/storage";
+import { updateUserProfile } from "@/lib/user-actions";
+import { useProfileImage } from "@/hooks/use-profile-image";
 import { useToast } from "@/components/app/common/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,40 +44,16 @@ export function ProfileEditModal({
   onSaved: () => void;
 }) {
   const [displayName, setDisplayName] = useState(name);
-  const [avatar, setAvatar] = useState(avatarUrl);
-  const [avatarBusy, setAvatarBusy] = useState(false);
-  const [avatarError, setAvatarError] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const { show } = useToast();
-
-  /** 头像：选中即上传并落库（同 settings 逻辑，BUG-14 换图清旧图） */
-  async function onAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file || avatarBusy) return;
-    const invalid = validateImage(file);
-    if (invalid) {
-      setAvatarError(invalid);
-      return;
-    }
-    setAvatarError("");
-    setAvatarBusy(true);
-    try {
-      const path = await uploadImage("avatar", file, userId);
-      /* 写库 + BUG-14 回滚/清旧图收纳于 lib/user-actions.saveProfileImage */
-      const { ok } = await saveProfileImage(createClient(), { userId, column: "avatar_url", bucket: "avatar", path, prevPath: avatar });
-      if (!ok) {
-        setAvatarError("保存失败，请重试");
-        return;
-      }
-      setAvatar(path);
-    } catch {
-      setAvatarError("上传失败，请重试");
-    } finally {
-      setAvatarBusy(false);
-    }
-  }
+  /* 头像上传编排（hooks/use-profile-image，与 profile-view 封面共用；写库 BUG-14 收 lib/user-actions） */
+  const { path: avatar, busy: avatarBusy, error: avatarError, change: onAvatarChange } = useProfileImage({
+    column: "avatar_url",
+    bucket: "avatar",
+    userId,
+    currentPath: avatarUrl,
+  });
 
   async function save() {
     const value = displayName.trim();

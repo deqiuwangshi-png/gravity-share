@@ -55,14 +55,16 @@
 
 > 放对柜子即可，规范跟着规模走，不提前设计。
 
-全项目只有四个柜子、三条规则：
+全项目就这几个柜子、三条规则：
 
 ```
-app/          页面柜 —— 一页一个文件，文件名即网址
-styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录（单文件 ≤ 400 行）
-components/   组件柜 —— 访问区 + feature 双层，用到两次才抽
-lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具
-supabase/     迁移柜 —— 数据库唯一真相（001-040，幂等可重跑）
+app/          路由·页面·布局柜 —— 一页一个文件，文件名即网址
+components/   组件柜 —— ui 官方件 + 访问区 feature 双层，用到两次才抽
+hooks/        hook 柜 —— 可复用 client 状态机（2026-09-03 起）
+lib/          数据·业务·工具柜 —— 动作 / 读查询 / 类型 / 配置 / 纯工具
+styles/       样式柜 —— globals.css 令牌唯一源 + 访问区分区（单文件 ≤ 400 行）
+supabase/     迁移柜 —— 数据库唯一真相（001-046，幂等可重跑）
+tests/        测试柜 —— 单测统一收口（2026-09-03 起）
 ```
 
 三条规则，就这些：
@@ -121,8 +123,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=你的publishable key
 SUPABASE_SERVICE_ROLE_KEY=你的service_role key   # 仅注销账号功能需要，server-only
 ```
 
-3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-040`（建表、RLS、触发器、种子数据，幂等可重跑；执行后按迁移文件头部「✅ 已执行」标记登记）；
-4. 可选：Authentication → Providers 开启 GitHub / Google（OAuth 配置说明见 `docs/DEVELOPER-HANDBOOK.md` §2.5）。
+3. 在 Supabase Dashboard 的 SQL Editor **按序执行** `supabase/migrations/001-046`（建表、RLS、触发器、种子数据，幂等可重跑；执行后按迁移文件头部「✅ 已执行」标记登记）；
+4. 可选：Authentication → Providers 开启 GitHub / Google（provider 清单见 `lib/config.ts` 的 `OAUTH_PROVIDERS`，回调统一走 `/auth/callback`）。
 
 ### 运行
 
@@ -139,10 +141,11 @@ pnpm build      # 生产构建（如遇 NODE_OPTIONS 干扰：env -u NODE_OPTION
 
 | 文档 | 内容 |
 |---|---|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | 架构规范：四个柜子、三条规则、数据层纪律 |
-| [docs/SYSTEM-ARCHITECTURE.md](docs/SYSTEM-ARCHITECTURE.md) | 一页纸版 + 规模化前置清单（触发条件对照） |
-| [docs/DEVELOPER-HANDBOOK.md](docs/DEVELOPER-HANDBOOK.md) | 开发与维护手册（事实源：关键决策、安全设计、操作手册） |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 架构规范（单一真相源）：柜子模型、单一架构归属表、色板、数据层纪律 |
+| [AGENTS.md](AGENTS.md) | 开发纪律与完成定义（DoD）：生态优先、组件职责分层、样式工程、颜色保护 |
+| [docs/DEBTS.md](docs/DEBTS.md) | 债务台账 + 规模化前置清单（触发条件对照） |
 | [docs/OPERATIONS-RUNBOOK.md](docs/OPERATIONS-RUNBOOK.md) | 运营操作手册（公告/处置/验证） |
+| [docs/INCIDENTS.md](docs/INCIDENTS.md) | 问题复盘档案（现象 → 根因 → 修复 → 教训） |
 
 ---
 
@@ -154,32 +157,32 @@ pnpm build      # 生产构建（如遇 NODE_OPTIONS 干扰：env -u NODE_OPTION
 
 1. **提问题** —— 哪里有疑问、哪里不完善、哪里想不通，直接开 Issue。问题是最好的改进线索，每一个被认真回答的问题，都在让这个项目更扎实；
 2. **提想法** —— 你心中的「全球网络一触即达」应该长什么样？有什么新功能、新分发方式、新场景值得探索？先聊再写：**先讨论「这个规则该在哪一层」，再动手写代码**；
-3. **贡献力量** —— 认领规模化前置清单里的任务（S1-S9），或修复你发现的问题。贡献不在大小，一个文档修订、一个 bug 修复、一次代码审查，都算。
+3. **贡献力量** —— 认领 [docs/DEBTS.md](docs/DEBTS.md) 债务台账里的存量债（D-01…）或规模化前置项（S-01…），或修复你发现的问题。贡献不在大小，一个文档修订、一个 bug 修复、一次代码审查，都算。
 
 ### 先认同这三件事
 
 1. **极简优先** —— 在「多做一个功能」和「少引入一个概念」之间，我们永远选后者；
-2. **规范跟着规模走** —— 不提前设计，出现重复再抽象，触发条件见规模化前置清单；
+2. **规范跟着规模走** —— 不提前设计，出现重复再抽象，触发条件与债务见 [docs/DEBTS.md](docs/DEBTS.md)；
 3. **数据只在 `lib/`，颜色只用变量** —— 三条规则之外没有别的硬规矩。
 
 ### 开发约定（提交前自检）
 
 - [ ] `pnpm check` 通过（lint + 单测 + 样式规约 + 死代码 + 类型）；
 - [ ] 无 `any`、无 `@ts-ignore`、无裸 `href="#"`、无新色号 `#hex`；
-- [ ] 新增文件放对柜子：页面 → `app/`，共享组件 → `components/`，数据/类型 → `lib/`，表结构 → `supabase/migrations/`；
+- [ ] 新增文件放对柜子：页面 → `app/`，共享组件 → `components/`，状态机 hook → `hooks/`，数据/类型/工具 → `lib/`，单测 → `tests/`，表结构 → `supabase/migrations/`；
 - [ ] 数据库改动遵循「RLS 管身份 → 触发器管一致性 → Handler 管业务校验」的归属纪律；
 - [ ] 结构有重大调整时，同步更新对应文档（文档即契约）。
 
 ### 从哪开始
 
-- 读一遍 [ARCHITECTURE.md](ARCHITECTURE.md)（十分钟）和 [docs/SYSTEM-ARCHITECTURE.md](docs/SYSTEM-ARCHITECTURE.md)（五分钟）；
-- 对照 [docs/SYSTEM-ARCHITECTURE.md](docs/SYSTEM-ARCHITECTURE.md) §七 的规模化前置清单（S1-S9）认领任务；
+- 读一遍 [ARCHITECTURE.md](ARCHITECTURE.md)（十分钟，含单一架构归属总表）；
+- 对照 [docs/DEBTS.md](docs/DEBTS.md) 的债务与规模化前置清单认领任务；
 - 加入我们的社区：飞书社群（见落地页页脚二维码）或 GitHub Discussion。
 
 ### 已知边界
 
 - 当前为纯前端 MVP + Supabase BaaS，无自建后端；
-- 分页、缓存、测试 CI、CSP 等规模化项按触发条件推进（见规模化前置清单）；
+- 分页、缓存、测试 CI、CSP 等规模化项按触发条件推进（见 [docs/DEBTS.md](docs/DEBTS.md) 规模化前置清单）；
 - 微信登录需企业主体资质，暂不在路线图内。
 
 ---
@@ -205,7 +208,7 @@ pnpm build      # 生产构建（如遇 NODE_OPTIONS 干扰：env -u NODE_OPTION
 ### 工程：为什么极简 + 托管
 
 - **托管而非自建**：认证、数据库、存储全部交给成熟基础设施（Supabase），项目只保留业务逻辑；商业化如未来开放，支付收单等合规能力同样整体托管、不自行收单。MVP 阶段，验证理念比堆技术重要得多；
-- **极简而非完备**：架构是涨出来的，不是设计出来的。四个柜子、三条规则，够用；等触发条件出现（内容量、用户量、团队规模），再按清单逐项升级；
+- **极简而非完备**：架构是涨出来的，不是设计出来的。几个柜子、三条规则，够用；等触发条件出现（内容量、用户量、团队规模），再按 [docs/DEBTS.md](docs/DEBTS.md) 清单逐项升级；
 - **透明而非封闭**：规则写进文档、分发写进帮助页、源码完全开放。信任不是喊出来的，是每一个可验证的细节积累出来的。
 
 ### 这条路是否成立

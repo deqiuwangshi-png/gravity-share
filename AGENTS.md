@@ -71,7 +71,7 @@ lib/          纯函数与数据操作（无 React）：读查询、清洗/格�
 
 ## UI 迁移颜色保护规则（2026-09-02 用户铁律，CSS → Tailwind / shadcn 迁移必守）
 **核心**：迁移 = 改变实现方式，不是重新设计。视觉（颜色/层级/对比度/明暗）必须与迁移前一致；任何颜色定义不得凭变量名或视觉猜测，必须基于已确认的 Token 映射。
-1. **先建映射后动手**：颜色迁移前必读 `styles/globals.css`（:root 全量变量 + @theme inline 映射）、docs/STYLE-SYSTEM.md §2 映射表、被迁组件的实际 className / var() 用法；产出「旧 → 新」一一对应清单；**映射确认前禁止任何批量改色**。
+1. **先建映射后动手**：颜色迁移前必读 `styles/globals.css`（:root 全量变量 + @theme inline 映射，令牌唯一真相源）、ARCHITECTURE.md §6 色板表、被迁组件的实际 className / var() 用法；产出「旧 → 新」一一对应清单；**映射确认前禁止任何批量改色**。
 2. **语义以实际用法为准，不靠名字猜**：`--foreground` 是文字色不是背景、`--surface` 是卡片底不是页底；迁移前先 grep 该变量的消费处确认语义，再定去向。
 3. **禁止硬编码替换**：`var(--primary)` 不得替换成 `green` / `#006855` / `emerald-600` 等裸值或猜测类；仅当原 CSS 本就是该值且映射已确认（值不变），才允许同值收编进令牌（如 Q4 把散写 `#a32d2d` 收编为 `--accent-warn`）。
 4. **Light / Dark 双验**：当前项目仅 light 单主题（无 dark 层）；**未来引入 dark 主题后**，每批迁移必须 light + dark 分别核对：页面背景 / 文字 / 卡片 / 边框 / Primary 及其上文字 / Muted / Hover 均不得反转。
@@ -84,11 +84,11 @@ lib/          纯函数与数据操作（无 React）：读查询、清洗/格�
 ```
 6. **验收标准**：视觉一致 + Token 语义正确 + 组件复用提高 + CSS 减少 + Tailwind 正常工作 + shadcn/ui 正确复用。CSS 文件数增减 / Tailwind 类数量本身**不是**成功标准。
 
-## 维护与完成定义（DoD，2026-08-23 治理方案，见 docs/DEVELOPER-HANDBOOK.md §2.4）
-1. **"完成" = 四件事全做到**：① 新功能可用（lint + build 过）；② 被取代的代码已删除，或已在债务台账登记（不允许"留着以后用"）；③ 文档已同步（ARCHITECTURE.md / SYSTEM-ARCHITECTURE.md 随改随更）；④ `pnpm check` 全绿
+## 维护与完成定义（DoD，2026-08-23 治理方案，见 ARCHITECTURE.md §7.5）
+1. **"完成" = 四件事全做到**：① 新功能可用（lint + build 过）；② 被取代的代码已删除，或已在 docs/DEBTS.md 债务台账登记（不允许"留着以后用"）；③ 文档已同步（ARCHITECTURE.md / docs/DEBTS.md 随改随更）；④ `pnpm check` 全绿
 2. **迁移执行登记**：手动复制 SQL 到 Supabase Dashboard 执行后，在迁移文件头部加 `-- ✅ 已执行 YYYY-MM-DD` 标记（防漏跑/防重跑）
 3. **AI 交付模板**：每次功能交付必须列出 新增 / 修改 / 删除 文件清单 + 是否引入债务 + 文档同步情况
 4. **AI 禁令**：不顺手改无关代码；不跨目录移动文件而不说明；不删除功能而不清理旧代码；不新增依赖而不报告（见上方"新增依赖流程"）
-5. **死代码护栏**：`pnpm check`（含 knip）检出的零引用导出/文件，新代码必须当场清理；存量债务登记见 docs/DEVELOPER-HANDBOOK.md §4（剩余已知债），经确认后分批清理
+5. **死代码护栏**：`pnpm check`（含 knip）检出的零引用导出/文件，新代码必须当场清理；存量债务登记见 docs/DEBTS.md（债务台账），经确认后分批清理
 
 <!-- END:project-dev-discipline -->

@@ -4,28 +4,28 @@
  * 2026-08-23 重构：Tab 统一为「推荐」（我发布的推荐+推广）与「评论」（我发表过的评论）
  * 2c：支持他人主页（isSelf=false 显示关注按钮 + 粉丝数）
  * 2026-09-02 迁移：profile-* 系列原子类化（原 styles/app/profile.css），封面交互用 group 变体
+ * 2026-09-03 职责分层（组件只留展示 + 受控交互，见 AGENTS.md）：
+ *   内容流双列表 → hooks/use-profile-content；封面上传编排 → hooks/use-profile-image（与头像共用）；
+ *   关注 toggle → hooks/use-follow。本组件仅剩 UI 渲染 + tab/showEdit 两个纯 UI 态
  */
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { ProfileSquarePost } from "@/components/app/shell/profile-square-post";
 import { ProfileComment } from "@/components/app/shell/profile-comment";
 import { ProfileTabs, type ProfileTab } from "@/components/app/shell/profile-tabs";
 import { ProfileEditModal } from "@/components/app/shell/profile-edit-modal";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { AuthorBadge } from "@/components/app/common/author-badge";
-import { createClient } from "@/lib/supabase/client";
-import { safeCoverUrl, uploadImage, validateImage } from "@/lib/storage";
-import { saveProfileImage } from "@/lib/user-actions";
+import { useProfileContent } from "@/hooks/use-profile-content";
+import { useProfileImage } from "@/hooks/use-profile-image";
+import { useFollow } from "@/hooks/use-follow";
+import { safeCoverUrl } from "@/lib/storage";
 import { SITE_INFO } from "@/lib/config";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SQUARE_UPDATED_EVENT } from "@/lib/events";
-import { fetchCommentsByAuthor } from "@/lib/queries/comments";
-import { fetchSquarePostsByAuthor } from "@/lib/queries/posts";
-import { isFollowing, toggleFollow } from "@/lib/queries/social";
-import type { CommentDTO, SquarePostDTO } from "@/lib/types";
+import type { SquarePostDTO } from "@/lib/types";
 
 export default function ProfileView({
   name,
@@ -53,73 +53,22 @@ export default function ProfileView({
   initialPosts?: SquarePostDTO[];
 }) {
   const [tab, setTab] = useState<ProfileTab>("推荐");
-  const [myPosts, setMyPosts] = useState<SquarePostDTO[]>(initialPosts);
-  const [myComments, setMyComments] = useState<CommentDTO[]>([]);
-  const [following, setFollowing] = useState(false);
-  const [followBusy, setFollowBusy] = useState(false);
-  const [cover, setCover] = useState(coverUrl);
-  const [coverBusy, setCoverBusy] = useState(false);
-  const [coverError, setCoverError] = useState("");
   /* 编辑个人资料弹窗（头像+昵称；简介在用户设置里编辑） */
   const [showEdit, setShowEdit] = useState(false);
   const router = useRouter();
 
-  const load = useCallback(() => {
-    void fetchSquarePostsByAuthor(createClient(), userId).then(setMyPosts).catch(() => { /* 失败保持空态，事件触发再试 */ });
-    void fetchCommentsByAuthor(createClient(), userId).then(setMyComments).catch(() => {});
-  }, [userId]);
-
-  useEffect(() => {
-    load();
-    const onUpdate = () => load();
-    window.addEventListener(SQUARE_UPDATED_EVENT, onUpdate);
-    return () => window.removeEventListener(SQUARE_UPDATED_EVENT, onUpdate);
-  }, [load]);
-
-  useEffect(() => {
-    if (!isSelf) void isFollowing(createClient(), userId).then(setFollowing);
-  }, [isSelf, userId]);
-
-  async function onFollow() {
-    if (followBusy) return;
-    setFollowBusy(true);
-    try {
-      setFollowing(await toggleFollow(createClient(), userId));
-    } catch {
-      /* 写失败保持原状态（P1-3 回滚） */
-    }
-    setFollowBusy(false);
-  }
-
-  /** 封面上传（S-1）：校验 → storage → update users.cover_url */
-  async function onCoverChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file || !isSelf) return;
-    const invalid = validateImage(file);
-    if (invalid) {
-      setCoverError(invalid);
-      return;
-    }
-    setCoverError("");
-    setCoverBusy(true);
-    try {
-      const path = await uploadImage("cover", file, userId);
-      /* 写库 + BUG-14 回滚/清旧图收纳于 lib/user-actions.saveProfileImage */
-      const { ok } = await saveProfileImage(createClient(), { userId, column: "cover_url", bucket: "cover", path, prevPath: cover });
-      if (!ok) {
-        setCoverError("保存失败，请重试");
-        return;
-      }
-      setCover(path);
-    } catch {
-      setCoverError("上传失败，请重试");
-    } finally {
-      setCoverBusy(false);
-    }
-  }
-
-  /* 2026-08-23：Tab 统一为 推荐/评论，无多数据源筛选逻辑 */
+  /* 内容流双列表 + SQUARE_UPDATED_EVENT 刷新（hooks/use-profile-content） */
+  const { myPosts, myComments, load } = useProfileContent(userId, initialPosts);
+  /* 封面上传编排（hooks/use-profile-image，与编辑弹窗头像共用；他人主页只读禁用） */
+  const { path: cover, busy: coverBusy, error: coverError, change: onCoverChange } = useProfileImage({
+    column: "cover_url",
+    bucket: "cover",
+    userId,
+    currentPath: coverUrl,
+    enabled: isSelf,
+  });
+  /* 关注 toggle（hooks/use-follow，仅他人主页启用） */
+  const { following, busy: followBusy, toggle: onFollow } = useFollow(userId, !isSelf);
 
   return (
     <div className="grid grid-cols-[1fr_220px] items-start gap-[22px] max-[900px]:grid-cols-1">
