@@ -1,8 +1,7 @@
 /* (app) 装饰/特殊段收容（CSS→Tailwind 迁移系列多批次累积：P2-home+P3-壳 → profile → 设置族 → 分类页+发布页 → 通知，2026-09-02）
  * 保留理由：① CSS 变量宿主（通知抽屉原子类引用 --app-sidebar-w/--app-topbar-h 定位，notification.css 已迁删）；
  * ② 非令牌 rgba 半透明色（毛玻璃/光晕/hover 阴影/遮罩，规则：颜色唯一真相在 :root，未入令牌的保留原值）；
- * ③ 伪元素（::before 导航竖条 / ::-webkit-scrollbar，Tailwind 无对应）；
- * ④ .app-logo 内 logo-mark 尺寸覆盖（globals 基础 32px 缩 30px）。
+ * ③ 伪元素（::before 导航竖条 / ::-webkit-scrollbar，Tailwind 无对应）。
  * 布局/令牌色一律走组件 Tailwind 类，本文件不承担布局职责。
  */
 
@@ -50,12 +49,6 @@
 .square-cats::-webkit-scrollbar-thumb {
   border-radius: 2px;
   background: var(--border);
-}
-
-/* ---------- ④ app 侧栏 Logo 标记尺寸覆盖（globals .logo-mark 32px → 壳内 30px） ---------- */
-.app-logo .logo-mark {
-  width: 30px;
-  height: 30px;
 }
 
 /* ---------- ⑤ profile 编辑弹窗：面板阴影（2026-09-02 profile 批次：自 profile.css 迁出收容；

@@ -7,7 +7,6 @@ import { Logo } from "@/components/common/logo";
  * 装饰锚点类名保留供 styles/auth/decor.css 选择器使用：
  * - auth-brand-panel：::before/::after 背景双圆环（需保持 relative + overflow-hidden）
  * - auth-orbit / orbit-*：纯装饰轨道图形
- * - auth-brand-logo：.logo-mark 白底场景覆盖
  */
 export default function AuthLayout({
   children,
@@ -18,9 +17,7 @@ export default function AuthLayout({
         className="auth-brand-panel relative flex min-h-svh flex-col overflow-hidden bg-primary px-[clamp(36px,6vw,88px)] pb-8 pt-[38px] text-on-primary max-[820px]:min-h-[390px] max-[820px]:px-6 max-[820px]:pb-7 max-[820px]:pt-6 max-[480px]:min-h-[350px]"
         aria-label="引力品牌介绍"
       >
-        <Logo
-          className="auth-brand-logo z-[1] inline-flex w-fit items-center gap-2.5 text-[22px] font-extrabold tracking-[-0.5px]"
-        />
+        <Logo className="z-[1] inline-flex w-fit items-center gap-2.5 text-[22px] font-extrabold tracking-[-0.5px]" />
         <div className="z-[1] my-auto max-w-[560px] py-[6vh] max-[820px]:mb-0 max-[820px]:mt-auto max-[820px]:pb-0 max-[820px]:pt-[45px]">
           <p className="mb-6 text-[13px] font-bold tracking-[0.04em] text-white/68">
             一个开放的发现与连接平台

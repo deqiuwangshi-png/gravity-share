@@ -112,6 +112,22 @@ lib（业务动作 · 读查询 · 类型 · 配置 · 纯工具）—— 最底
 
 > 语义色（成功/警告/错误）**用到再加**；`rgba()` 阴影保留（属 `--shadow-*`，非色值令牌）。shadcn 别名键映射（primary-foreground→on-primary、destructive→error、input→border、ring→border-primary）见 globals.css `@theme inline`。
 
+### 6.1 品牌资产（单一源，2026-09-03 收口）
+
+品牌视觉统一为「圆角方块 + G + 轨道」（深翡翠底），**站点 Logo 与浏览器 favicon 同源**。
+
+| 用途 | 文件 | 消费方式 |
+|---|---|---|
+| **Logo 唯一源** | `public/brand/logo.png`（180×180 / 30KB） | `components/common/logo.tsx` 用 `next/image` 引用，marketing / app / auth 三区共用 |
+| favicon 三件套 | `app/favicon.ico` + `app/icon.png`（512×512）+ `app/apple-icon.png`（180×180） | Next.js 文件约定自动注入 `<link rel="icon">`；`app/manifest.ts` 的 icons 指向 `/icon.png` |
+| 社交分享卡片 | ❌ 待补（`app/opengraph-image.tsx`） | 已登记 `docs/DEBTS.md` |
+
+**换品牌时必须同步替换 4 份**：`public/brand/logo.png`、`app/icon.png`、`app/apple-icon.png`、`app/favicon.ico`（同源人工同步，无构建期派生）。
+
+**禁止**：
+- ❌ 用 CSS 手绘品牌标记 —— 2026-09-03 已退役 `.logo-mark` 及 `app/decor.css`、`auth/decor.css` 两处尺寸/配色覆盖（共约 40 行），回归「生态优先 > 自研」
+- ❌ 引用 `mark.svg` 一类「SVG 壳包 base64 PNG」的伪矢量资产 —— 2.5MB 且不具备矢量特性；且 `app/` 下非约定文件名**不会**被 serve 成 `/mark.svg`
+
 ## 7. 团队协作约定
 
 1. **新增文件先定位**：页面 → `app/`；共享组件 → `components/`；可复用 hook → `hooks/`；动作/数据/类型/配置 → `lib/`；单测 → `tests/`；表结构/触发器 → `supabase/migrations/`

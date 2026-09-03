@@ -29,9 +29,7 @@ export function LandingFooter() {
           <Link href="/privacy" className="block py-[5px] text-[13px] text-muted transition-colors duration-[180ms] hover:text-primary">隐私政策</Link>
         </nav>
         <nav aria-label="站点链接">
-          <h3 className="mb-[14px] text-[13px] font-semibold text-foreground">社区</h3>
-          <Link href="https://github.com/deqiuwangshi-png/gravity-share" className="block py-[5px] text-[13px] text-muted transition-colors duration-[180ms] hover:text-primary">引力开源（国际版）</Link>
-          <Link href="https://gitee.com/earth-players/GSWL" className="block py-[5px] text-[13px] text-muted transition-colors duration-[180ms] hover:text-primary">引力开源（国内版）</Link>
+          <h3 className="mb-[14px] text-[13px] font-semibold text-foreground">联系社区</h3>
           {/* 2026-08-31：飞书社群二维码（静态图 public/images/fileName.png，URL 不带 public 前缀；原先误放 app/images + public 前缀均无法访问） */}
           <div className="mt-1.5 inline-flex flex-col items-center gap-2 text-xs text-muted">
             {/* eslint-disable-next-line @next/next/no-img-element -- 运营二维码静态图 */}

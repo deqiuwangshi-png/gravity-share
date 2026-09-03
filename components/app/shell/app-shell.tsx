@@ -22,8 +22,7 @@ type NavItem = readonly [string, string, string];
 
 /* 2026-09-02 P2-home+P3-壳 批次：shell.css 布局全量 Tailwind 化（255 行 → 原子类）。
  * 保留装饰挂靠类名（styles/app/decor.css 承载）：app-shell（CSS 变量宿主，通知抽屉原子类 var() 引用，
- * notification.css 已于同日通知批次迁删）、app-topbar（毛玻璃 rgba）、global-search（聚焦光晕）、
- * app-logo（logo-mark 30px 覆盖）。
+ * notification.css 已于同日通知批次迁删）、app-topbar（毛玻璃 rgba）、global-search（聚焦光晕）。
  * 断点 800（侧栏隐藏/main 全宽/顶栏收窄/操作区隐藏）、480（kbd 隐藏）逐像素保留。 */
 export default function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const [publishOpen, setPublishOpen] = useState(false);
@@ -80,7 +79,7 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
 
   return <div className="app-shell min-h-svh bg-background text-foreground">
     <aside className="fixed inset-y-0 left-0 z-20 flex w-[230px] flex-col border-r border-line bg-raised px-[14px] py-[22px] max-[800px]:hidden">
-      <Logo className="app-logo flex items-center gap-[10px] px-[10px] pb-6 pt-[6px] text-[19px] font-extrabold tracking-[-0.5px]" />
+      <Logo size={30} className="flex items-center gap-[10px] px-[10px] pb-6 pt-[6px] text-[19px] font-extrabold tracking-[-0.5px]" />
       <button type="button" className="mb-6 flex h-10 w-full items-center justify-center rounded-[9px] border-0 bg-primary text-[13px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark" onClick={() => setPublishOpen(true)}>+ 发布</button>
       <AppNavSection title="导航" items={MAIN_NAV} />
     </aside>

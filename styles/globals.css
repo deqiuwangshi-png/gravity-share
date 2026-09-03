@@ -301,40 +301,6 @@ input[type="password"]::-ms-clear {
   display: none;
 }
 
-/*
- * 跨区共享：品牌 Logo 圆形标记（logo-mark，被 Logo 组件三区消费）。
- * 文字排版由调用方决定：marketing 自 2026-09-02 P0 起 Tailwind 类直接传参（原 .logo 类已删）；
- * app 壳 .app-logo 尺寸覆盖见 styles/app/decor.css；auth 品牌面板白徽章覆盖见 styles/auth/decor.css。
- */
-.logo-mark {
-  width: 32px;
-  height: 32px;
-  position: relative;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--primary);
-}
-
-.logo-mark::before,
-.logo-mark span {
-  content: "";
-  position: absolute;
-  border: 2px solid var(--on-primary);
-  border-radius: 50%;
-}
-
-.logo-mark::before {
-  width: 15px;
-  height: 15px;
-}
-
-.logo-mark span {
-  width: 5px;
-  height: 5px;
-  background: var(--on-primary);
-}
-
 /* 全局错误兜底页（C5，app/error.tsx） */
 .error-fallback {
   display: grid;

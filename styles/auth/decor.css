@@ -2,7 +2,7 @@
  * 来源：原 auth/shell.css 装饰段 + auth/card.css 弹窗动画段并入；其余布局已 Tailwind 化。
  * 保留理由（STYLE-SYSTEM §4）：伪元素装饰（::before/::after 双圆环）、纯装饰轨道图形
  * （scaleY 椭圆 + 多层光晕阴影）、@keyframes 动画、非令牌 rgba 遮罩/阴影色。
- * 消费方仍持原类名（auth-brand-panel / auth-brand-logo / auth-orbit / orbit-* /
+ * 消费方仍持原类名（auth-brand-panel / auth-orbit / orbit-* /
  * auth-modal-*），仅作 CSS 选择器锚点，不承担布局。 */
 
 /* ===== 品牌面板背景装饰双圆（需 .auth-brand-panel 保持 position:relative 锚点） ===== */
@@ -27,11 +27,6 @@
   height: 420px;
   left: -270px;
   top: 24%;
-}
-
-/* 深绿品牌面板上的 Logo 白徽章场景覆盖（globals .logo-mark 基础是 primary 底，此处叠加白 16%） */
-.auth-brand-logo .logo-mark {
-  background: rgba(255, 255, 255, 0.16);
 }
 
 /* ===== orbit 轨道装饰（纯图形：椭圆环 + 核心 + 节点） ===== */
