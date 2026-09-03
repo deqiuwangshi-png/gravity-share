@@ -15,6 +15,7 @@ import { PostMenu } from "@/components/app/common/post-menu";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { AuthorLink } from "@/components/app/common/author-link";
 import { AuthorBadge } from "@/components/app/common/author-badge";
+import { Button } from "@/components/ui/button";
 import type { CommentDTO } from "@/lib/types";
 
 export function CommentSection({
@@ -140,10 +141,15 @@ export function CommentSection({
                     className="min-h-10 resize-y border-0 bg-transparent px-[2px] py-1 text-[13px] leading-[1.6] text-foreground outline-none placeholder:text-soft [font:inherit]"
                   />
                   <div className="flex justify-end gap-2">
-                    <button type="button" className="cursor-pointer rounded-full border border-line bg-surface px-[14px] py-[5px] text-[12px] text-muted transition-[border-color,color] duration-[180ms] hover:border-line-primary hover:text-primary [font:inherit]" onClick={() => setReplyTo(null)}>取消</button>
-                    <button type="button" className="cursor-pointer rounded-full border-0 bg-primary px-[14px] py-[5px] text-[12px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark disabled:cursor-default disabled:text-disabled disabled:hover:text-on-primary [font:inherit]" disabled={!replyText.trim() || sendingReply} onClick={() => void sendReply()}>
+                    <Button variant="secondary" size="sm" onClick={() => setReplyTo(null)}>取消</Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={!replyText.trim() || sendingReply}
+                      onClick={() => void sendReply()}
+                    >
                       {sendingReply ? "发送中…" : "回复"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { removeImage, safeAvatarUrl, uploadImage, validateImage } from "@/lib/storage";
 import { useToast } from "@/components/app/common/toast";
+import { Button } from "@/components/ui/button";
 
 /* 行控件（原 settings.css .settings-row 族，2026-09-02 原子类化，与 SettingsPanel 同款；[font:inherit] 保真） */
 const rowClass = "flex min-h-[56px] items-center justify-between gap-4 border-b border-line py-4 last:border-0";
@@ -149,20 +150,17 @@ export function ProfileEditModal({
         </div>
 
         <footer className="flex justify-end gap-2 border-t border-line px-5 py-[14px]">
-          <button
-            type="button"
-            className="cursor-pointer rounded-full border border-line bg-surface px-4 py-[6px] text-[12px] text-muted transition-[border-color,color] duration-[180ms] hover:border-line-primary hover:text-primary disabled:cursor-default disabled:text-disabled disabled:hover:border-line disabled:hover:text-disabled"
-            onClick={onClose}
-            disabled={saving}
-          >取消</button>
-          <button
-            type="button"
-            className="cursor-pointer rounded-full border-0 bg-primary px-4 py-[6px] text-[12px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark hover:text-on-primary disabled:cursor-default disabled:text-disabled disabled:hover:text-on-primary"
+          <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>
+            取消
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => void save()}
             disabled={saving || !displayName.trim()}
           >
             {saving ? "保存中…" : "保存"}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>

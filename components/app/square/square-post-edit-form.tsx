@@ -14,6 +14,7 @@ import { removeImage, pathFromPublicUrl } from "@/lib/storage";
 import { SQUARE_CATEGORIES } from "@/lib/config";
 import { isRichText, sanitizeHtml, extractImageUrls, stripImages } from "@/lib/rich-content";
 import { RichEditor } from "@/components/app/common/rich-editor";
+import { Button } from "@/components/ui/button";
 import type { SquarePostDTO } from "@/lib/types";
 
 export function SquarePostEditForm({
@@ -150,8 +151,13 @@ export function SquarePostEditForm({
       {error && <p className="m-0 text-[12px] text-error" role="alert">{error}</p>}
 
       <div className="flex justify-end gap-2">
-        <button type="button" className="cursor-pointer rounded-full border border-line bg-surface px-4 py-[6px] text-[12px] text-muted transition-[border-color,color] duration-[180ms] hover:border-line-primary hover:text-primary [font:inherit]" onClick={handleCancel}>取消</button>
-        <button type="submit" disabled={busy || !content.replace(/<[^>]*>/g, "").trim()} className="cursor-pointer rounded-full border-0 bg-primary px-4 py-[6px] text-[12px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark disabled:cursor-default disabled:text-disabled disabled:hover:text-on-primary [font:inherit]">{busy ? "保存中…" : "保存"}</button>
+        <Button variant="secondary" size="sm" onClick={handleCancel}>取消</Button>
+        <Button
+          type="submit"
+          variant="primary"
+          size="sm"
+          disabled={busy || !content.replace(/<[^>]*>/g, "").trim()}
+        >{busy ? "保存中…" : "保存"}</Button>
       </div>
     </form>
   );

@@ -15,13 +15,12 @@ import { useSearchParams } from "next/navigation";
 import { AD_FEED_INTERVAL, AD_SLOTS, SQUARE_CATEGORIES } from "@/lib/config";
 import { AdSlot } from "@/components/common/ad-slot";
 import { LoadError } from "@/components/app/common/load-error";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
 import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
 import { useSquarePosts } from "@/lib/use-square-posts";
 import { FeaturedBanner } from "./featured-banner";
 import type { SquarePostDTO } from "@/lib/types";
-
-/** 状态段（feed-loading/feed-empty 原 feed.css，padding 48px 18px） */
-const feedStateClass = "px-[18px] py-12 text-center text-[13px] text-soft";
 
 export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) {
   /* 分类筛选：默认「全部」（所有公开内容），点击后仅展示对应分类 */
@@ -67,9 +66,11 @@ export function SquareFeed({ initialPosts }: { initialPosts: SquarePostDTO[] }) 
       {failed ? (
         <LoadError onRetry={retry} />
       ) : loading ? (
-        <p className={feedStateClass}>加载中…</p>
+        <LoadingState />
       ) : filtered.length === 0 ? (
-        <p className={feedStateClass}>{q ? `未找到与「${q}」相关的内容。` : "该分类暂无内容，去「+ 发布」分享第一份好东西。"}</p>
+        <EmptyState className="px-[18px] py-12">
+          {q ? `未找到与「${q}」相关的内容。` : "该分类暂无内容，去「+ 发布」分享第一份好东西。"}
+        </EmptyState>
       ) : (
         <div className={homeGridClass}>
           {/* A1 广告位：每 AD_FEED_INTERVAL 条内容后插入一张广告卡（内容不足则不插，避免「广告多于内容」） */}

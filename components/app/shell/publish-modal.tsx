@@ -25,6 +25,8 @@ import { extractTags, stripHtml } from "@/lib/text";
 import { sanitizeHtml } from "@/lib/rich-content";
 import { RichEditor } from "@/components/app/common/rich-editor";
 import { removeImage } from "@/lib/storage";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 
 /* A2 修复（2026-08-23）：post_type 由 SQUARE_POST_TYPES 枚举驱动（与迁移 015 CHECK 同源），不再写死字面量；
  * 2026-08-31 移除可选标注后新帖恒为 PT_SHARE（存量 opportunity/content 帖保留渲染） */
@@ -195,7 +197,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       <div className="modal-box relative w-[min(560px,100%)] min-w-0 rounded-card bg-surface p-7">
         <div className="mb-[25px] flex items-center justify-between">
           <h2 id="publish-title" className="m-0 text-[20px]">发布</h2>
-          <button type="button" onClick={attemptClose} aria-label="关闭" className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border-0 bg-hover text-muted"><X size={16} /></button>
+          <IconButton label="关闭" onClick={attemptClose} className="size-8"><X size={16} /></IconButton>
         </div>
 
         <form className="grid grid-cols-[minmax(0,1fr)] gap-[18px]" onSubmit={handleSubmit}>
@@ -228,9 +230,15 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {submitError && <p className="-mt-[6px] mb-[10px] text-[12px] text-error" role="alert">{submitError}</p>}
-            <button className="h-[46px] cursor-pointer rounded-full border-0 bg-primary text-[15px] font-semibold text-on-primary transition-[background-color] duration-[180ms] hover:bg-primary-dark disabled:cursor-default disabled:opacity-60" type="submit" disabled={submitting}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="h-[46px]"
+              disabled={submitting}
+            >
               {submitting ? "发布中…" : "发布"}
-            </button>
+            </Button>
           </form>
 
         {/* 放弃确认（2026-09-02）：dirty 时覆盖在表单之上——返回「继续编辑」组件不卸载、输入不丢失

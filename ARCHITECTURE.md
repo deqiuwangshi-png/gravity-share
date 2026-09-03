@@ -24,9 +24,9 @@
 ```
 app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
-components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层
+components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层；`ui/` 为无业务纯 UI 层（Button/DropdownMenu/状态件，禁 import 业务，业务组件组合它）
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-042，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-043，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 
@@ -65,7 +65,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 项 | 规则 | 示例 |
 |---|---|---|
 | 页面文件 | 固定名 `page.tsx` / `layout.tsx` | `app/(app)/home/page.tsx` |
-| 组件文件 | PascalCase，一个文件一个组件；按「访问区 → feature」两层归入 `components/<区>/<feature>/`，跨区共享放 `common/` | `components/app/square/square-actions.tsx` |
+| 组件文件 | PascalCase，一个文件一个组件；按「访问区 → feature」两层归入 `components/<区>/<feature>/`，跨区共享放 `common/`，无业务纯 UI 放 `components/ui/` | `components/app/square/square-actions.tsx` / `components/ui/button.tsx` |
 | 私有文件 | `_` 前缀（不参与路由） | `(auth)/_components/auth-form.tsx` |
 | 类型 | 组件 Props 用 `XxxProps` 命名（简单组件可内联）；展示模型用 `XxxDTO`（queries-*.ts 统一映射，集中在 lib/types.ts） | `SquarePostDTO` / `Announcement`（均在 lib/types.ts） |
 | 常量 | UPPER_SNAKE_CASE | `MARKETING_CATEGORIES` |

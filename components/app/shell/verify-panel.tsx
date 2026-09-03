@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
 import { fetchVerifications, type VerificationRow } from "@/lib/queries-misc";
 import { useToast } from "@/components/app/common/toast";
+import { Button } from "@/components/ui/button";
 
 const VTYPES = [
   { id: "personal", title: "个人认证", desc: "面向独立创作者/优质发布者，通过后获得金牌「发现者」标识" },
@@ -166,20 +167,17 @@ export function VerifyPanel() {
             className="min-h-[88px] w-full resize-y rounded-lg border border-line bg-surface px-3 py-[10px] text-[13px] leading-[1.7] text-foreground outline-none focus:border-line-primary [font:inherit]"
           />
           <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              disabled={submitting}
-              className="cursor-pointer rounded-full border border-line bg-surface px-4 py-[6px] text-xs text-muted transition-[border-color,color] duration-[180ms] enabled:hover:border-line-primary enabled:hover:text-primary disabled:cursor-default disabled:text-disabled [font:inherit]"
-            >返回</button>
-            <button
-              type="button"
+            <Button variant="secondary" size="sm" onClick={() => setSelected(null)} disabled={submitting}>
+              返回
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => void submit()}
               disabled={submitting || !statement.trim()}
-              className="cursor-pointer rounded-full border-0 bg-primary px-4 py-[6px] text-xs font-semibold text-on-primary transition-[background-color] duration-[180ms] enabled:hover:bg-primary-dark enabled:hover:text-on-primary disabled:cursor-default disabled:text-disabled [font:inherit]"
             >
               {submitting ? "提交中…" : "提交申请"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
