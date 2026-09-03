@@ -20,7 +20,7 @@ export function ProfileComment({
 }) {
   return (
     <div className="border-b border-line px-[18px] py-[14px]">
-      <div className="mb-[6px] flex items-center gap-2 [&>.comment-menu]:ml-auto">
+      <div className="mb-[6px] flex items-center gap-2">
         <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[12px] font-semibold text-primary" badge={comment.authorBadge} authorId={comment.authorId} />
         <b className="text-[13px] font-semibold">{comment.authorName}<AuthorBadge badge={comment.authorBadge} /></b>
         <small className="text-[11px] text-soft">{comment.time}</small>

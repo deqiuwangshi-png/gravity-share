@@ -198,7 +198,9 @@ export function PostMenu({
   }
 
   return (
-    <div className="relative shrink-0" ref={ref}>
+    /* ml-auto：内容头「头像 / 姓名+时间 / 菜单」两端对齐，菜单贴容器右边缘（2026-09-03 修复）
+       原依赖调用方任意变体 [&>.comment-menu]:ml-auto，因组件根元素无该类名而从未生效 */
+    <div className="relative ml-auto shrink-0" ref={ref}>
       <button
         type="button"
         className="inline-flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-soft transition-[background-color,color] duration-[180ms] hover:bg-hover hover:text-foreground"

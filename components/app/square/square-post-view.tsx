@@ -49,7 +49,7 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
 
   return (
     <>
-      <div className="mb-[14px] flex items-center gap-[10px] [&>.comment-menu]:ml-auto">
+      <div className="mb-[14px] flex items-center gap-[10px]">
         <AvatarBox path={post.authorAvatar} name={post.authorName} className="grid size-[30px] shrink-0 place-items-center rounded-full bg-primary-soft text-[12px] font-bold text-primary" badge={post.authorBadge} authorId={post.authorId} link />
         <div>
           <strong className="block text-[13px]"><AuthorLink link authorId={post.authorId} name={post.authorName} /><AuthorBadge badge={post.authorBadge} /></strong>

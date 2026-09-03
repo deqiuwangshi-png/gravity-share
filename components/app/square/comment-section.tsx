@@ -120,7 +120,7 @@ export function CommentSection({
           <div className="flex gap-[10px] border-b border-line py-[14px] last:border-b-0" key={comment.id}>
             <AvatarBox path={comment.authorAvatar} name={comment.authorName} className="grid size-[30px] shrink-0 place-items-center rounded-full bg-primary-soft text-[12px] font-bold text-primary" badge={comment.authorBadge} authorId={comment.authorId} />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 [&>.comment-menu]:ml-auto">
+              <div className="flex items-center gap-2">
                 <strong className="text-[12px]"><AuthorLink authorId={comment.authorId} name={comment.authorName} /><AuthorBadge badge={comment.authorBadge} /></strong>
                 <small className="text-[11px] text-soft">{comment.time}</small>
                 <PostMenu targetType="comment" targetId={comment.id} isOwner={comment.authorId === myId} content={comment.content} onDeleted={refresh} />
@@ -152,7 +152,7 @@ export function CommentSection({
                 <div className="mt-2 flex gap-[10px] pt-3" key={reply.id}>
                   <AvatarBox path={reply.authorAvatar} name={reply.authorName} className="grid size-[30px] shrink-0 place-items-center rounded-full bg-primary-soft text-[12px] font-bold text-primary" badge={reply.authorBadge} authorId={reply.authorId} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 [&>.comment-menu]:ml-auto">
+                    <div className="flex items-center gap-2">
                       <strong className="text-[12px]"><AuthorLink authorId={reply.authorId} name={reply.authorName} /><AuthorBadge badge={reply.authorBadge} /></strong>
                       <small className="text-[11px] text-soft">{reply.time}</small>
                       <PostMenu targetType="comment" targetId={reply.id} isOwner={reply.authorId === myId} content={reply.content} onDeleted={refresh} />

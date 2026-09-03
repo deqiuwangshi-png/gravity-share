@@ -34,7 +34,7 @@ export function ProfileSquarePost({
 
   const inner = (
     <>
-      <div className="relative mb-[10px] flex items-center gap-2 [&>.comment-menu]:ml-auto">
+      <div className="relative mb-[10px] flex items-center gap-2">
         <AvatarBox path={post.authorAvatar} name={post.authorName} className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[13px] font-semibold text-primary" badge={post.authorBadge} authorId={post.authorId} />
         <b className="text-[13px] font-semibold">{post.authorName}<AuthorBadge badge={post.authorBadge} /></b>
         <small className="text-[11px] text-soft">{post.time}</small>
