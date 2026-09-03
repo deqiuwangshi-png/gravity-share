@@ -27,7 +27,7 @@ styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层；`ui/` 为无业务纯 UI 层（Button/DropdownMenu/状态件，禁 import 业务，业务组件组合它）
 hooks/        hook 柜 —— 可复用 client 状态逻辑（2026-09-03 起；useSquarePosts 自 lib/ 归位于此）。lib/ 只放纯工具/数据/服务，React hook 一律归此
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
-supabase/     迁移柜 —— 数据库唯一真相（001-044，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-046，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
 
 

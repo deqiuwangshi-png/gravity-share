@@ -4,8 +4,9 @@
  * - 本人：删除（菜单内联确认，无弹窗二次确认）/ 修改（仅内容）/ 复制 / 分享
  * - 他人：举报（2026-09-03 改独立 Dialog 弹窗，见 report-dialog.tsx）/ 复制 / 分享
  * 操作反馈统一走全局 toast（底部居中，淡入淡出自动消失）
- * 删除：按 targetType 删对应表（RLS 作者校验），成功后可联动清理配图（imagePath / galleryPaths），
- * 再回调 onDeleted（页面跳转 / 列表刷新）；否则 router.refresh()
+ * 职责分层（2026-09-03，见 AGENTS.md「组件职责分层」）：写库动作已下沉 lib/content-actions（删除）
+ * 与 lib/share（分享），复制文本组装在 lib/content-text + lib/clipboard；本组件只保留菜单 UI
+ * （两态视图 + busy）与 toast / 导航 / onDeleted 回调编排
  * shareUrl 可选：评论等场景缺省取当前页 URL（server 组件调用无需传 window）
  * 定位（2026-09-03 P2）：shadcn DropdownMenu（Radix）——Portal 挂 body 脱离卡片 overflow/transform
  * 裁剪；视口避让/键盘导航/互斥关闭由 Radix 接管。两态内容（主面板 / 删除确认）受控 open + view 状态：
@@ -17,8 +18,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { removeImage } from "@/lib/storage";
 import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,10 +25,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { deleteContent, type ContentTarget } from "@/lib/content-actions";
+import { createClient } from "@/lib/supabase/client";
 import { ReportDialog } from "./report-dialog";
 import { useToast } from "./toast";
 import { postCopyText } from "@/lib/content-text";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { shareContentUrl } from "@/lib/share";
 
 /** 菜单项基础类（原子类化，2026-09-02）；danger 变体独立成串不拼接，避免同属性 hover/text 色冲突 */
 const MENU_ITEM_CLASS =
@@ -55,7 +57,7 @@ export function PostMenu({
   onDeleted,
 }: {
   /** 内容归属：square_posts（话题）| comments（评论）；discoveries 已随内容池归一退役（016） */
-  targetType: "square" | "comment";
+  targetType: ContentTarget;
   targetId: string;
   isOwner: boolean;
   /** 复制用的正文文本（举报弹窗回显摘要亦取自它，经 stripHtml 截断） */
@@ -85,21 +87,14 @@ export function PostMenu({
   async function onDelete() {
     if (busy) return;
     setBusy(true);
-    const TABLE: Record<typeof targetType, string> = {
-      square: "square_posts",
-      comment: "comments",
-    };
-    const { error } = await createClient().from(TABLE[targetType]).delete().eq("id", targetId);
+    /* 数据动作（写库 + 配图清理）在 lib/content-actions；组件只做反馈与导航编排 */
+    const { ok } = await deleteContent(createClient(), { targetType, targetId, imagePath, galleryPaths });
     setBusy(false);
     setOpen(false);
-    if (error) {
+    if (!ok) {
       show("删除失败，请重试", "danger");
       return;
     }
-    /* 内容已删：配图联动清理（封面 + 图集全部，删图失败静默，避免孤儿文件） */
-    [...new Set([...(galleryPaths ?? []), ...(imagePath ? [imagePath] : [])])].forEach((path) =>
-      void removeImage("post", path).catch(() => {}),
-    );
     show("已删除");
     if (onDeleted) onDeleted();
     else router.refresh();
@@ -114,21 +109,11 @@ export function PostMenu({
   }
 
   async function onShare() {
-    const url = shareUrl ?? (typeof window !== "undefined" ? window.location.href : "");
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: content.slice(0, 30), url });
-        return;
-      } catch {
-        /* 用户取消分享：静默 */
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      show("链接已复制");
-    } catch {
-      show("复制失败", "danger");
-    }
+    const link = shareUrl ?? (typeof window !== "undefined" ? window.location.href : "");
+    /* 分享/复制编排在 lib/share；toast 按结果反馈 */
+    const result = await shareContentUrl({ title: content.slice(0, 30), url: link });
+    if (result === "copied") show("链接已复制");
+    else if (result === "failed") show("复制失败", "danger");
   }
 
   return (

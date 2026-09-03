@@ -4,8 +4,8 @@
  * 结构：标题行（DialogTitle + 关闭 ×）→ 对象回显条（类型 pill + 内容摘要，隐私仅摘要两行）
  * → 原因单选列表（aria-pressed 行按钮）→ 「其他」展开补充说明 textarea（必填：trim 非空才解锁提交）
  * → 底部取消 / 提交举报（未满足条件 disabled；提交中 busy「提交中…」）
- * 提交：RLS 写 reports 表（detail 一并入库）→ toast 成功关弹窗 / 失败停留弹窗；
- * 飞书工作台同步 fire-and-forget（凭证缺失/表未加列/不可达均静默，不影响主流程）
+ * 提交：写库 + 飞书同步编排已下沉 lib/reports.ts submitReport（2026-09-03，组件职责分层）；
+ * 本组件只保留表单受控态与 toast/开关编排
  * 消费方：post-menu（唯一）；props 稳定供将来独立举报入口复用
  */
 "use client";
@@ -14,7 +14,7 @@ import { useState } from "react";
 import { Check, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { stripHtml } from "@/lib/text";
-import { REPORT_REASONS, REPORT_DETAIL_MAX, makeReportId } from "@/lib/reports";
+import { REPORT_REASONS, REPORT_DETAIL_MAX, submitReport } from "@/lib/reports";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "./toast";
@@ -48,36 +48,19 @@ export function ReportDialog({
   async function submit() {
     if (!canSubmit || busy) return;
     setBusy(true);
-    const note = needDetail ? detail.trim() : "";
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        show("请先登录", "danger");
-        return;
-      }
-      const { error } = await supabase.from("reports").insert({
-        id: makeReportId(),
-        reporter_id: user.id,
-        target_type: targetType,
-        target_id: targetId,
+      const result = await submitReport(createClient(), {
+        targetType,
+        targetId,
         reason: reason!,
-        detail: note,
+        detail: needDetail ? detail.trim() : "",
       });
-      if (error) {
-        show("举报失败，请重试", "danger");
+      if (!result.ok) {
+        show(result.message, "danger");
         return;
       }
       show("已收到举报，我们会尽快处理");
       onOpenChange(false);
-      /* 同步飞书工作台（fire-and-forget：凭证缺失/表未加列/不可达均静默） */
-      void fetch("/api/reports/feishu", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetType, targetId, reason, detail: note }),
-      }).catch(() => {});
     } catch {
       show("举报失败，请重试", "danger");
     } finally {

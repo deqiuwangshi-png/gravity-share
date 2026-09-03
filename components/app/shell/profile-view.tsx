@@ -21,9 +21,9 @@ import { removeImage, safeCoverUrl, uploadImage, validateImage } from "@/lib/sto
 import { SITE_INFO } from "@/lib/config";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SQUARE_UPDATED_EVENT } from "@/lib/events";
-import { fetchCommentsByAuthor } from "@/lib/queries-comments";
-import { fetchSquarePostsByAuthor } from "@/lib/queries-posts";
-import { isFollowing, toggleFollow } from "@/lib/queries-social";
+import { fetchCommentsByAuthor } from "@/lib/queries/comments";
+import { fetchSquarePostsByAuthor } from "@/lib/queries/posts";
+import { isFollowing, toggleFollow } from "@/lib/queries/social";
 import type { CommentDTO, SquarePostDTO } from "@/lib/types";
 
 export default function ProfileView({

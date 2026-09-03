@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
-import { fetchVerifications, type VerificationRow } from "@/lib/queries-misc";
+import { fetchVerifications, type VerificationRow } from "@/lib/queries/misc";
 import { useToast } from "@/components/app/common/toast";
 import { Button } from "@/components/ui/button";
 

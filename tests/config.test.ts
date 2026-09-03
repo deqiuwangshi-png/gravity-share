@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { SQUARE_CATEGORIES, SQUARE_POST_TYPES } from "./config";
+import { SQUARE_CATEGORIES, SQUARE_POST_TYPES } from "@/lib/config";
 
 /**
  * 从迁移 SQL 提取 CHECK 约束的枚举值列表（如 '工具','技术' → ["工具","技术"]）

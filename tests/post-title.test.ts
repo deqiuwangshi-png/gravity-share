@@ -4,7 +4,7 @@
  * L4 作者兜底、富文本/纯文本等价、不编造断言。
  */
 import { describe, expect, it } from "vitest";
-import { postHeadline, CATEGORY_PHRASE } from "./post-title";
+import { postHeadline, CATEGORY_PHRASE } from "@/lib/post-title";
 
 /** 构造最小入参的帮手 */
 function opts(overrides: Partial<Parameters<typeof postHeadline>[0]> = {}) {

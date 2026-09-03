@@ -16,7 +16,7 @@ import { notFound, redirect } from "next/navigation";
 import { riskOf, safeRedirectTarget } from "@/lib/links";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { fetchLinkDomains } from "@/lib/queries-misc";
+import { fetchLinkDomains } from "@/lib/queries/misc";
 import { GoActions } from "./go-actions";
 
 export const dynamic = "force-dynamic";

@@ -12,7 +12,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { fetchSquarePostsByTag } from "@/lib/queries-posts";
+import { fetchSquarePostsByTag } from "@/lib/queries/posts";
 import { SITE_URL, buildCollectionPage, jsonLd } from "@/lib/seo";
 import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
 

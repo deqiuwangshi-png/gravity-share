@@ -9,8 +9,8 @@
  */
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { fetchComments } from "@/lib/queries-comments";
-import { fetchSquarePostById, fetchSquarePosts } from "@/lib/queries-posts";
+import { fetchComments } from "@/lib/queries/comments";
+import { fetchSquarePostById, fetchSquarePosts } from "@/lib/queries/posts";
 import type { CommentDTO } from "@/lib/types";
 import type { SquarePostDTO } from "@/lib/types";
 
@@ -20,8 +20,8 @@ export const getPost = cache(async (id: string): Promise<SquarePostDTO | null> =
   return fetchSquarePostById(supabase, id);
 });
 
-/** 相关文章（P0-6）：同分类优先（排除自身），不足 4 条按时间补其他分类，最多 6 条 */
-export const getRelated = cache(
+/** 相关文章（P0-6）：同分类优先（排除自身），不足 4 条按时间补其他分类，最多 6 条（仅 loadSquareDetail 编排内部使用，非对外 API） */
+const getRelated = cache(
   async (category: string, excludeId: string): Promise<SquarePostDTO[]> => {
     const supabase = await createClient();
     const posts = await fetchSquarePosts(supabase, 100);

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SQUARE_CATEGORIES, SQUARE_CATEGORY_META } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
-import { fetchSquarePosts } from "@/lib/queries-posts";
+import { fetchSquarePosts } from "@/lib/queries/posts";
 
 export const metadata: Metadata = {
   title: "全部分类 | 引力",

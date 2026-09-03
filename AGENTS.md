@@ -43,6 +43,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## 优先级
 成熟生态 > 自己实现；已有组件 > 新建组件；组合 > 重写；简单实现 > 过度抽象；明确依赖 > 隐藏实现；少量业务代码 > 大量基础设施代码。
 
+## 组件职责分层（2026-09-03 用户铁律，业务与 UI 分离，长期架构约束）
+**核心**：UI 组件 = 展示 + 受控交互（props/回调驱动），不承载业务。业务按性质落到两层，组件只做编排。
+```text
+components/   纯 UI：展示、事件回调、纯 UI 状态（菜单开关/灯箱 index/表单受控值）；禁止 createClient() 后的写路径
+hooks/        可复用 client 业务 hook：状态机 + 副作用编排（多场景共用的上传/加载/提交编排；use-square-posts / use-gallery-upload 先例）
+lib/          纯函数与数据操作（无 React）：读查询、清洗/格式化、常量、无状态写动作（传 supabase client 入参；content-text / content-actions / share 先例）
+```
+1. **写路径禁令**：组件内禁止直接 `createClient()` + `insert/update/delete/upload` 业务写库/写 storage——一律经 lib 动作（单次写）或 hooks（带状态机的编排）转发
+2. **读查询**：简单单次读（表单回填等）可留组件；多场景共用的列表/详情加载模式抽 hooks（use-square-posts 先例）
+3. **去向判定**：多场景共享的状态机/异步编排 → `hooks/`；单次无状态写操作 → `lib/` 动作函数（入参接 `SupabaseClient`，返回结果由组件 toast/导航）
+4. **新组件自查**：新增/修改组件前先问——这段逻辑是否会在第二个场景被复用？若是 → 抽 hooks 或 lib，不留组件内
+5. **纯展示零业务**：components/app/common 应收敛为纯展示/交互组件（account-action-modal / post-gallery 等先例）；发现组件内出现状态机 + 写库 + toast 三件套即视为违规信号，按本规则拆出
+
 ## 样式工程规则（CSS / Tailwind 优先级，2026-09-02 落档）
 **核心**：样式是工程资产，集中、可复用、可理解。新代码按以下优先级选择实现方式（上层优先）：
 ```text

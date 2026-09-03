@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SQUARE_UPDATED_EVENT } from "@/lib/events";
-import { fetchSquarePostById, fetchSquarePosts } from "@/lib/queries-posts";
+import { fetchSquarePostById, fetchSquarePosts } from "@/lib/queries/posts";
 import type { SquarePostDTO } from "@/lib/types";
 
 /** SQUARE_UPDATED_EVENT 的 detail（2026-09-02 D：发布/删除写库方携带，列表做增量刷新） */

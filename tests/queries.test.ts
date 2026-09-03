@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { toCommentDTO } from "@/lib/queries-comments";
-import { toSquarePostDTO } from "@/lib/queries-posts";
-import type { CommentRow } from "@/lib/queries-comments";
-import type { SquarePostRow } from "@/lib/queries-posts";
+import { toCommentDTO } from "@/lib/queries/comments";
+import { toSquarePostDTO } from "@/lib/queries/posts";
+import type { CommentRow } from "@/lib/queries/comments";
+import type { SquarePostRow } from "@/lib/queries/posts";
 
 describe("toSquarePostDTO（广场帖子映射）", () => {
   const row: SquarePostRow = {

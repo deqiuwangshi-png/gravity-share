@@ -5,10 +5,12 @@
  *   rich-editor-content（TipTap ProseMirror，非 JSX 元素 → 排版层 CSS 承载）；根保留宿主类
  *   rich-editor（供 .rich-editor.compact .rich-editor-content 组合选择器）；
  *   图集浮层非令牌 rgba 宿主类（rich-gallery-status/rich-gallery-actions）收 decor.css ⑨
+ * 2026-09-03：图集上传状态机抽取为 hooks/use-gallery-upload（发布/编辑双场景共用），
+ *   本组件回归纯 UI：TipTap 内核 + 工具栏 + 图集条渲染；正文 <img> 移除为编辑器内核职责（内联保留）
  */
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -17,25 +19,7 @@ import {
   Bold, Italic, Strikethrough, Heading2, Heading3,
   List, ListOrdered, Quote, Code2, Minus, Link2, ImagePlus, ArrowLeft, ArrowRight, X,
 } from "lucide-react";
-import { publicImageUrl, removeImage, uploadImage, validateImage, pathFromPublicUrl } from "@/lib/storage";
-import { extractImageUrls } from "@/lib/rich-content";
-
-/** 图集图片上限（2026-08-31：与 5MB/张 校验协同防滥用） */
-const GALLERY_MAX = 9;
-
-type GalleryItem = {
-  /** 本地唯一 key（上传成功前用于定位条目） */
-  key: string;
-  /** storage path（上传成功后才有，删除/清理用） */
-  path: string;
-  /** 完整公开 URL（插入正文用） */
-  src: string;
-  status: "uploading" | "done" | "error";
-  /** 原始文件（重试用） */
-  file?: File;
-  /** 来源：upload=本次新上传（孤儿，删即清 storage）；existing=编辑预载的存量图（删后延迟到保存才清 storage） */
-  origin: "upload" | "existing";
-};
+import { GALLERY_MAX, useGalleryUpload, type GalleryItem } from "@/hooks/use-gallery-upload";
 
 export function RichEditor({
   value,
@@ -61,10 +45,14 @@ export function RichEditor({
   /** 编辑场景：已有序图集 storage path（037，优先预载；旧帖为空则回退正文存量图提取） */
   galleryPaths?: string[];
 }) {
-  const [gallery, setGallery] = useState<GalleryItem[]>([]);
-  const [galleryHint, setGalleryHint] = useState("");
-  /** 被删除的存量图 path（延迟到保存才清 storage） */
-  const [removedExisting, setRemovedExisting] = useState<string[]>([]);
+  const { gallery, galleryHint, uploadingCount, pickFiles, retryUpload, removeItem, moveItem } = useGalleryUpload({
+    upload,
+    initialContent: value,
+    initialGalleryPaths: galleryPaths,
+    onUploadedChange,
+    onRemovedExistingChange,
+  });
+
   const editor = useEditor({
     /* Link 协议白名单（2026-08-29）：编辑器入口即拒绝 javascript:/data: 等危险协议，
      * 与渲染端 sanitizeHtmlForRender 的 URI 白名单形成双保险 */
@@ -97,46 +85,8 @@ export function RichEditor({
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
   });
   const fileRef = useRef<HTMLInputElement>(null);
-  const uploading = useRef(false);
-
-  /* 编辑场景预载存量图：galleryPaths（037 新模型有序图集）优先；空则回退正文已有 <img>（旧帖兼容）
-   * 预载条目 origin=existing：删除仅标记待删（onRemovedExistingChange），保存成功才清 storage */
-  const initialValueRef = useRef(value);
-  const initialGalleryRef = useRef(galleryPaths);
-  useEffect(() => {
-    const fromGallery = initialGalleryRef.current ?? [];
-    const fromBody = initialValueRef.current
-      ? extractImageUrls(initialValueRef.current)
-          .map((url) => pathFromPublicUrl(url))
-          .filter((p): p is string => Boolean(p))
-      : [];
-    /* 去重保序：图集优先 + 正文存量兜底（旧帖）；顺序 = 展示顺序 + 封面 */
-    const paths = [...new Set([...fromGallery, ...fromBody])];
-    if (!paths.length) return;
-    setGallery(
-      paths.map((path, i) => ({
-        key: `e${i}-${path}`,
-        path,
-        src: publicImageUrl("post", path),
-        status: "done" as const,
-        origin: "existing" as const,
-      })),
-    );
-  }, []);
-
-  /* 上传成功列表上抛（外层取封面 = 第 1 张，未提交关闭时清理孤儿文件） */
-  useEffect(() => {
-    onUploadedChange?.(gallery.filter((it) => it.status === "done" && it.path).map((it) => it.path));
-  }, [gallery, onUploadedChange]);
-
-  /* 被删存量图上抛（外层保存成功后清 storage） */
-  useEffect(() => {
-    onRemovedExistingChange?.(removedExisting);
-  }, [removedExisting, onRemovedExistingChange]);
 
   if (!editor) return <div className="rich-editor min-w-0 max-w-full overflow-hidden rounded-control border border-line bg-surface" aria-label="编辑器加载中" />;
-
-  const uploadingCount = gallery.filter((it) => it.status === "uploading").length;
 
   /* 工具栏按钮（原 .rich-tool-btn：30×30 圆角 6 透明底；active「on」态主色软底——
    * 原 CSS .on 定义于 :hover 之后同特异性 → active 时悬停不变色，故 on 分支不带 hover 类） */
@@ -182,78 +132,7 @@ export function RichEditor({
     editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
   }
 
-  /** 多选图片 → 逐张串行上传（一次一张防配额突刺）→ 进图集条（不自动插入正文） */
-  async function onPickImages(files: FileList | null) {
-    if (!files || !upload || uploading.current) return;
-    const list = Array.from(files);
-    if (list.length === 0) return;
-    if (gallery.length + list.length > GALLERY_MAX) {
-      setGalleryHint(`图片最多 ${GALLERY_MAX} 张`);
-      return;
-    }
-    setGalleryHint("");
-    for (const file of list) {
-      const invalid = validateImage(file);
-      if (invalid) {
-        setGalleryHint(invalid);
-        continue;
-      }
-      const key = `g${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-      setGallery((g) => [...g, { key, path: "", src: "", status: "uploading", file, origin: "upload" }]);
-      uploading.current = true;
-      try {
-        const path = await uploadImage("post", file, upload.userId, upload.postId);
-        setGallery((g) => g.map((it) => (it.key === key ? { ...it, path, src: publicImageUrl("post", path), status: "done" } : it)));
-      } catch {
-        setGallery((g) => g.map((it) => (it.key === key ? { ...it, status: "error" } : it)));
-      } finally {
-        uploading.current = false;
-      }
-    }
-    if (fileRef.current) fileRef.current.value = "";
-  }
-
-  /** 失败重试：用条目保留的原始 File 重新上传 */
-  async function retryUpload(item: GalleryItem) {
-    if (!upload || !item.file || uploading.current) return;
-    setGallery((g) => g.map((it) => (it.key === item.key ? { ...it, status: "uploading" } : it)));
-    uploading.current = true;
-    try {
-      const path = await uploadImage("post", item.file, upload.userId, upload.postId);
-      setGallery((g) => g.map((it) => (it.key === item.key ? { ...it, path, src: publicImageUrl("post", path), status: "done" } : it)));
-    } catch {
-      setGallery((g) => g.map((it) => (it.key === item.key ? { ...it, status: "error" } : it)));
-    } finally {
-      uploading.current = false;
-    }
-  }
-
-  /** 删除图集条目：同步移除正文中同 src 的 <img>；按 origin 决定 storage 清理时机
-   *  upload=本次新上传（从未入库，孤儿）→ 立即删 storage
-   *  existing=编辑预载的存量图 → 仅标记待删，保存成功才真删（避免取消编辑后 content 回滚仍引用已删文件 → 404） */
-  function removeFromGallery(item: GalleryItem) {
-    setGallery((g) => g.filter((it) => it.key !== item.key));
-    if (item.src) removeImageFromDoc(item.src);
-    if (item.origin === "upload" && item.path) {
-      void removeImage("post", item.path).catch(() => {});
-    } else if (item.origin === "existing" && item.path) {
-      setRemovedExisting((prev) => (prev.includes(item.path) ? prev : [...prev, item.path]));
-    }
-  }
-
-  /** 图集排序（左移/右移，037：顺序 = 展示顺序 + 第 1 张封面）；移动后 onUploadedChange 自动上抛新顺序 */
-  function moveItem(index: number, dir: -1 | 1) {
-    setGallery((g) => {
-      const target = index + dir;
-      if (target < 0 || target >= g.length) return g;
-      const next = [...g];
-      const [item] = next.splice(index, 1);
-      next.splice(target, 0, item);
-      return next;
-    });
-  }
-
-  /** 按 src 移除正文中的 <img>（Tiptap 无内置命令，遍历 doc 删除节点） */
+  /** 按 src 移除正文中的 <img>（Tiptap 无内置命令，遍历 doc 删除节点；编辑器内核职责） */
   function removeImageFromDoc(src: string) {
     const positions: number[] = [];
     editor.state.doc.descendants((node, pos) => {
@@ -263,6 +142,12 @@ export function RichEditor({
     let tr = editor.state.tr;
     for (const pos of positions.reverse()) tr = tr.delete(pos, pos + 1);
     editor.view.dispatch(tr);
+  }
+
+  /** 删除图集条目：先同步移除正文同 src 的 <img>，storage 清理编排交给 hook（按 origin 分流） */
+  function removeFromGallery(item: GalleryItem) {
+    if (item.src) removeImageFromDoc(item.src);
+    removeItem(item);
   }
 
   return (
@@ -320,7 +205,7 @@ export function RichEditor({
         multiple
         hidden
         onChange={(event) => {
-          void onPickImages(event.target.files);
+          void pickFiles(event.target.files);
         }}
       />
 

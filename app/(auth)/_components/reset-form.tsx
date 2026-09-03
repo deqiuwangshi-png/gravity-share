@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { verifyCurrentPassword } from "@/lib/queries-misc";
+import { verifyCurrentPassword } from "@/lib/queries/misc";
 import { AuthSubmit, authButtonClass } from "./auth-submit";
 import { AuthField, AuthInput } from "./auth-field";
 

@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { deriveProfileDisplay, fetchProfileByUserId } from "@/lib/profile-detail";
-import { fetchFollowingCount, fetchFollowerCount } from "@/lib/queries-social";
+import { fetchFollowingCount, fetchFollowerCount } from "@/lib/queries/social";
 import ProfileView from "@/components/app/shell/profile-view";
 
 export const metadata: Metadata = {

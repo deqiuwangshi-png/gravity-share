@@ -10,7 +10,7 @@ import {
   fetchNotifications,
   markAllNotificationsRead,
   markNotificationRead,
-} from "@/lib/queries-notifications";
+} from "@/lib/queries/notifications";
 import type { NotificationDTO } from "@/lib/types";
 
 /**

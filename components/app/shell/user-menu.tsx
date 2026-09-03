@@ -16,15 +16,6 @@ import {
 /**
  * 用户下拉菜单：纯头像触发（不显示昵称/邮箱，昵称见个人主页、邮箱见用户设置）
  * 菜单项：个人主页 / 用户设置 / 帮助与反馈 / 退出登录
- * 2026-08-25 SEO（D1 公开只读）：未登录游客（访问 /square /profile 等公开区）显示「登录/注册」入口
- * 2026-09-02：user-menu.css 全量 Tailwind 化（129 行 → 原子类）；入场动画 keyframes 收 decor.css ⑨，
- *   .user-menu-trigger strong 为死规则（纯头像菜单无昵称）删除不迁移
- * 2026-09-03 P2：改接 shadcn DropdownMenu（Radix）——删自研 absolute 定位 + document click/Esc 监听；
- *   side=bottom align=end sideOffset=10 等价原 right-0 top-[calc(100%+10px)]（Portal 挂 body 后
- *   视口避让/键盘导航/互斥关闭由 Radix 接管）；入场动画走 Content data-[state=open] 播 decor.css ⑨
- *   user-menu-in（原挂载即播，等价）；「个人主页」Item asChild + Link；设置/帮助/退出走 onSelect
- *   （select 即关菜单，无需手动 setOpen）；退出 onSelect preventDefault 保持菜单开着显示「退出中…」
- *   直至跳转 /login（1:1 原行为）
  */
 export function UserMenu({
   onOpenSettings,

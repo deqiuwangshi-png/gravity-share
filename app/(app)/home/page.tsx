@@ -4,8 +4,8 @@ import { AnnouncementCarousel } from "@/components/app/discovery/announcement-ca
 import { SquareFeed } from "@/components/app/square/square-feed";
 import { LoadingState } from "@/components/ui/loading-state";
 import { createClient } from "@/lib/supabase/server";
-import { fetchAnnouncements } from "@/lib/queries-misc";
-import { fetchSquarePosts } from "@/lib/queries-posts";
+import { fetchAnnouncements } from "@/lib/queries/misc";
+import { fetchSquarePosts } from "@/lib/queries/posts";
 
 export const dynamic = "force-dynamic";
 

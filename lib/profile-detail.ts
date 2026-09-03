@@ -10,8 +10,8 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { fetchSquarePostsByAuthor } from "@/lib/queries-posts";
-import { fetchFollowerCount, fetchFollowingCount } from "@/lib/queries-social";
+import { fetchSquarePostsByAuthor } from "@/lib/queries/posts";
+import { fetchFollowerCount, fetchFollowingCount } from "@/lib/queries/social";
 import type { SquarePostDTO, UserBadge } from "@/lib/types";
 
 /** users 行投影（本人/他人主页共用查询形状：个人品牌区可公开展示的 5 字段） */

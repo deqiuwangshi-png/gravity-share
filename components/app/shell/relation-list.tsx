@@ -10,7 +10,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { createClient } from "@/lib/supabase/client";
-import { toggleFollow } from "@/lib/queries-social";
+import { toggleFollow } from "@/lib/queries/social";
 import type { UserCardDTO } from "@/lib/types";
 
 export function RelationList({

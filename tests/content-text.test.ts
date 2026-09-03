@@ -2,7 +2,7 @@
  * 复制内容工具单测（2026-09-03 C）——richTextToPlainText 保结构转换 + postCopyText 组装规则
  */
 import { describe, expect, it } from "vitest";
-import { postCopyText, richTextToPlainText } from "./content-text";
+import { postCopyText, richTextToPlainText } from "@/lib/content-text";
 
 describe("richTextToPlainText（富文本 → 保结构纯文本，复制用）", () => {
   it("段落间空行、br 段内换行、实体解码", () => {
