@@ -12,7 +12,8 @@ import { useCallback, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { removeImage, pathFromPublicUrl } from "@/lib/storage";
 import { SQUARE_CATEGORIES } from "@/lib/config";
-import { isRichText, sanitizeHtml, extractImageUrls, stripImages } from "@/lib/rich-content";
+import { isRichText, extractImageUrls } from "@/lib/rich-content";
+import { updateSquarePost } from "@/lib/square-actions";
 import { RichEditor } from "@/components/app/common/rich-editor";
 import { Button } from "@/components/ui/button";
 import type { SquarePostDTO } from "@/lib/types";
@@ -63,37 +64,23 @@ export function SquarePostEditForm({
     if (!text || busy) return;
     setBusy(true);
     setError("");
-    /* 统一图片模型（与发布一致，037）：封面 = 图集第 1 张；图集空且原封面未被删则保留原封面，否则（删光）置空，避免回退到已删文件 → 404 */
-    const nextImage: string | null =
-      galleryPaths[0] ?? (post.imageUrl && !pendingDeletes.includes(post.imageUrl) ? post.imageUrl : null);
-    const { error: updateError } = await createClient()
-      .from("square_posts")
-      /* 富文本保存前 sanitize（主防线，与发布一致）+ stripImages 剥离正文 img（037：图片统一进图集，正文纯文字；
-         旧帖正文存量图已由预载进 galleryPaths，保存即升级新模型）；url 不再写入（存量帖 url 保留，防误删历史链接） */
-      .update({
-        content: isRich ? stripImages(sanitizeHtml(content)) : content.trim(),
-        /* 038 标题必填（2026-09-02 与发布同步）：校验已拦空，恒写入 trim 结果（不再写 null 清空标题） */
-        title: title.trim(),
-        image_url: nextImage,
-        gallery: galleryPaths,
-        category,
-      })
-      .eq("id", post.id);
-    if (updateError) {
-      /* 回滚本次新上传的孤儿图（仅 upload，existing 存量图不动——保存失败数据库未变，仍引用这些图） */
-      galleryPaths
-        .filter((path) => !initialExisting.current.has(path))
-        .forEach((path) => void removeImage("post", path).catch(() => {}));
+    /* sanitize/统一图片模型/update/失败回滚+成功清图（封面变更清旧图、保存后延迟删已删存量）
+     * 全部收口于 lib/square-actions.updateSquarePost */
+    const { ok } = await updateSquarePost(createClient(), {
+      postId: post.id,
+      content,
+      title,
+      category,
+      galleryPaths,
+      prevImageUrl: post.imageUrl ?? null,
+      existingPaths: initialExisting.current,
+      deletedExisting: pendingDeletes,
+    });
+    if (!ok) {
       setError("保存失败，请重试");
       setBusy(false);
       return;
     }
-    /* 封面变更：清理旧封面图 */
-    if (post.imageUrl && post.imageUrl !== nextImage) {
-      void removeImage("post", post.imageUrl);
-    }
-    /* 保存成功：清理被删除的存量图（延迟删除，避免取消编辑 → content 回滚仍引用 → 404） */
-    pendingDeletes.forEach((path) => void removeImage("post", path).catch(() => {}));
     setBusy(false);
     onDone();
   }

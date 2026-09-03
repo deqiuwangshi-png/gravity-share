@@ -14,7 +14,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { removeImage, safeAvatarUrl, uploadImage, validateImage } from "@/lib/storage";
+import { safeAvatarUrl, uploadImage, validateImage } from "@/lib/storage";
+import { saveProfileImage, updateUserProfile } from "@/lib/user-actions";
 import { useToast } from "@/components/app/common/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,13 +62,12 @@ export function ProfileEditModal({
     setAvatarBusy(true);
     try {
       const path = await uploadImage("avatar", file, userId);
-      const { error: saveError } = await createClient().from("users").update({ avatar_url: path }).eq("id", userId);
-      if (saveError) {
-        void removeImage("avatar", path);
+      /* 写库 + BUG-14 回滚/清旧图收纳于 lib/user-actions.saveProfileImage */
+      const { ok } = await saveProfileImage(createClient(), { userId, column: "avatar_url", bucket: "avatar", path, prevPath: avatar });
+      if (!ok) {
         setAvatarError("保存失败，请重试");
         return;
       }
-      if (avatar && avatar !== path) void removeImage("avatar", avatar);
       setAvatar(path);
     } catch {
       setAvatarError("上传失败，请重试");
@@ -85,9 +85,9 @@ export function ProfileEditModal({
     if (saving) return;
     setSaving(true);
     setError("");
-    const { error: saveError } = await createClient().from("users").update({ name: value }).eq("id", userId);
+    const { ok } = await updateUserProfile(createClient(), userId, { name: value });
     setSaving(false);
-    if (saveError) {
+    if (!ok) {
       setError("保存失败，请稍后重试");
       return;
     }

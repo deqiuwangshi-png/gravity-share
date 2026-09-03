@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { createComment } from "@/lib/comment-actions";
 
 export function SquareCommentBox({ postId, onCreated }: { postId: string; onCreated?: () => void }) {
   const [text, setText] = useState("");
@@ -26,15 +27,10 @@ export function SquareCommentBox({ postId, onCreated }: { postId: string; onCrea
     if (!user) return;
     setSending(true);
     setError(false);
-    const { error: insertError } = await supabase.from("comments").insert({
-      id: `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-      author_id: user.id,
-      target_type: "square",
-      target_id: postId,
-      content,
-    });
+    /* 写库收口于 lib/comment-actions.createComment */
+    const { ok } = await createComment(supabase, { authorId: user.id, postId, content });
     setSending(false);
-    if (insertError) {
+    if (!ok) {
       setError(true);
       return;
     }

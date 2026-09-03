@@ -18,19 +18,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
-import { SQUARE_CATEGORIES, SQUARE_POST_TYPES } from "@/lib/config";
+import { SQUARE_CATEGORIES } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { SQUARE_UPDATED_EVENT } from "@/lib/events";
-import { extractTags, stripHtml } from "@/lib/text";
-import { sanitizeHtml } from "@/lib/rich-content";
+import { stripHtml } from "@/lib/text";
+import { createSquarePost } from "@/lib/square-actions";
 import { RichEditor } from "@/components/app/common/rich-editor";
 import { removeImage } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-
-/* A2 修复（2026-08-23）：post_type 由 SQUARE_POST_TYPES 枚举驱动（与迁移 015 CHECK 同源），不再写死字面量；
- * 2026-08-31 移除可选标注后新帖恒为 PT_SHARE（存量 opportunity/content 帖保留渲染） */
-const [PT_SHARE] = SQUARE_POST_TYPES;
 
 /** 生成防重复短 id（同毫秒连发也唯一）；模块级纯函数（2026-08-31 修复：useState 初始化器引用须先于声明） */
 function newId(prefix: string): string {
@@ -134,30 +130,17 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
       } = await supabase.auth.getUser();
       if (!user) return;
       const id = draftId;
-      /* 封面 = 图集第 1 张（图集已由 RichEditor 上传完毕，path 前缀 posts/{uid}/{draftId}/…） */
-      const imageUrl = galleryPaths[0] ?? undefined;
-      const base = {
+      /* 组装 / sanitize / insert / 失败孤儿图回滚 收口于 lib/square-actions.createSquarePost
+       * （封面 = 图集第 1 张；tags 提炼 / url 恒 null / post_type 语义随迁，双侧不再漂移） */
+      const { ok } = await createSquarePost(supabase, {
         id,
-        author_id: user.id,
-        /* 主防线：入库前 sanitize-html 白名单清洗（渲染端另有二次清洗纵深） */
-        content: sanitizeHtml(html),
-        /* 038 标题必填（2026-09-02）：校验已拦空，恒写入 trim 结果（不再写 null；存量空标题帖不受影响） */
-        title: title.trim(),
+        authorId: user.id,
+        html,
+        title,
         category,
-        tags: extractTags(plain),
-        /* 2026-08-29 收口：独立链接字段已移除，新帖 url 恒 null（链接统一由正文 <a> 承载） */
-        url: null,
-        image_url: imageUrl ?? null,
-        /* 037 图集：有序 storage path 数组（第 1 张 = 封面 image_url；正文纯文字不含图） */
-        gallery: galleryPaths,
-        /* 2026-08-31 移除可选标注：新帖统一普通分享（015 CHECK 三值，库结构不变）；
-           commission/source_platform 不写入 → 默认 null（存量帖字段保留供渲染） */
-        post_type: PT_SHARE,
-      };
-      const { error } = await supabase.from("square_posts").insert(base);
-      if (error) {
-        /* BUG-14 扩展：insert 失败回滚本次上传的全部图片，避免孤儿文件 */
-        galleryPaths.forEach((path) => void removeImage("post", path).catch(() => {}));
+        galleryPaths,
+      });
+      if (!ok) {
         setSubmitError("发布失败，请重试");
         return;
       }

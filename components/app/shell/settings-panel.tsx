@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { FEISHU_FEEDBACK_URL } from "@/lib/config";
+import { updateUserProfile } from "@/lib/user-actions";
 import { Input } from "@/components/ui/input";
 import { FieldRow } from "@/components/ui/field-row";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -114,9 +115,9 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
     if (!userId || !editing) return;
     setSaving(true);
     setError("");
-    const { error: saveError } = await createClient().from("users").update({ bio: draft }).eq("id", userId);
+    const { ok } = await updateUserProfile(createClient(), userId, { bio: draft });
     setSaving(false);
-    if (saveError) {
+    if (!ok) {
       setError("保存失败，请稍后重试");
       return;
     }

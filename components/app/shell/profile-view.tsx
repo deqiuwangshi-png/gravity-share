@@ -17,7 +17,8 @@ import { ProfileEditModal } from "@/components/app/shell/profile-edit-modal";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { AuthorBadge } from "@/components/app/common/author-badge";
 import { createClient } from "@/lib/supabase/client";
-import { removeImage, safeCoverUrl, uploadImage, validateImage } from "@/lib/storage";
+import { safeCoverUrl, uploadImage, validateImage } from "@/lib/storage";
+import { saveProfileImage } from "@/lib/user-actions";
 import { SITE_INFO } from "@/lib/config";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SQUARE_UPDATED_EVENT } from "@/lib/events";
@@ -104,15 +105,12 @@ export default function ProfileView({
     setCoverBusy(true);
     try {
       const path = await uploadImage("cover", file, userId);
-      const { error: saveError } = await createClient().from("users").update({ cover_url: path }).eq("id", userId);
-      if (saveError) {
-        /* BUG-14：更新失败回滚新图 */
-        void removeImage("cover", path);
+      /* 写库 + BUG-14 回滚/清旧图收纳于 lib/user-actions.saveProfileImage */
+      const { ok } = await saveProfileImage(createClient(), { userId, column: "cover_url", bucket: "cover", path, prevPath: cover });
+      if (!ok) {
         setCoverError("保存失败，请重试");
         return;
       }
-      /* BUG-14：换图成功清理旧图（与旧 path 不同才删） */
-      if (cover && cover !== path) void removeImage("cover", cover);
       setCover(path);
     } catch {
       setCoverError("上传失败，请重试");

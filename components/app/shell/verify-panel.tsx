@@ -4,99 +4,49 @@
  * 状态流：未申请（选类型 + 填说明提交）→ pending 审核中 → approved / rejected
  * 审核：MVP Table Editor（verifications.status 置 approved 并同步 users.badge），无后台代码
  * 2026-09-02 迁移：verify-* 原子类化（原 styles/app/verify.css 面板段；徽标基础段已随 author-badge/avatar-box 内化）
+ * 2026-09-03 职责分层：数据态/轮询/提交编排 → hooks/use-verification；写库 → lib/verification-actions
+ *   本组件只留表单受控态（selected/statement）+ 三态渲染判定 + toast 反馈
  */
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
-import { fetchVerifications, type VerificationRow } from "@/lib/queries/misc";
+import { useState } from "react";
+import { useVerification } from "@/hooks/use-verification";
+import type { VerificationVType } from "@/lib/verification-actions";
 import { useToast } from "@/components/app/common/toast";
 import { Button } from "@/components/ui/button";
 
-const VTYPES = [
+const VTYPES: { id: VerificationVType; title: string; desc: string }[] = [
   { id: "personal", title: "个人认证", desc: "面向独立创作者/优质发布者，通过后获得金牌「发现者」标识" },
   { id: "organization", title: "机构认证", desc: "面向组织/团队/媒体等机构账号，通过后获得官方蓝 V 标识" },
   { id: "enterprise", title: "企业认证", desc: "面向企业官方账号，通过后获得官方蓝 V 标识" },
-] as const;
+];
 
-type VType = (typeof VTYPES)[number]["id"];
-const VLABEL: Record<VType, string> = { personal: "个人", organization: "机构", enterprise: "企业" };
+const VLABEL: Record<VerificationVType, string> = { personal: "个人", organization: "机构", enterprise: "企业" };
 
 /* 认证类型选择卡（.verify-type 原子化） */
 const verifyTypeBtn =
   "grid cursor-pointer gap-1 rounded-[10px] border border-line bg-surface p-[14px_16px] text-left transition-[border-color] duration-[180ms] enabled:hover:border-line-primary [font:inherit]";
 
 export function VerifyPanel() {
-  const [myVerifications, setMyVerifications] = useState<VerificationRow[] | null>(null);
-  /* 自己的对外标识（users.badge，公开读）——与申请状态互证，避免「badge 已设但 status 未改」脱节 */
-  const [myBadge, setMyBadge] = useState<string>("none");
-  const [selected, setSelected] = useState<VType | null>(null);
+  const { myVerifications, myBadge, submitting, submit } = useVerification();
+  const [selected, setSelected] = useState<VerificationVType | null>(null);
   const [statement, setStatement] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const { show } = useToast();
-
-  const load = useCallback(() => {
-    const supabase = createClient();
-    void supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      void supabase
-        .from("users")
-        .select("badge")
-        .eq("id", data.user.id)
-        .maybeSingle()
-        .then(({ data: me }) => setMyBadge((me?.badge as string) ?? "none"));
-    });
-    void fetchVerifications(supabase).then(setMyVerifications).catch(() => setMyVerifications([]));
-  }, []);
-
-  /* 审核状态实时性：挂载拉一次；审核中（pending）时 30s 轮询；
-   * 监听 NOTIFICATION_UPDATED_EVENT（审核通过/驳回会写站内通知，抽屉操作后事件触发） */
-  const statusRef = useRef<string | null>(null);
-  useEffect(() => {
-    statusRef.current = myVerifications?.[0]?.status ?? null;
-  }, [myVerifications]);
-
-  useEffect(() => {
-    load();
-    const onNotify = () => load();
-    window.addEventListener(NOTIFICATION_UPDATED_EVENT, onNotify);
-    const timer = setInterval(() => {
-      if (statusRef.current === "pending") load();
-    }, 30000);
-    return () => {
-      window.removeEventListener(NOTIFICATION_UPDATED_EVENT, onNotify);
-      clearInterval(timer);
-    };
-  }, [load]);
 
   const latest = myVerifications?.[0];
   /* 用户视角判定：已认证（申请通过 或 标识已生效）> 审核中 > 可申请 */
   const hasApproved = (myVerifications?.some((v) => v.status === "approved") ?? false) || myBadge !== "none";
 
-  async function submit() {
-    if (!selected || submitting) return;
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    setSubmitting(true);
-    const { error } = await supabase.from("verifications").insert({
-      id: `v${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-      user_id: user.id,
-      vtype: selected,
-      statement: statement.trim(),
-    });
-    setSubmitting(false);
-    if (error) {
+  async function handleSubmit() {
+    if (!selected) return;
+    const { ok } = await submit(selected, statement);
+    if (!ok) {
       show("提交失败，请稍后重试", "danger");
       return;
     }
     show("认证申请已提交，请等待审核");
     setSelected(null);
     setStatement("");
-    load();
   }
 
   /* 已认证（用户视角：有通过申请 或 标识已生效——容忍「badge 已设但 status 未改」脱节） */
@@ -173,7 +123,7 @@ export function VerifyPanel() {
             <Button
               variant="default"
               size="sm"
-              onClick={() => void submit()}
+              onClick={() => void handleSubmit()}
               disabled={submitting || !statement.trim()}
             >
               {submitting ? "提交中…" : "提交申请"}

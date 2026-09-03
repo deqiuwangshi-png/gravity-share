@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MessageCircle, Heart } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { fetchCommentLikeMap, fetchComments, toggleCommentLike } from "@/lib/queries/comments";
+import { createComment } from "@/lib/comment-actions";
 import { SquareCommentBox } from "./square-comment-box";
 import { PostMenu } from "@/components/app/common/post-menu";
 import { AvatarBox } from "@/components/app/common/avatar-box";
@@ -78,16 +79,10 @@ export function CommentSection({
     } = await supabase.auth.getUser();
     if (!user) return;
     setSendingReply(true);
-    const { error } = await supabase.from("comments").insert({
-      id: `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-      author_id: user.id,
-      target_type: "square",
-      target_id: postId,
-      parent_id: replyTo.id,
-      content,
-    });
+    /* 写库收口于 lib/comment-actions.createComment（回复带 parentId） */
+    const { ok } = await createComment(supabase, { authorId: user.id, postId, content, parentId: replyTo.id });
     setSendingReply(false);
-    if (error) return;
+    if (!ok) return;
     setReplyTo(null);
     setReplyText("");
     void refresh();
