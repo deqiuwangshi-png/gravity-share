@@ -1,7 +1,8 @@
 /**
- * 标签页（/tag/[tag]，2026-08-31 P0-7）——SEO 标签体系：
- * 标签是自由文本（发布时 # 提取），页面为 server 组件（爬虫可见内容列表）。
- * 防低质页策略（需求十三）：
+ * 标签页（/tag/[tag]，2026-09-03 架构拆分后）——只做「编排」：
+ * 数据获取 → lib/tag-detail.ts（getPostsByTag cache 工厂）
+ * 本文件仅剩：import + 组装 + JSX 布局，不再内联 cache/数据访问。
+ * 防低质页策略（需求十三，与迁移前一致）：
  *   ≥3 条内容 → index（进收录）
  *   <3 条内容 → noindex, follow（不污染索引，链接仍可跟）
  *   0 条内容 → 404（不产生空标签页）
@@ -10,9 +11,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
-import { fetchSquarePostsByTag } from "@/lib/queries/posts";
+import { getPostsByTag } from "@/lib/tag-detail";
 import { SITE_URL, buildCollectionPage, jsonLd } from "@/lib/seo";
 import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
 
@@ -20,15 +19,10 @@ export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ tag: string }> };
 
-/** 同一次请求内 generateMetadata 与页面主体共享同一查询（React cache 以 tag 为 key） */
-const getPosts = cache(async (tag: string) => {
-  const supabase = await createClient();
-  return fetchSquarePostsByTag(supabase, tag);
-});
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { tag } = await params;
-  const posts = await getPosts(tag);
+  /* getPostsByTag（lib 层 cache 工厂）：与页面主体共享同一查询（同请求不查两遍） */
+  const posts = await getPostsByTag(tag);
   if (posts.length === 0) return { title: "标签不存在" };
   return {
     title: `#${tag} 标签`,
@@ -41,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function TagPage({ params }: PageProps) {
   const { tag } = await params;
-  const posts = await getPosts(tag);
+  const posts = await getPostsByTag(tag);
   if (posts.length === 0) notFound();
 
   return (
