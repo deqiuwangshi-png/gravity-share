@@ -4,6 +4,7 @@
  * 供 SquareFeed / categories[slug] 等 client 列表复用。
  * 过滤逻辑（分类/搜索）由调用方基于返回的 posts 自己做（各页语义不同）。
  * 2026-08-25 SEO：支持 initialPosts 服务端预取作为首帧（SSR 爬虫可见），挂载后仍自动拉取最新。
+ * 2026-09-03 归位：自 lib/use-square-posts.ts 迁至根级 hooks/（React hook 与 lib 纯工具/数据层分离）。
  */
 "use client";
 

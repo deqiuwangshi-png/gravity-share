@@ -18,7 +18,7 @@ import { LoadError } from "@/components/app/common/load-error";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
-import { useSquarePosts } from "@/lib/use-square-posts";
+import { useSquarePosts } from "@/hooks/use-square-posts";
 import { FeaturedBanner } from "./featured-banner";
 import type { SquarePostDTO } from "@/lib/types";
 

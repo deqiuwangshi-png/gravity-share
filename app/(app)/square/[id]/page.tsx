@@ -1,129 +1,51 @@
+/**
+ * 帖子详情页 /square/[id]（2026-09-03 架构拆分后）——只做「编排」：
+ * 数据获取 → lib/square-detail.ts（cache 工厂 + 并行编排）
+ * SEO/派生 → lib/seo.ts buildSquarePostSeo（headline/desc/cover 一次派生 → metadata + Article JSON-LD）
+ * 本文件仅剩：import + 组装 + JSX 布局，不再内联任何数据访问或 SEO 构造。
+ * 索引策略：帖子存在且 anon 可读（RLS 公开读，无登录墙）→ index；null → notFound 404（自动 noindex）
+ */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cache } from "react";
 import { SquareActions } from "@/components/app/square/square-actions";
 import { SquarePostView } from "@/components/app/square/square-post-view";
 import { CommentSection } from "@/components/app/square/comment-section";
 import { SquareCard, homeGridClass } from "@/components/app/common/square-card";
 import { AdSlot } from "@/components/common/ad-slot";
 import { AD_SLOTS } from "@/lib/config";
-import { createClient } from "@/lib/supabase/server";
-import { fetchComments } from "@/lib/queries-comments";
-import { fetchSquarePostById, fetchSquarePosts } from "@/lib/queries-posts";
-import { stripHtml } from "@/lib/text";
-import { publicImageUrl } from "@/lib/storage";
-import { SITE_URL, buildArticle, jsonLd } from "@/lib/seo";
-import { postHeadline } from "@/lib/post-title";
-
-/* P0-2 性能优化（2026-08-31）：同一次请求内 generateMetadata 与页面主体共享同一查询
- * （React cache 以 id 为 key 去重）——进详情页不再把同一帖查两遍 */
-const getPost = cache(async (id: string) => {
-  const supabase = await createClient();
-  return fetchSquarePostById(supabase, id);
-});
-
-/* P0-6 相关文章：同分类优先（排除自身），不足 4 条按时间补其他分类，最多 6 条
- * （与 getPost 并行发；React cache 以 category+excludeId 为 key 去重） */
-const getRelated = cache(async (category: string, excludeId: string) => {
-  const supabase = await createClient();
-  const posts = await fetchSquarePosts(supabase, 100);
-  const same = posts.filter((post) => post.category === category && post.id !== excludeId);
-  if (same.length >= 4) return same.slice(0, 6);
-  const others = posts.filter((post) => post.id !== excludeId && post.category !== category);
-  return [...same, ...others].slice(0, 6);
-});
+import { getPost, loadSquareDetail } from "@/lib/square-detail";
+import { buildSquarePostSeo, jsonLd } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const post = await getPost(id);
-  /* 标题提炼（P0-1，L1-L4 流水线）：用户标题 > 正文实体 > 分类 > 作者兜底；与页面 H1 同源 */
-  const pageTitle = post
-    ? postHeadline({
-        title: post.title,
-        content: post.content,
-        category: post.category,
-        tags: post.tags,
-        url: post.url,
-        authorName: post.authorName,
-        postType: post.postType,
-      })
-    : "话题不存在";
-  const desc = post ? (stripHtml(post.content).slice(0, 160) || pageTitle) : "";
-  /* OG image：有配图（封面/图集首张）输出；无图不填（不造默认图） */
-  const coverSrc = post?.imageUrl ? publicImageUrl("post", post.imageUrl) : undefined;
-  return {
-    title: pageTitle,
-    description: desc,
-    /* 索引策略显式声明（2026-09-02，GSC noindex 排查收尾）：
-       帖子存在且 anon 可读（200 + 全文 SSR）→ index, follow；
-       null（不存在/已删/读不到，走 notFound 404）→ noindex, nofollow（双保险：Next 对 404 已自动注入 noindex） */
-    robots: post ? { index: true, follow: true } : { index: false, follow: false },
-    alternates: { canonical: `/square/${id}` },
-    openGraph: {
-      title: pageTitle,
-      description: desc,
-      type: "article",
-      url: `${SITE_URL}/square/${id}`,
-      ...(coverSrc ? { images: [{ url: coverSrc }] } : {}),
-    },
-    twitter: {
-      ...(coverSrc ? { images: [coverSrc] } : {}),
-    },
-  };
+  /* getPost 与页面主体共享 React cache（square-detail 层）——同一次请求只查一遍 */
+  return buildSquarePostSeo(await getPost(id), id).metadata;
 }
 
 export default async function SquareDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  /* 与 generateMetadata 共享缓存（P0-2：同一请求内只查一次） */
-  const post = await getPost(id);
-  if (!post) notFound();
-  /* P0-2 并行化：评论 / 登录态 两件事同时发，不再排队串行；相关文章与帖子主体并行（P0-6） */
-  const supabase = await createClient();
-  const [comments, userRes, related] = await Promise.all([
-    fetchComments(supabase, id),
-    supabase.auth.getUser(),
-    getRelated(post.category, post.id),
-  ]);
-  const myId = userRes.data.user?.id ?? "";
-  /* 标题提炼（与 generateMetadata 同一函数 → H1 与 SEO title 严格一致） */
-  const headline = postHeadline({
-    title: post.title,
-    content: post.content,
-    category: post.category,
-    tags: post.tags,
-    url: post.url,
-    authorName: post.authorName,
-    postType: post.postType,
-  });
-  /* P1-1：Article JSON-LD 补字段的摘要与配图（与 metadata 同源） */
-  const desc = stripHtml(post.content).slice(0, 160) || headline;
-  const coverSrc = post.imageUrl ? publicImageUrl("post", post.imageUrl) : undefined;
+  /* 取数编排在 square-detail 层：getPost（复用 metadata 缓存）+ 评论/登录态/相关文章并行 */
+  const loaded = await loadSquareDetail(id);
+  if (!loaded) notFound();
+  const { post, comments, myId, related } = loaded;
+  /* 派生与 generateMetadata 同一函数同源 → H1 与 SEO title 严格一致（P0-1 六条硬约束） */
+  const seo = buildSquarePostSeo(post, id);
 
   return (
     <div className="app-content">
-      {/* Article 结构化数据（UGC 长尾词入口，2026-08-25 SEO；P1-1 补 description/image/mainEntityOfPage，headline 与 H1/metadata 同源） */}
+      {/* Article 结构化数据（UGC 长尾词入口，2026-08-25 SEO；buildSquarePostSeo 派生，
+          headline/desc/image 与 metadata、H1 同源——post 已判空，article 必非 null） */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: jsonLd(
-            buildArticle({
-              headline,
-              authorName: post.authorName,
-              url: `${SITE_URL}/square/${post.id}`,
-              datePublished: post.createdAt,
-              description: desc,
-              image: coverSrc,
-            }),
-          ),
-        }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(seo.article!) }}
       />
       <article className="mx-auto w-full max-w-[720px] px-1 pb-10">
         {/* 2026-08-27 方案A：广场并入首页，返回目标 /square → /home，文案同步 */}
         <Link className="mb-[22px] inline-block text-[13px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/home">← 返回首页</Link>
 
         {/* P0-2 H1：标题提炼结果（server 渲染，SSR 首帧可见；正文首行与之同文属正常，靠字号/字重区分层级） */}
-        <h1 className="m-0 mb-[14px] break-words text-[22px] font-bold leading-[1.45] tracking-[-0.2px]">{headline}</h1>
+        <h1 className="m-0 mb-[14px] break-words text-[22px] font-bold leading-[1.45] tracking-[-0.2px]">{seo.headline}</h1>
 
         {/* 帖子主体：发帖头 + 三点菜单（本人 删/改/复/享，他人 举报/复/享）+ 正文（可编辑）+ 配图 */}
         <SquarePostView post={post} isOwner={post.authorId === myId} />

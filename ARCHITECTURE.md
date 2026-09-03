@@ -25,6 +25,7 @@
 app/          页面柜 —— 一页一个文件，文件名即网址
 styles/       样式柜 —— 全部 CSS 统一管理，按访问区分目录
 components/   组件柜 —— 用到两次才抽，按「访问区 → feature」双层；`ui/` 为无业务纯 UI 层（Button/DropdownMenu/状态件，禁 import 业务，业务组件组合它）
+hooks/        hook 柜 —— 可复用 client 状态逻辑（2026-09-03 起；useSquarePosts 自 lib/ 归位于此）。lib/ 只放纯工具/数据/服务，React hook 一律归此
 lib/          数据柜 —— 数据访问、类型、配置、图标、文本工具集中管理
 supabase/     迁移柜 —— 数据库唯一真相（001-044，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 ```
@@ -66,6 +67,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 |---|---|---|
 | 页面文件 | 固定名 `page.tsx` / `layout.tsx` | `app/(app)/home/page.tsx` |
 | 组件文件 | PascalCase，一个文件一个组件；按「访问区 → feature」两层归入 `components/<区>/<feature>/`，跨区共享放 `common/`，无业务纯 UI 放 `components/ui/` | `components/app/square/square-actions.tsx` / `components/ui/button.tsx` |
+| Hook 文件 | camelCase `use*`，一个文件一个 hook，归根级 `hooks/`（client 状态逻辑；禁放 lib/ 工具层） | `hooks/use-square-posts.ts` |
 | 私有文件 | `_` 前缀（不参与路由） | `(auth)/_components/auth-form.tsx` |
 | 类型 | 组件 Props 用 `XxxProps` 命名（简单组件可内联）；展示模型用 `XxxDTO`（queries-*.ts 统一映射，集中在 lib/types.ts） | `SquarePostDTO` / `Announcement`（均在 lib/types.ts） |
 | 常量 | UPPER_SNAKE_CASE | `MARKETING_CATEGORIES` |
@@ -92,7 +94,7 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 
 ## 7. 团队协作约定
 
-1. **新增文件先定位**：页面 → `app/`；共享组件 → `components/`；数据/类型/配置 → `lib/`；表结构/触发器 → `supabase/migrations/`
+1. **新增文件先定位**：页面 → `app/`；共享组件 → `components/`；可复用 hook → `hooks/`；数据/类型/配置 → `lib/`；表结构/触发器 → `supabase/migrations/`
 2. **提交前自检**：`pnpm lint` + `pnpm build` 通过；不新建目录（除非触发 §2 的分层条件）
 3. **重复第二次就抽象**，第一次允许内联
 4. **数据只从 `lib/queries-*.ts` / `lib/data.ts` 拿**，颜色只从色板取
@@ -122,3 +124,5 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 ---
 
 *本规范 v3.5 于 2026-08-29 修订（029 title 列回收：`square_posts.title` drop，前端 6 处残留 + 测试 + 3 组样式全部清理；详情页 SEO 回落「作者 的话题」）。
+
+*本规范 v3.6 于 2026-09-03 修订（详情页 page.tsx 职责拆分：数据加载迁 `lib/square-detail.ts`、SEO 派生迁 `lib/seo.ts buildSquarePostSeo`、page 回归纯编排；`useSquarePosts` 自 lib/ 归位根级 `hooks/`，§2 柜子模型增 hook 柜）。
