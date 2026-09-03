@@ -167,11 +167,11 @@ export function VerifyPanel() {
             className="min-h-[88px] w-full resize-y rounded-lg border border-line bg-surface px-3 py-[10px] text-[13px] leading-[1.7] text-foreground outline-none focus:border-line-primary [font:inherit]"
           />
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setSelected(null)} disabled={submitting}>
+            <Button variant="outline" size="sm" onClick={() => setSelected(null)} disabled={submitting}>
               返回
             </Button>
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               onClick={() => void submit()}
               disabled={submitting || !statement.trim()}

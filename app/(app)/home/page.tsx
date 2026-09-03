@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AnnouncementCarousel } from "@/components/app/discovery/announcement-carousel";
 import { SquareFeed } from "@/components/app/square/square-feed";
+import { LoadingState } from "@/components/ui/loading-state";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAnnouncements } from "@/lib/queries-misc";
 import { fetchSquarePosts } from "@/lib/queries-posts";
@@ -37,7 +38,7 @@ export default async function HomePage() {
       </header>
 
       {/* useSearchParams 需 Suspense 边界（Next 约定，搜索 q 由 SquareFeed 读取） */}
-      <Suspense fallback={<p className="px-[18px] py-12 text-center text-[13px] text-soft">加载中…</p>}>
+      <Suspense fallback={<LoadingState />}>
         <SquareFeed initialPosts={initialPosts} />
       </Suspense>
     </div>

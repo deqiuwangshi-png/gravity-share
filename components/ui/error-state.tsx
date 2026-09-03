@@ -3,7 +3,7 @@
  * 视觉与迁移前逐类一致（含重试按钮样式，未强行套 Button——其描边 primary 色为特例形态）
  * load-error.tsx 保留为兼容转发导出，调用方（square-feed / notification-drawer）import 零扰动
  */
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 export function ErrorState({
   onRetry,

@@ -58,25 +58,20 @@
   height: 30px;
 }
 
-/* ---------- ⑤ profile 编辑弹窗：遮罩壳 + 面板阴影（2026-09-02 profile 批次：自 profile.css 迁出收容）
- * .profile-edit-overlay：叠加在 modal.css .app-modal 之上，grid 居中取代 flex、留白 15→24px；
- * .profile-edit-modal：面板阴影为非令牌 rgba（同 modal.css 家族阴影），其余布局已 Tailwind 化 */
-.profile-edit-overlay {
-  display: grid;
-  place-items: center;
-  padding: 24px;
-}
-
+/* ---------- ⑤ profile 编辑弹窗：面板阴影（2026-09-02 profile 批次：自 profile.css 迁出收容；
+ * 2026-09-03 P1 弹窗壳换 Radix：.profile-edit-overlay（grid 居中/留白 24px）规则删除——
+ *   Radix DialogContent 自身固定居中，宿主类名由 profile-edit-modal.tsx 保留承载阴影） */
 .profile-edit-modal {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
 }
 
 /* ---------- ⑥ 设置面板 + 敏感操作弹窗（2026-09-02 设置族批次：自 settings.css / account-action.css 迁出收容）
- * .settings-overlay：遮罩浅色背景为非令牌 rgba（覆盖 modal.css .app-modal 更深底色，类名由 settings-panel.tsx 保留）；
+ * .settings-overlay：遮罩浅色背景为非令牌 rgba（2026-09-03 P1：改经 DialogContent overlayClassName 挂载，
+ *   类名由 settings-panel.tsx 保留；本规则未分层 → 优先于 Dialog 默认 bg-foreground/38（@layer utilities））；
  * .settings-nav-item.active::before：导航 active 左侧 3px 主色竖条（::before 伪元素 Tailwind 无对应；
  *   定位宿主 relative 由组件保留，border-radius 背景为令牌色；640 以下导航转横向时隐藏）；
- * .account-action-overlay：z-index 110 叠于 .app-modal(z100) 之上（类名由 account-action-modal.tsx 保留）；
- * .account-action-modal：面板阴影为非令牌 rgba（同 modal.css 家族阴影）；
+ * .account-action-modal：面板阴影为非令牌 rgba（2026-09-03 P1：.account-action-overlay z110 规则删除——
+ *   Radix 嵌套 Dialog 同为 body portal（z-50），后挂载自然覆盖外层面板，无需提层）；
  * .account-action-modal input:focus：聚焦光晕为非令牌 rgba(0,104,85,.1)，border-color 已原子类化 focus:border-primary */
 .settings-overlay {
   background: rgba(15, 25, 22, 0.18);
@@ -91,10 +86,6 @@
   width: 3px;
   border-radius: 2px;
   background: var(--primary);
-}
-
-.account-action-overlay {
-  z-index: 110;
 }
 
 .account-action-modal {

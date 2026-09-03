@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoadError } from "@/components/app/common/load-error";
+import { EmptyState } from "@/components/ui/empty-state";
 import { createClient } from "@/lib/supabase/client";
 import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
 import {
@@ -142,7 +143,7 @@ export function NotificationDrawer({
           {failed ? (
             <LoadError onRetry={retry} />
           ) : items.length === 0 ? (
-            <p className="p-[64px_24px] text-center text-[13px] text-soft">暂无通知</p>
+            <EmptyState className="p-[64px_24px]">暂无通知</EmptyState>
           ) : (
             items.map((item) => (
               <button

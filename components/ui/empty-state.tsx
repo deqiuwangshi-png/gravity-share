@@ -4,7 +4,7 @@
  *   如 px-[18px] py-12 / p-[64px_24px]）；可内嵌行动链接/按钮（如"去发布"）
  */
 import type { ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils";
 
 export function EmptyState({
   children,

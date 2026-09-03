@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Smartphone, Monitor } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatRelativeTime } from "@/lib/text";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Device = {
   id: string;
@@ -110,7 +111,7 @@ export function DevicesPanel() {
       </div>
 
       {devices.length === 0 ? (
-        <p className="m-0 p-[32px_18px] text-center text-[13px] text-soft">暂无已登录设备。</p>
+        <EmptyState className="p-[32px_18px]">暂无已登录设备。</EmptyState>
       ) : (
         <ul className="m-0 grid list-none gap-2 p-0">
           {devices.map((device) => {

@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
   /* 主色（品牌绿） */
@@ -46,6 +50,28 @@
   --radius-section: 24px;
   --shadow-card: 0 18px 50px rgba(20, 40, 34, 0.08);
   --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.05);
+
+  /*
+   * shadcn 轨道语义键（2026-09-03 shadcn init 注入 oklch 块后收编：var() 链现有令牌、零覆盖，
+   * 值随项目令牌联动；init 曾覆盖的 --primary/--accent/--border/--background/--foreground 已恢复原位）。
+   * 冲突键 muted（项目=文字灰 vs shadcn=底色）/ accent（项目=金色 vs shadcn=hover 底）不走 :root，
+   * 由引入组件时改写源码类兜底（bg-muted→bg-hover、hover:bg-accent→hover:bg-hover）。
+   * 项目未用键（chart/sidebar）与暗色 .dark 块（light only）已删除。
+   */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --primary-foreground: var(--on-primary);
+  --secondary: var(--bg-hover);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--bg-hover);
+  --muted-foreground: var(--text-muted);
+  --accent-foreground: var(--foreground);
+  --destructive: var(--error);
+  --input: var(--border);
+  --ring: var(--border-primary);
+  --radius: 0.625rem; /* shadcn 尺度基：radius-lg=10px ≈ 控件圆角，组件默认 rounded-* 视觉即对齐 */
 }
 
 /*
@@ -100,7 +126,33 @@
   --shadow-card: var(--shadow-card);
   --shadow-panel: var(--shadow-panel);
 
-  /* 2026-08-28：系统字体栈替代 Geist（next/font/google 需访问 fonts.gstatic.com，国内 build 不可达） */
+  /*
+   * shadcn 轨道键（2026-09-03 init 注入后收编：值恒链 :root 别名，零覆盖）。
+   * --color-border 与项目 --color-line 同值并存——项目存量走 border-line，shadcn 组件默认走 border-border。
+   */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* 2026-08-28：系统字体栈替代 Geist（next/font/google 需访问 fonts.gstatic.com，国内 build 不可达）。
+     init 曾把此值误写为 var(--font-sans) 自引用致失效，已恢复原值；Geist 由 layout.tsx 还原移除。 */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
 }
@@ -141,10 +193,13 @@
  * 样式优先于 @layer 内一切样式（无视特异性），会压掉 a 元素上的 text-* 颜色类，
  * 造成落地页登录按钮黑字（text-on-primary 失效）、CTA 按钮白底白字（text-primary-dark
  * 失效→继承父级 text-surface）的回归。收层后 Tailwind utilities 恢复优先，原子文字色类全数生效。）
+ * border-border / outline-ring / bg-background / font-sans 等 apply 为 shadcn init（2026-09-03）
+ * 追加：设默认边框/轮廓颜色与字体族，无宽度不产生视觉，与 shadcn 组件行为对齐。
  */
 @layer base {
   * {
     box-sizing: border-box;
+    @apply border-border outline-ring/50;
   }
 
   body {
@@ -152,6 +207,7 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+    @apply bg-background text-foreground;
   }
 
   a {
@@ -167,6 +223,9 @@
   button,
   a {
     -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    @apply font-sans;
   }
 }
 

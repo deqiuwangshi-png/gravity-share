@@ -141,9 +141,9 @@ export function CommentSection({
                     className="min-h-10 resize-y border-0 bg-transparent px-[2px] py-1 text-[13px] leading-[1.6] text-foreground outline-none placeholder:text-soft [font:inherit]"
                   />
                   <div className="flex justify-end gap-2">
-                    <Button variant="secondary" size="sm" onClick={() => setReplyTo(null)}>取消</Button>
+                    <Button variant="outline" size="sm" onClick={() => setReplyTo(null)}>取消</Button>
                     <Button
-                      variant="primary"
+                      variant="default"
                       size="sm"
                       disabled={!replyText.trim() || sendingReply}
                       onClick={() => void sendReply()}

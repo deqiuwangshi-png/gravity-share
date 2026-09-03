@@ -113,7 +113,6 @@ Supabase（Postgres RLS + Storage）—— 通过 lib/supabase 双客户端
 | 范围 | 状态 | 说明 |
 |---|---|---|
 
-| 发布标注移除 + 定价区下线（2026-08-31） | ✅ | 发布页删除「包含推广/我的原创」两个可选标注（新帖统一 post_type=share，存量机会/来源标识保留渲染，库 015 不动）；落地页定价三卡整体下线，改为免费口径文案（「目前完全免费，未来付费会提前公告」），pricing.css 与 PRICING_TIERS 一并删除 |
 | 内容头三点菜单右对齐修复（2026-09-03） | ✅ | 缺陷成因：P2-详情页批次（09-02）把推右逻辑写成容器任意变体 `[&>.comment-menu]:ml-auto`，而后续 P-菜单批次把 PostMenu 根元素原子化为 `relative shrink-0` 时丢掉了 `comment-menu` 钩子类名 → 选择器永不命中，菜单紧邻姓名未贴右边缘（5 处均失效：square-post-view / comment-section×2 / profile-square-post / profile-comment）。**方案 A（用户拍板）**：取消隔空钩子，改 PostMenu 根元素内置 `ml-auto`（5 处调用均为「头像 / 姓名+时间 / 菜单」同构布局，无例外），5 处失效选择器删除；不做光学负边距（用户选择保持现状，按钮 26px 热区完整）。零新依赖 |
 
 | 规模化前置（CSP / 分页缓存 / 迁移 CLI 等） | 🔜 待办 | 触发条件与方案见 `docs/SYSTEM-ARCHITECTURE.md` §七；迁移 CLI 经用户决策改用手动复制 |

@@ -9,6 +9,9 @@ import { verifyCurrentPassword } from "@/lib/queries-misc";
 import { FEISHU_FEEDBACK_URL } from "@/lib/config";
 import { useToast } from "@/components/app/common/toast";
 import { AccountActionModal } from "@/components/app/common/account-action-modal";
+import { Input } from "@/components/ui/input";
+import { FieldRow } from "@/components/ui/field-row";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DevicesPanel } from "./devices-panel";
 import { VerifyPanel } from "./verify-panel";
 
@@ -25,12 +28,9 @@ const NAV_ITEMS = [
 
 /* 2026-09-02 迁移：settings-* 原子类化（原 styles/app/settings.css；profile-edit-modal 行控件同款就地） */
 const groupClass = "mt-5 mb-1.5 text-xs font-semibold text-soft first:mt-2";
-const rowClass = "flex min-h-[56px] items-center justify-between gap-4 border-b border-line py-4 last:border-0";
-const rowClassPlain = "flex min-h-[56px] items-center justify-between gap-4 py-4";
-const rowLabelClass = "text-[13px] text-foreground";
+/* 行骨架常量（rowClass/rowClassPlain/rowLabelClass/errClass）2026-09-03 P3 收编 ui/field-row；以下为 settings 特有语义常量 */
 const rowValueClass = "ml-auto text-[13px] text-muted";
 const rowActionClass = "shrink-0 cursor-pointer border-0 bg-transparent text-[13px] font-medium text-primary [font:inherit]";
-const errClass = "-mt-1 mb-2.5 text-xs text-error";
 /* 敏感操作弹窗内裸 input（原 account-action.css .account-action-body input；聚焦光晕由 decor 承载） */
 const aaInputClass =
   "h-[42px] w-full rounded-[var(--radius-control)] border border-line bg-surface px-[14px] text-[14px] text-foreground outline-none focus:border-primary";
@@ -48,8 +48,7 @@ function SettingRow({
   onAction?: () => void;
 }) {
   return (
-    <div className={rowClass}>
-      <span className={rowLabelClass}>{label}</span>
+    <FieldRow label={label}>
       {value && <span className={rowValueClass}>{value}</span>}
       {action && (
         <button
@@ -61,7 +60,7 @@ function SettingRow({
           {action}
         </button>
       )}
-    </div>
+    </FieldRow>
   );
 }
 
@@ -152,13 +151,7 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
     });
   }, []);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  /* Esc 关闭（2026-09-03 P1：手写 document keydown effect 删除——Radix Dialog 内置 Esc → onOpenChange，见下方 Dialog） */
 
   function closeModal() {
     setModal(null);
@@ -292,11 +285,18 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
   }
 
   return (
-    /* 遮罩壳（app-modal 提供居中/背景，settings-overlay 浅色背景覆盖见 decor.css） */
-    <div className="app-modal settings-overlay" onClick={onClose}>
-      <div
-        className="grid h-[480px] w-[760px] grid-cols-[220px_minmax(0,1fr)] overflow-hidden rounded-2xl bg-surface shadow-panel max-[640px]:grid-cols-1"
-        onClick={(event) => event.stopPropagation()}
+    /* Dialog 壳（2026-09-03 P1 重构）：自研遮罩 + 手写 Esc → Radix Dialog 组合；
+     * settings-overlay 浅色遮罩（decor.css 未分层 .18）经 overlayClassName 覆盖 Dialog 默认 .38；
+     * Esc / 点遮罩关闭由 Radix 托管；嵌套的 AccountActionModal 为独立 Dialog（React 树内嵌套 Root） */
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        overlayClassName="settings-overlay"
+        className="grid h-[480px] w-[min(760px,calc(100%-2rem))] grid-cols-[220px_minmax(0,1fr)] overflow-hidden rounded-2xl bg-surface shadow-panel max-[640px]:grid-cols-1"
       >
         <aside className="flex flex-col gap-1 border-r border-line bg-raised p-[28px_24px] max-[640px]:flex-row max-[640px]:overflow-x-auto max-[640px]:border-r-0 max-[640px]:border-b max-[640px]:border-line max-[640px]:p-[12px_14px]">
           {NAV_ITEMS.map(([label, id]) => (
@@ -312,8 +312,10 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
         </aside>
         <section className="flex min-h-0 min-w-0 flex-col">
           <header className="flex items-center justify-between border-b border-line p-[28px_32px]">
-            <h2 className="m-0 text-[16px]">{NAV_ITEMS.find(([, id]) => id === tab)![0]}</h2>
-            <button type="button" className="cursor-pointer border-0 bg-transparent p-1 text-[18px] text-soft" onClick={onClose} aria-label="关闭">×</button>
+            <DialogTitle asChild><h2 className="m-0 text-[16px]">{NAV_ITEMS.find(([, id]) => id === tab)![0]}</h2></DialogTitle>
+            <DialogClose asChild>
+              <button type="button" className="cursor-pointer border-0 bg-transparent p-1 text-[18px] text-soft" aria-label="关闭">×</button>
+            </DialogClose>
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto p-[8px_32px_32px]">
             {tab === "settings" && (
@@ -322,10 +324,9 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
                 <SettingRow label="邮箱" value={email || "未设置"} action="修改" onAction={() => setModal("email")} />
                 {editing === "bio" ? (
                   <div className="border-b border-line">
-                    <div className={rowClassPlain}>
-                      <span className={rowLabelClass}>简介</span>
-                      <input
-                        className="ml-auto max-w-[220px] min-w-0 flex-1 rounded-lg border border-line bg-surface p-[7px_10px] text-[13px] text-foreground outline-none focus:border-line-primary [font:inherit]"
+                    <FieldRow divided={false} label="简介" error={error}>
+                      <Input
+                        className="ml-auto max-w-[220px] min-w-0 flex-1"
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}
                         onKeyDown={(event) => {
@@ -341,8 +342,7 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
                           {saving ? "保存中…" : "保存"}
                         </button>
                       </div>
-                    </div>
-                    {error && <p className={errClass}>{error}</p>}
+                    </FieldRow>
                   </div>
                 ) : (
                   <SettingRow label="简介" value={bio || "未填写"} action="编辑" onAction={() => startEdit("bio")} />
@@ -354,10 +354,9 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
               <>
                 <h3 className={groupClass}>账户安全</h3>
                 <SettingRow label="修改密码" value="输入当前密码直接修改" action="修改" onAction={() => setModal("password")} />
-                <div className={rowClass}>
-                  <span className={`${rowLabelClass} text-error`}>永久删除账号</span>
+                <FieldRow label="永久删除账号" labelClassName="text-error">
                   <button type="button" className={`${rowActionClass} text-error`} onClick={() => setModal("delete")}>删除</button>
-                </div>
+                </FieldRow>
               </>
             )}
             {tab === "devices" && (
@@ -371,10 +370,9 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
                 <SettingRow label="如何开始使用引力？" action="查看" />
                 <SettingRow label="引力和原平台是什么关系？" action="查看" />
                 <SettingRow label="有收费计划吗？" action="查看" />
-                <div className={rowClass}>
-                  <span className={rowLabelClass}>查看完整帮助</span>
+                <FieldRow label="查看完整帮助">
                   <Link className={rowActionClass} href="/help">前往</Link>
-                </div>
+                </FieldRow>
                 <div className="mt-5 grid gap-3">
                   <h3 className="m-0 text-[13px]">反馈意见</h3>
                   <p className="m-0 text-xs leading-[1.7] text-soft">遇到问题或有建议？通过飞书表单告诉我们，我们会尽快处理。</p>
@@ -391,7 +389,7 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
             )}
           </div>
         </section>
-      </div>
+      </DialogContent>
 
       {/* 敏感操作统一弹窗（2026-08-29）：同一套壳 + re-auth，视觉流程一致 */}
       {modal === "password" && (
@@ -439,6 +437,6 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
           <label className="grid gap-1.5"><span className="text-xs font-semibold text-muted">当前密码</span><PwdInput value={deletePassword} onChange={setDeletePassword} placeholder="验证身份" autoComplete="current-password" /></label>
         </AccountActionModal>
       )}
-    </div>
+    </Dialog>
   );
 }

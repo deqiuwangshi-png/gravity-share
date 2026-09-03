@@ -19,6 +19,7 @@ import { AuthorBadge } from "@/components/app/common/author-badge";
 import { createClient } from "@/lib/supabase/client";
 import { removeImage, safeCoverUrl, uploadImage, validateImage } from "@/lib/storage";
 import { SITE_INFO } from "@/lib/config";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SQUARE_UPDATED_EVENT } from "@/lib/events";
 import { fetchCommentsByAuthor } from "@/lib/queries-comments";
 import { fetchSquarePostsByAuthor } from "@/lib/queries-posts";
@@ -211,11 +212,11 @@ export default function ProfileView({
         <div className="pt-1">
           {tab === "推荐" && (myPosts.length > 0
             ? myPosts.map((item) => <ProfileSquarePost post={item} key={item.id} isSelf={isSelf} onChanged={load} />)
-            : <p className="px-[18px] py-10 text-center text-[13px] text-soft">还没有发布内容，点右上角「+ 发布」分享好东西。</p>)}
+            : <EmptyState className="px-[18px] py-10">还没有发布内容，点右上角「+ 发布」分享好东西。</EmptyState>)}
 
           {tab === "评论" && (myComments.length > 0
             ? myComments.map((comment) => <ProfileComment comment={comment} key={comment.id} onChanged={load} />)
-            : <p className="px-[18px] py-10 text-center text-[13px] text-soft">还没有发表过评论。</p>)}
+            : <EmptyState className="px-[18px] py-10">还没有发表过评论。</EmptyState>)}
         </div>
       </div>
 

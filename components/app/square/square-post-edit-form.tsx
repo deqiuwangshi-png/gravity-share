@@ -151,10 +151,10 @@ export function SquarePostEditForm({
       {error && <p className="m-0 text-[12px] text-error" role="alert">{error}</p>}
 
       <div className="flex justify-end gap-2">
-        <Button variant="secondary" size="sm" onClick={handleCancel}>取消</Button>
+        <Button variant="outline" size="sm" onClick={handleCancel}>取消</Button>
         <Button
           type="submit"
-          variant="primary"
+          variant="default"
           size="sm"
           disabled={busy || !content.replace(/<[^>]*>/g, "").trim()}
         >{busy ? "保存中…" : "保存"}</Button>

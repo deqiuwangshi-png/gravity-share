@@ -26,7 +26,7 @@ import { sanitizeHtml } from "@/lib/rich-content";
 import { RichEditor } from "@/components/app/common/rich-editor";
 import { removeImage } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 /* A2 修复（2026-08-23）：post_type 由 SQUARE_POST_TYPES 枚举驱动（与迁移 015 CHECK 同源），不再写死字面量；
  * 2026-08-31 移除可选标注后新帖恒为 PT_SHARE（存量 opportunity/content 帖保留渲染） */
@@ -97,14 +97,8 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
     onClose();
   }
 
-  /* Esc = 明确取消意图，但同样过 dirty 守卫（无依赖数组：每次渲染重绑，保证监听器拿到最新 attemptClose/dirty） */
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") attemptClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  });
+  /* Esc / 点遮罩 = 明确取消意图，同样过 dirty 守卫（2026-09-03 P1：原手写 document keydown
+   * effect 删除——Radix Dialog 内置 Esc → onOpenChange(false) → attemptClose，见下方 Dialog 绑定） */
 
   /* 两个标注已移除（2026-08-31）：发布性质恒为普通分享，无互斥切换逻辑 */
 
@@ -182,22 +176,21 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    /* 遮罩关闭（2026-09-02 修复）：onMouseDown + 目标自检——只有按下瞬间光标落在遮罩本体才算「点外部关闭」；
-     * 编辑器内拖选文字滑出到遮罩松手的 click（派发到共同祖先）不再触发关闭（onClick 冒泡式会误关） */
-    <div
-      className="app-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="publish-title"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) attemptClose();
+    /* Dialog 壳（2026-09-03 P1 重构）：自研遮罩 + onMouseDown 自检 + 手写 Esc → Radix Dialog 组合
+     * Esc / 点遮罩统一走 onOpenChange(false) → attemptClose（dirty 守卫）；点遮罩判定按 pointerdown
+     * 是否落在面板外（Radix onPointerDownOutside）——编辑器内按下拖出松手不误关，语义等价原目标自检 */
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) attemptClose();
       }}
     >
-      {/* 面板壳：modal-box 宿主类仅承载 decor 阴影（0 30px 80px rgba(0,0,0,.15)，非令牌收容）；relative 为放弃确认覆盖层提供包含块（原 publish-box） */}
-      <div className="modal-box relative w-[min(560px,100%)] min-w-0 rounded-card bg-surface p-7">
+      {/* 面板：modal-box 宿主类仅承载 decor 阴影（0 30px 80px rgba(0,0,0,.15)，非令牌收容）；
+          固定定位的 DialogContent 即 confirmClose 覆盖层（absolute inset-0）的包含块（原面板 relative） */}
+      <DialogContent className="modal-box w-[min(560px,calc(100%-2rem))] min-w-0 max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-card bg-surface p-7">
         <div className="mb-[25px] flex items-center justify-between">
-          <h2 id="publish-title" className="m-0 text-[20px]">发布</h2>
-          <IconButton label="关闭" onClick={attemptClose} className="size-8"><X size={16} /></IconButton>
+          <DialogTitle className="m-0 text-[20px]">发布</DialogTitle>
+          <Button variant="ghost" size="icon" aria-label="关闭" onClick={attemptClose} className="rounded-lg bg-hover text-muted"><X size={16} /></Button>
         </div>
 
         <form className="grid grid-cols-[minmax(0,1fr)] gap-[18px]" onSubmit={handleSubmit}>
@@ -232,7 +225,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
             {submitError && <p className="-mt-[6px] mb-[10px] text-[12px] text-error" role="alert">{submitError}</p>}
             <Button
               type="submit"
-              variant="primary"
+              variant="default"
               size="lg"
               className="h-[46px]"
               disabled={submitting}
@@ -263,7 +256,7 @@ export default function PublishModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

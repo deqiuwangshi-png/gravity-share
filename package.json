@@ -14,7 +14,6 @@
     "check": "eslint && pnpm test && node scripts/check-styles.mjs && knip && pnpm typecheck"
   },
   "dependencies": {
-    "@floating-ui/react": "^0.27.20",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "@tiptap/extension-image": "^3.30.5",
@@ -23,11 +22,17 @@
     "@tiptap/react": "^3.30.5",
     "@tiptap/starter-kit": "^3.30.5",
     "@waffo/pancake-ts": "^0.19.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "lucide-react": "^1.33.0",
     "next": "16.3.1",
+    "radix-ui": "^1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "sanitize-html": "^2.17.7"
+    "sanitize-html": "^2.17.7",
+    "shadcn": "^4.19.1",
+    "tailwind-merge": "^3.6.0",
+    "tw-animate-css": "^1.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

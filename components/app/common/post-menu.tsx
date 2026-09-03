@@ -7,17 +7,25 @@
  * 删除：按 targetType 删对应表（RLS 作者校验），成功后可联动清理配图（imagePath），
  * 再回调 onDeleted（页面跳转 / 列表刷新）；否则 router.refresh()
  * shareUrl 可选：评论等场景缺省取当前页 URL（server 组件调用无需传 window）
- * 定位（2026-09-03）：接 @floating-ui/react，bottom-end + flip/shift/size 自动避让视口边界
- * （绝对定位、不挂 Portal，菜单仍为按钮容器子节点，点击外部/Esc 关闭逻辑不受影响）
+ * 定位（2026-09-03 P2）：改接 shadcn DropdownMenu（Radix）——删 @floating-ui/react + 手工点外/Esc
+ * 监听 + 容器子节点浮层；Portal 挂 body 脱离卡片 overflow/transform 裁剪；视口避让/键盘导航/互斥关闭
+ * 由 Radix 接管。三态内容（主面板 / 删除确认 / 举报原因）用受控 open + view 状态 1:1 复刻：
+ * 需保持菜单开启的项（切 view / 异步提交中显示 busy）onSelect preventDefault（Radix 默认 select 即关
+ * 闭菜单），关闭型项不 prevent（select 自动关 + 受控 onOpenChange 复位 view）
  */
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { removeImage } from "@/lib/storage";
 import { MoreHorizontal } from "lucide-react";
-import { useFloating, autoUpdate, offset, flip, shift, size } from "@floating-ui/react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "./toast";
 
 /** 举报原因（与 /guidelines 红线、/enforcement 专项对齐；举报时必选） */
@@ -34,6 +42,9 @@ const MENU_ITEM_DANGER_CLASS =
 function makeReportId(): string {
   return `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
+
+/** 菜单视图（三态内容切换；关闭时经 onOpenChange 复位 main，卸载即重置） */
+type MenuView = "main" | "confirm-delete" | "report";
 
 export function PostMenu({
   targetType,
@@ -64,73 +75,10 @@ export function PostMenu({
   onDeleted?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const [reporting, setReporting] = useState(false);
+  const [view, setView] = useState<MenuView>("main");
   const [busy, setBusy] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { show } = useToast();
-  /* 浮层避让（2026-09-03）：placement bottom-end = 右对齐触发器 + 向下展开（等价原 right-0/top-full 观感）；
-     空间不足时 flip 翻到上方、shift 左右位移贴边、size 限高滚动，菜单不再被视口裁切。
-     strategy 用 absolute 且不挂 Portal：菜单仍是按钮容器的 DOM 子节点，
-     点击外部关闭（ref.current.contains）与 Esc 关闭逻辑保持零改动 */
-  const { refs: floatingRefs, floatingStyles } = useFloating({
-    open,
-    placement: "bottom-end",
-    strategy: "absolute",
-    middleware: [
-      offset(4),
-      flip({ padding: 8 }),
-      shift({ padding: 8 }),
-      size({
-        padding: 8,
-        apply({ availableHeight, elements }) {
-          elements.floating.style.maxHeight = `${Math.max(availableHeight, 140)}px`;
-        },
-      }),
-    ],
-    whileElementsMounted: autoUpdate,
-  });
-  /* 必须把 setter 解构成局部变量再传给 JSX ref，不能直接写 floatingRefs.setX：
-     React Compiler 对 JSX ref 属性有类型方程「传入值形如 useRef 返回值」，
-     于是 refs.setX 这种属性读取会被反向推断成「渲染期读取 ref 值」而报 react-hooks/refs。
-     走 Destructure 分支则不命中，属编译器已知误报（facebook/react#34775） */
-  const { setReference, setFloating } = floatingRefs;
-
-  /* 点击外部 / Esc 关闭菜单 */
-  useEffect(() => {
-    if (!open) return;
-    function onDown(event: MouseEvent) {
-      if (!ref.current?.contains(event.target as Node)) {
-        setOpen(false);
-        setConfirming(false);
-        setReporting(false);
-      }
-    }
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        setConfirming(false);
-        setReporting(false);
-      }
-    }
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  function toggle() {
-    setOpen((prev) => {
-      if (prev) {
-        setConfirming(false);
-        setReporting(false);
-      }
-      return !prev;
-    });
-  }
 
   async function onDelete() {
     if (busy) return;
@@ -142,7 +90,6 @@ export function PostMenu({
     const { error } = await createClient().from(TABLE[targetType]).delete().eq("id", targetId);
     setBusy(false);
     setOpen(false);
-    setConfirming(false);
     if (error) {
       show("删除失败，请重试", "danger");
       return;
@@ -192,13 +139,11 @@ export function PostMenu({
       show("举报失败，请重试", "danger");
     } finally {
       setBusy(false);
-      setReporting(false);
       setOpen(false);
     }
   }
 
   async function copy() {
-    setOpen(false);
     try {
       await navigator.clipboard.writeText(content);
       show("已复制");
@@ -208,7 +153,6 @@ export function PostMenu({
   }
 
   async function onShare() {
-    setOpen(false);
     const url = shareUrl ?? (typeof window !== "undefined" ? window.location.href : "");
     if (navigator.share) {
       try {
@@ -227,87 +171,116 @@ export function PostMenu({
   }
 
   return (
-    /* ml-auto：内容头「头像 / 姓名+时间 / 菜单」两端对齐，菜单贴容器右边缘（2026-09-03 修复）
-       原依赖调用方任意变体 [&>.comment-menu]:ml-auto，因组件根元素无该类名而从未生效 */
-    <div className="relative ml-auto shrink-0" ref={ref}>
-      <button
-        type="button"
-        ref={setReference}
-        className="inline-flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-soft transition-[background-color,color] duration-[180ms] hover:bg-hover hover:text-foreground"
-        aria-label={targetType === "comment" ? "评论操作" : "内容操作"}
-        aria-expanded={open}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          toggle();
-        }}
-      >
-        <MoreHorizontal size={16} />
-      </button>
-
-      {open && (
-        <div
-          ref={setFloating}
-          style={floatingStyles}
-          className="z-30 grid min-w-[108px] overflow-y-auto rounded-[10px] border border-line bg-surface p-[5px] shadow-panel"
-          role="menu"
+    /* DropdownMenu 不渲染根 DOM：ml-auto/shrink-0 移到 Trigger 按钮（原根 div 承载的两端对齐语义） */
+    <DropdownMenu
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setView("main");
+      }}
+    >
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="ml-auto inline-flex h-[26px] w-[26px] shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-soft transition-[background-color,color] duration-[180ms] hover:bg-hover hover:text-foreground"
+          aria-label={targetType === "comment" ? "评论操作" : "内容操作"}
+          onClick={(event) => {
+            /* 内容卡片整卡可点（跳详情）：阻止冒泡；展开/收起由 Radix Trigger 接管 */
+            event.preventDefault();
+            event.stopPropagation();
+          }}
         >
-          {confirming ? (
-            <>
-              <div className="px-3 pb-[2px] pt-2 text-[12px] text-muted">{targetType === "comment" ? "确定删除这条评论？" : "确定删除这条内容？"}</div>
-              <button
-                type="button"
-                role="menuitem"
-                className={MENU_ITEM_DANGER_CLASS}
+          <MoreHorizontal size={16} />
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="min-w-[108px] rounded-[10px] p-[5px] shadow-panel">
+        {view === "confirm-delete" ? (
+          <>
+            <div className="px-3 pb-[2px] pt-2 text-[12px] text-muted">
+              {targetType === "comment" ? "确定删除这条评论？" : "确定删除这条内容？"}
+            </div>
+            <DropdownMenuItem
+              className={MENU_ITEM_DANGER_CLASS}
+              disabled={busy}
+              onSelect={(event) => {
+                /* 保持菜单开启以显示「删除中…」；成功后手动关 */
+                event.preventDefault();
+                void onDelete();
+              }}
+            >
+              {busy ? "删除中…" : "删除"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className={MENU_ITEM_CLASS}
+              onSelect={(event) => {
+                event.preventDefault();
+                setView("main");
+              }}
+            >
+              取消
+            </DropdownMenuItem>
+          </>
+        ) : isOwner ? (
+          <>
+            <DropdownMenuItem
+              className={MENU_ITEM_CLASS}
+              onSelect={(event) => {
+                event.preventDefault();
+                setView("confirm-delete");
+              }}
+            >
+              删除
+            </DropdownMenuItem>
+            <DropdownMenuItem className={MENU_ITEM_CLASS} onSelect={() => onEdit?.()}>
+              修改
+            </DropdownMenuItem>
+          </>
+        ) : view === "report" ? (
+          <>
+            <div className="px-3 pb-[2px] pt-2 text-[12px] text-muted">选择举报原因</div>
+            {REPORT_REASONS.map((reason) => (
+              <DropdownMenuItem
+                key={reason}
+                className={MENU_ITEM_CLASS}
                 disabled={busy}
-                onClick={(event) => { event.preventDefault(); event.stopPropagation(); void onDelete(); }}
-              >{busy ? "删除中…" : "删除"}</button>
-              <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setConfirming(false); }}>
-                取消
-              </button>
-            </>
-          ) : isOwner ? (
-            <>
-              {/* 投放入口（2026-08-31 内容投流暂未开放，已摘除；恢复时在此还原按钮，跳 /boost?post=<id> 预选本帖） */}
-              <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setConfirming(true); }}>
-                删除
-              </button>
-              <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpen(false); onEdit?.(); }}>
-                修改
-              </button>
-            </>
-          ) : reporting ? (
-            <>
-              <div className="px-3 pb-[2px] pt-2 text-[12px] text-muted">选择举报原因</div>
-              {REPORT_REASONS.map((reason) => (
-                <button
-                  key={reason}
-                  type="button"
-                  role="menuitem"
-                  className={MENU_ITEM_CLASS}
-                  disabled={busy}
-                  onClick={(event) => { event.preventDefault(); event.stopPropagation(); void submitReport(reason); }}
-                >
-                  {reason}
-                </button>
-              ))}
-              <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setReporting(false); }}>
-                取消
-              </button>
-            </>
-          ) : (
-            <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setReporting(true); }}>
-              举报
-            </button>
-          )}
-          <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); void copy(); }}>
-            复制
-          </button>
-          <button type="button" role="menuitem" className={MENU_ITEM_CLASS} onClick={(event) => { event.preventDefault(); event.stopPropagation(); void onShare(); }}>
-            分享
-          </button>
-        </div>
-      )}
-    </div>
+                onSelect={(event) => {
+                  /* 保持菜单开启以显示提交中 busy；成功后 finally 手动关 */
+                  event.preventDefault();
+                  void submitReport(reason);
+                }}
+              >
+                {reason}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuItem
+              className={MENU_ITEM_CLASS}
+              onSelect={(event) => {
+                event.preventDefault();
+                setView("main");
+              }}
+            >
+              取消
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <DropdownMenuItem
+            className={MENU_ITEM_CLASS}
+            onSelect={(event) => {
+              event.preventDefault();
+              setView("report");
+            }}
+          >
+            举报
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem className={MENU_ITEM_CLASS} onSelect={() => void copy()}>
+          复制
+        </DropdownMenuItem>
+        <DropdownMenuItem className={MENU_ITEM_CLASS} onSelect={() => void onShare()}>
+          分享
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
