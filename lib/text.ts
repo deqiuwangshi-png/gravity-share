@@ -18,19 +18,29 @@ export function safeName(name: string | null | undefined): string {
   return (name ?? "").trim() || "引力推荐";
 }
 
-/** 富文本 HTML → 纯文本（列表卡片截断预览用；标签替换为空格避免词粘连，实体解码最小集） */
-export function stripHtml(html: string): string {
-  return html
-    .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
+/** HTML 实体解码最小集（stripHtml 与 richTextToPlainText 共用唯一源，2026-09-03 C 复制内容抽取） */
+export function decodeHtmlEntities(text: string): string {
+  return text
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/&apos;/g, "'");
+}
+
+/** 富文本 HTML → 纯文本（列表卡片截断预览用；标签替换为空格避免词粘连）
+ * ⚠ 语义 = 「压空格折叠」，仅卡片预览/SEO 摘要场景；复制内容的保结构转换见 lib/content-text.ts richTextToPlainText */
+export function stripHtml(html: string): string {
+  /* 顺序不可调换：先剥标签后解码——字面 &lt;tag&gt; 若先解码成 <tag> 会被标签正则误剥（text.test.ts 已覆盖） */
+  return decodeHtmlEntities(
+    html
+      .replace(/<br\s*\/?>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
 }
 
 /** 相对时间（库 created_at → 展示文案：刚刚 / X 分钟前 / X 小时前 / X 天前 / 日期）

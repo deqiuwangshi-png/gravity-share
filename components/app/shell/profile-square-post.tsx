@@ -43,6 +43,8 @@ export function ProfileSquarePost({
           targetId={post.id}
           isOwner={isSelf}
           content={post.content}
+          title={post.title}
+          url={post.url}
           shareUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/square/${post.id}`}
           imagePath={post.imageUrl}
           galleryPaths={post.gallery}

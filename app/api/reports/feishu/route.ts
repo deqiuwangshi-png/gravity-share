@@ -2,26 +2,27 @@
  * 举报同步到飞书多维表格（POST /api/reports/feishu）
  * 流程：校验登录 → 24h 同目标去重（防滥用）→ 飞书 tenant_access_token → 多维表格建记录
  * 约定：飞书 = 运营处理工作台；DB reports 表 = 原始留档（状态回写待管理后台统一做）
+ * 「其他」原因附补充说明（detail，≤500 字）→ 飞书表需含「补充说明」列；表未加列时该条同步失败（502 静默降级，
+ * 不影响举报写库主流程）
  * 凭证（环境变量，仅服务端）：FEISHU_APP_ID / FEISHU_APP_SECRET / FEISHU_BITABLE_APP_TOKEN / FEISHU_BITABLE_TABLE_ID
- * 优雅降级：凭证缺失或飞书不可达时返回 501，不影响举报写库主流程（前端静默）
+ * 优雅降级：凭证缺失或飞书不可达时返回 501/502，不影响举报写库主流程（前端静默）
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertSameOrigin } from "@/lib/origin-guard";
-
-/** 举报原因枚举（与 /guidelines 红线、/enforcement 专项对齐） */
-const REPORT_REASONS = ["违法内容", "侵权内容", "广告推广", "骚扰攻击", "虚假信息", "其他"] as const;
+import { REPORT_REASONS, REPORT_DETAIL_MAX, makeReportId } from "@/lib/reports";
 
 /** 同目标去重窗口（毫秒） */
 const DEDUP_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-/** 飞书多维表格列名（用户建表时对齐；处置备注列留空由运营填写） */
+/** 飞书多维表格列名（用户建表时对齐；处置备注列留空由运营填写；补充说明列仅在 detail 非空时写入） */
 const BITABLE_FIELDS = {
   reportId: "举报ID",
   targetType: "内容类型",
   targetId: "内容ID",
   reason: "原因",
+  detail: "补充说明",
   reporter: "举报人",
   time: "举报时间",
   status: "状态",
@@ -72,13 +73,13 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   /* 2. 入参校验 */
-  let body: { targetType?: unknown; targetId?: unknown; reason?: unknown };
+  let body: { targetType?: unknown; targetId?: unknown; reason?: unknown; detail?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
-  const { targetType, targetId, reason } = body;
+  const { targetType, targetId, reason, detail } = body;
   if (
     (targetType !== "square" && targetType !== "comment") ||
     typeof targetId !== "string" ||
@@ -88,6 +89,10 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
+
+  /* 补充说明：「其他」原因时透传（trim + 截断），其余原因忽略（前端写库同规则） */
+  const reportDetail =
+    reason === "其他" && typeof detail === "string" ? detail.trim().slice(0, REPORT_DETAIL_MAX) : "";
 
   /* 3. 目标存在性校验（R2 2026-09-02：防伪造 targetId 制造运营垃圾 / 污染 24h 去重窗口） */
   const admin = createAdminClient();
@@ -124,8 +129,8 @@ export async function POST(request: Request) {
   /* 6. 同步到飞书多维表格（失败不抛给前端：举报主流程已完成） */
   try {
     const token = await feishuToken(appId, appSecret);
-    await feishuAppendRecord(token, appToken, tableId, {
-      [BITABLE_FIELDS.reportId]: `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    const fields: Record<string, string> = {
+      [BITABLE_FIELDS.reportId]: makeReportId(),
       [BITABLE_FIELDS.targetType]: targetType === "square" ? "帖子" : "评论",
       [BITABLE_FIELDS.targetId]: targetId,
       [BITABLE_FIELDS.reason]: reason,
@@ -133,7 +138,10 @@ export async function POST(request: Request) {
       [BITABLE_FIELDS.time]: new Date().toLocaleString("zh-CN", { hour12: false }),
       [BITABLE_FIELDS.status]: "待处理",
       [BITABLE_FIELDS.note]: "",
-    });
+    };
+    /* 补充说明非空才带列：飞书表需含「补充说明」列，未加列则该条同步失败 → 502 静默降级 */
+    if (reportDetail) fields[BITABLE_FIELDS.detail] = reportDetail;
+    await feishuAppendRecord(token, appToken, tableId, fields);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "feishu_sync_failed" }, { status: 502 });

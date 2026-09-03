@@ -60,6 +60,8 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
           targetId={post.id}
           isOwner={isOwner}
           content={post.content}
+          title={post.title}
+          url={post.url}
           shareUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/square/${post.id}`}
           imagePath={post.imageUrl}
           galleryPaths={post.gallery}
