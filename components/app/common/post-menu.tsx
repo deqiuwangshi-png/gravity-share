@@ -7,6 +7,8 @@
  * 删除：按 targetType 删对应表（RLS 作者校验），成功后可联动清理配图（imagePath），
  * 再回调 onDeleted（页面跳转 / 列表刷新）；否则 router.refresh()
  * shareUrl 可选：评论等场景缺省取当前页 URL（server 组件调用无需传 window）
+ * 定位（2026-09-03）：接 @floating-ui/react，bottom-end + flip/shift/size 自动避让视口边界
+ * （绝对定位、不挂 Portal，菜单仍为按钮容器子节点，点击外部/Esc 关闭逻辑不受影响）
  */
 "use client";
 
@@ -15,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { removeImage } from "@/lib/storage";
 import { MoreHorizontal } from "lucide-react";
+import { useFloating, autoUpdate, offset, flip, shift, size } from "@floating-ui/react";
 import { useToast } from "./toast";
 
 /** 举报原因（与 /guidelines 红线、/enforcement 专项对齐；举报时必选） */
@@ -67,6 +70,32 @@ export function PostMenu({
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { show } = useToast();
+  /* 浮层避让（2026-09-03）：placement bottom-end = 右对齐触发器 + 向下展开（等价原 right-0/top-full 观感）；
+     空间不足时 flip 翻到上方、shift 左右位移贴边、size 限高滚动，菜单不再被视口裁切。
+     strategy 用 absolute 且不挂 Portal：菜单仍是按钮容器的 DOM 子节点，
+     点击外部关闭（ref.current.contains）与 Esc 关闭逻辑保持零改动 */
+  const { refs: floatingRefs, floatingStyles } = useFloating({
+    open,
+    placement: "bottom-end",
+    strategy: "absolute",
+    middleware: [
+      offset(4),
+      flip({ padding: 8 }),
+      shift({ padding: 8 }),
+      size({
+        padding: 8,
+        apply({ availableHeight, elements }) {
+          elements.floating.style.maxHeight = `${Math.max(availableHeight, 140)}px`;
+        },
+      }),
+    ],
+    whileElementsMounted: autoUpdate,
+  });
+  /* 必须把 setter 解构成局部变量再传给 JSX ref，不能直接写 floatingRefs.setX：
+     React Compiler 对 JSX ref 属性有类型方程「传入值形如 useRef 返回值」，
+     于是 refs.setX 这种属性读取会被反向推断成「渲染期读取 ref 值」而报 react-hooks/refs。
+     走 Destructure 分支则不命中，属编译器已知误报（facebook/react#34775） */
+  const { setReference, setFloating } = floatingRefs;
 
   /* 点击外部 / Esc 关闭菜单 */
   useEffect(() => {
@@ -203,6 +232,7 @@ export function PostMenu({
     <div className="relative ml-auto shrink-0" ref={ref}>
       <button
         type="button"
+        ref={setReference}
         className="inline-flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-soft transition-[background-color,color] duration-[180ms] hover:bg-hover hover:text-foreground"
         aria-label={targetType === "comment" ? "评论操作" : "内容操作"}
         aria-expanded={open}
@@ -216,7 +246,12 @@ export function PostMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+4px)] z-30 grid min-w-[108px] rounded-[10px] border border-line bg-surface p-[5px] shadow-panel" role="menu">
+        <div
+          ref={setFloating}
+          style={floatingStyles}
+          className="z-30 grid min-w-[108px] overflow-y-auto rounded-[10px] border border-line bg-surface p-[5px] shadow-panel"
+          role="menu"
+        >
           {confirming ? (
             <>
               <div className="px-3 pb-[2px] pt-2 text-[12px] text-muted">{targetType === "comment" ? "确定删除这条评论？" : "确定删除这条内容？"}</div>
