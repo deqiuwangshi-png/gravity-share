@@ -46,10 +46,10 @@ export const LANDING_CARDS = [
   },
   {
     type: "使用指南",
-    title: "帮助中心",
-    summary: "从发布到发现，三步上手引力，常见问题一页搞定。",
+    title: "常见问题",
+    summary: "从发布到发现，三步上手引力；入门与规则问题一页找到答案。",
     source: "引力团队",
-    link: "/help",
+    link: "/#faq",
   },
 ] as const;
 

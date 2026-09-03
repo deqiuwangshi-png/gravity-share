@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { User, Settings, HelpCircle, LogOut } from "lucide-react";
+import { User, Settings, MessageCircle, LogOut } from "lucide-react";
 import { AvatarBox } from "@/components/app/common/avatar-box";
+import { FEISHU_FEEDBACK_URL } from "@/lib/config";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,14 +16,12 @@ import {
 
 /**
  * 用户下拉菜单：纯头像触发（不显示昵称/邮箱，昵称见个人主页、邮箱见用户设置）
- * 菜单项：个人主页 / 用户设置 / 帮助与反馈 / 退出登录
+ * 菜单项：个人主页 / 用户设置 / 反馈意见（→ 飞书表单）/ 退出登录
  */
 export function UserMenu({
   onOpenSettings,
-  onOpenHelp,
 }: {
   onOpenSettings: () => void;
-  onOpenHelp: () => void;
 }) {
   const [initial, setInitial] = useState("U");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -109,8 +108,12 @@ export function UserMenu({
         <DropdownMenuItem className={itemClass} onSelect={onOpenSettings}>
           <span className={iconClass}><Settings size={13} /></span>用户设置
         </DropdownMenuItem>
-        <DropdownMenuItem className={itemClass} onSelect={onOpenHelp}>
-          <span className={iconClass}><HelpCircle size={13} /></span>帮助与反馈
+        {/* 2026-09-03 帮助与常见问题不占菜单位——官网落地页 #faq 已承接（/help 与设置 help tab 已删）
+            反馈意见常驻入口（外链飞书表单，新标签打开不离开 app） */}
+        <DropdownMenuItem asChild className={itemClass}>
+          <a href={FEISHU_FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
+            <span className={iconClass}><MessageCircle size={13} /></span>反馈意见
+          </a>
         </DropdownMenuItem>
         <div className="mx-[2px] my-[6px] h-px bg-line" />
         <DropdownMenuItem

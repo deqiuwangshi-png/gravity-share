@@ -38,7 +38,7 @@ export default function DisclaimerPage() {
 
       <section className="legal-section">
         <h2>六、联系我们</h2>
-        <p>如有疑问，欢迎通过帮助中心或站内反馈联系我们。相关文档：<Link href="/terms">用户协议</Link> · <Link href="/guidelines">引力社区规范</Link>。</p>
+        <p>如有疑问，欢迎通过官网常见问题或飞书反馈联系我们。相关文档：<Link href="/terms">用户协议</Link> · <Link href="/guidelines">引力社区规范</Link>。</p>
       </section>
     </LegalLayout>
   );

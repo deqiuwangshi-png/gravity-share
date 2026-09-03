@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LegalLayout } from "@/components/marketing/legal-layout";
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export default function AboutPage() {
       </section>
       <section className="legal-section">
         <h2>联系我们</h2>
-        <p>遇到问题，欢迎前往<a className="legal-link" href="/help">帮助中心</a>；或有任何想法，通过站内反馈告诉我们。</p>
+        <p>遇到问题，欢迎前往<Link className="legal-link" href="/#faq">常见问题</Link>；或有任何想法，通过飞书反馈表单告诉我们。</p>
       </section>
     </LegalLayout>
   );

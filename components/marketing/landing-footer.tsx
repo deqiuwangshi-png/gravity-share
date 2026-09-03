@@ -17,7 +17,7 @@ export function LandingFooter() {
         <nav aria-label="站点链接">
           <h3 className="mb-[14px] text-[13px] font-semibold text-foreground">服务</h3>
           <Link href="/about" className="block py-[5px] text-[13px] text-muted transition-colors duration-[180ms] hover:text-primary">关于引力</Link>
-          <Link href="/help" className="block py-[5px] text-[13px] text-muted transition-colors duration-[180ms] hover:text-primary">帮助中心</Link>
+          <Link href="/#faq" className="block py-[5px] text-[13px] text-muted transition-colors duration-[180ms] hover:text-primary">常见问题</Link>
         </nav>
         <nav aria-label="法律链接">
           <h3 className="mb-[14px] text-[13px] font-semibold text-foreground">法律</h3>

@@ -6,8 +6,8 @@ import { fetchProfileIds, fetchSquarePosts } from "@/lib/queries/posts";
 
 /**
  * sitemap.xml（2026-08-25 SEO 方案 M1）：
- * 静态页 9 + 分类页 12（SQUARE_CATEGORY_META 单一数据源）+ 动态页（square 最新 500 + profile 最新 500）
- * 注意：/discover/[id] 已 301 到 /square/[id]，只列目标 URL
+ * 静态页 8 + 分类页 12（SQUARE_CATEGORY_META 单一数据源）+ 动态页（square 最新 500 + profile 最新 500）
+ * 注意：/discover/[id] 已 301 到 /square/[id]，只列目标 URL；/help 已删（2026-09-03 FAQ 承接）
  */
 export const revalidate = 3600;
 
@@ -15,7 +15,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, changeFrequency: "weekly", priority: 1 },
     { url: `${SITE_URL}/about`, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${SITE_URL}/help`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${SITE_URL}/governance`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/guidelines`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/enforcement`, changeFrequency: "yearly", priority: 0.3 },

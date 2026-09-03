@@ -13,7 +13,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: [
         "/",
         "/about",
-        "/help",
         "/governance",
         "/guidelines",
         "/enforcement",

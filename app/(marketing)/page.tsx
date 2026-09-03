@@ -3,6 +3,8 @@ import { LandingHeader } from "@/components/marketing/landing-header";
 import { LandingHero } from "@/components/marketing/landing-hero";
 import { LandingFooter } from "@/components/marketing/landing-footer";
 import { LANDING_CARDS, MARKETING_CATEGORIES } from "@/lib/data";
+import { FEISHU_FEEDBACK_URL } from "@/lib/config";
+import type { ReactNode } from "react";
 
 const problems = [
   ["平台割裂", "内容分散在几十个平台，每个都要单独逛一遍"],
@@ -23,6 +25,25 @@ function SectionHead({ title, desc }: { title: string; desc: string }) {
       <h2 className="text-[30px] tracking-[-1px] max-[520px]:text-[26px]">{title}</h2>
       <p className="mt-[9px] text-sm text-muted">{desc}</p>
     </div>
+  );
+}
+
+/* FAQ 折叠项：原生 details 零 JS（2026-09-03 帮助与反馈/help 页 → 落地页常见问题承接）；open 首条默认展开 */
+function FaqItem({ q, open, children }: { q: string; open?: boolean; children: ReactNode }) {
+  return (
+    <details open={open} className="group border-b border-line">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-[15px] font-medium select-none [&::-webkit-details-marker]:hidden">
+        {q}
+        <svg
+          className="shrink-0 text-soft transition-transform duration-[180ms] group-open:rotate-180"
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </summary>
+      <p className="pb-[18px] text-sm leading-[1.8] text-muted">{children}</p>
+    </details>
   );
 }
 
@@ -129,7 +150,7 @@ export default function Home() {
           {/* 定价（2026-08-31：订阅/投流已下线 → 三卡移除，改为免费口径文案；
               未来付费能力上线前会提前公告并公示方案与价格） */}
           <div className="mb-7 flex items-end justify-between gap-5 max-[800px]:items-start">
-            <SectionHead title="目前完全免费，先放心用。" desc="本网站目前免费；未来如需付费功能（如展示位、会员），会提前公告并公示方案与价格。" />
+            <SectionHead title="目前完全免费，先放心用。" desc="本网站目前免费，不开放任何付费功能，也不出售排序或流量；未来若推出付费能力，会提前公告并公示方案与价格。" />
             <Link className="text-sm text-primary transition-colors duration-[180ms] hover:text-primary-dark" href="/register">加入引力 <span aria-hidden="true">→</span></Link>
           </div>
         </section>
@@ -140,23 +161,47 @@ export default function Home() {
           <p className="mx-auto max-w-[620px] leading-[1.8] text-muted">我们相信，真正有价值的内容不应该被平台和算法隔开。引力把发现和分享连接在一起，让每一个好东西都有机会抵达真正需要它的人。</p>
         </section>
 
-        <section className="container py-[75px]" id="help">
+        <section className="container py-[75px]" id="faq" aria-label="常见问题">
+          {/* 常见问题（2026-09-03 帮助与反馈承接区：原 3 静态卡 + /help 8 问并集去重 → 原生 details 折叠 7 条；
+              有收费计划吗 答案同步 terms 第四章口径，清除「展示位/会员」已删功能名残留） */}
           <div className="mb-7 flex items-end justify-between gap-5 max-[800px]:items-start">
-            <SectionHead title="常见问题" desc="还有什么想了解的？" />
+            <SectionHead title="常见问题" desc="从入门到规则，你关心的问题都在这里。" />
           </div>
-          <div className="grid grid-cols-3 gap-[18px] max-[800px]:grid-cols-1">
-            <div className="rounded-card border border-line bg-surface px-6 py-5">
-              <h3 className="mb-2 text-[15px]">引力和原平台是什么关系？</h3>
-              <p className="text-sm leading-[1.7] text-muted">引力只做展示与连接。内容在哪里发布、交易与交付，仍由原平台负责。</p>
-            </div>
-            <div className="rounded-card border border-line bg-surface px-6 py-5">
-              <h3 className="mb-2 text-[15px]">发布需要什么条件？</h3>
-              <p className="text-sm leading-[1.7] text-muted">注册后即可发布，提供一条链接和一段介绍就够了。</p>
-            </div>
-            <div className="rounded-card border border-line bg-surface px-6 py-5">
-              <h3 className="mb-2 text-[15px]">有收费计划吗？</h3>
-              <p className="text-sm leading-[1.7] text-muted">目前完全免费。未来如需付费功能（如展示位、会员），会提前公告并公示方案与价格。</p>
-            </div>
+          <div className="mx-auto max-w-[760px]">
+            <FaqItem q="如何开始使用引力？" open>
+              注册账号后即可开始：先在「广场」逛逛信息流；按分类或输入关键词，找到感兴趣的方向；点开内容查看详情；想分享时点「发布」，贴一条链接加一段介绍；最后在个人主页补齐昵称、头像、简介。全程免费。
+            </FaqItem>
+            <FaqItem q="引力和原平台是什么关系？">
+              引力是展示与连接的中间层。内容在哪里发布、交易与交付，仍由原平台负责；引力不介入交易、不代收代付，也不对任何发现承诺收益。
+            </FaqItem>
+            <FaqItem q="有收费计划吗？">
+              目前完全免费，没有开放任何付费功能，也不出售排序或流量。未来若推出付费能力，会提前公告并公示方案与价格。
+            </FaqItem>
+            <FaqItem q="发布需要什么条件？有什么限制？">
+              注册后即可发布，一条链接加一段介绍就够了。内容需合法、真实、不侵犯他人权益；商业推广需如实标注。具体边界见
+              <Link className="legal-link" href="/guidelines">《引力社区规范》</Link>。
+            </FaqItem>
+            <FaqItem q="如何发现感兴趣的内容？">
+              三个入口：按分类浏览主题页；在「广场」顶部输入关键词，会匹配标题、摘要、标签与作者；关注感兴趣的创作者，在关注流里看他们的新分享。
+            </FaqItem>
+            <FaqItem q="忘记密码或想修改资料怎么办？">
+              修改昵称、头像、简介：点右上角头像，进入「用户设置」。忘记密码：登录页选「忘记密码」，通过注册邮箱重置即可。
+            </FaqItem>
+            <FaqItem q="内容被举报或处置了怎么办？">
+              内容被举报或处置后，你会收到处置通知，可依
+              <Link className="legal-link" href="/enforcement">《举报与处罚细则》</Link>
+              提出申诉；想了解规则边界，可先读治理规则总纲。
+            </FaqItem>
+          </div>
+          <div className="mt-9 text-center">
+            <a
+              className="inline-block cursor-pointer text-sm font-medium text-primary transition-colors duration-[180ms] hover:text-primary-dark"
+              href={FEISHU_FEEDBACK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              没找到答案？通过飞书反馈告诉我们 <span aria-hidden="true">→</span>
+            </a>
           </div>
         </section>
 

@@ -17,7 +17,7 @@ export function LandingHeader() {
           <Link href="/" className="transition-colors duration-[180ms] hover:text-foreground">首页</Link>
           <Link href="#pricing" className="transition-colors duration-[180ms] hover:text-foreground">定价</Link>
           <Link href="/about" className="transition-colors duration-[180ms] hover:text-foreground">关于</Link>
-          <Link href="/help" className="transition-colors duration-[180ms] hover:text-foreground">帮助</Link>
+          <Link href="/#faq" className="transition-colors duration-[180ms] hover:text-foreground">常见问题</Link>
         </div>
         <div className="flex items-center gap-3 max-[520px]:gap-1">
           <Link

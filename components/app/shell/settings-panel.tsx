@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { FEISHU_FEEDBACK_URL } from "@/lib/config";
 import { updateUserProfile } from "@/lib/user-actions";
 import { Input } from "@/components/ui/input";
 import { FieldRow } from "@/components/ui/field-row";
@@ -12,15 +10,14 @@ import { DevicesPanel } from "./devices-panel";
 import { VerifyPanel } from "./verify-panel";
 import { PasswordDialog, EmailDialog, DeleteDialog } from "./account-action-dialogs";
 
-export type PanelId = "settings" | "security" | "devices" | "verify" | "help";
+export type PanelId = "settings" | "security" | "devices" | "verify";
 
-/** 双栏左侧导航（2026-08-23：账户安全/登录设备抽离为独立项；021 加官方认证） */
+/** 双栏左侧导航（2026-08-23：账户安全/登录设备抽离为独立项；021 加官方认证；2026-09-03 帮助与反馈 → 落地页 #faq 承接） */
 const NAV_ITEMS = [
   ["用户设置", "settings"],
   ["账户安全", "security"],
   ["登录设备", "devices"],
   ["官方认证", "verify"],
-  ["帮助与反馈", "help"],
 ] as const satisfies ReadonlyArray<readonly [string, PanelId]>;
 
 /* 2026-09-02 迁移：settings-* 原子类化（原 styles/app/settings.css；profile-edit-modal 行控件同款就地） */
@@ -207,28 +204,6 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
             )}
             {tab === "verify" && (
               <VerifyPanel />
-            )}
-            {tab === "help" && (
-              <>
-                <SettingRow label="如何开始使用引力？" action="查看" />
-                <SettingRow label="引力和原平台是什么关系？" action="查看" />
-                <SettingRow label="有收费计划吗？" action="查看" />
-                <FieldRow label="查看完整帮助">
-                  <Link className={rowActionClass} href="/help">前往</Link>
-                </FieldRow>
-                <div className="mt-5 grid gap-3">
-                  <h3 className="m-0 text-[13px]">反馈意见</h3>
-                  <p className="m-0 text-xs leading-[1.7] text-soft">遇到问题或有建议？通过飞书表单告诉我们，我们会尽快处理。</p>
-                  <a
-                    className="inline-flex h-[38px] items-center justify-center rounded-lg bg-primary text-[13px] font-semibold text-on-primary no-underline transition-[background-color] duration-[180ms] hover:bg-primary-dark hover:text-on-primary"
-                    href={FEISHU_FEEDBACK_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    前往提交反馈 →
-                  </a>
-                </div>
-              </>
             )}
           </div>
         </section>

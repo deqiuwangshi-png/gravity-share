@@ -81,7 +81,7 @@ export default function GovernancePage() {
 
       <section className="legal-section">
         <h2>五、反馈与帮助</h2>
-        <p>遇到违规内容，可通过帖子 / 评论的「举报」按钮或反馈表单告诉我们；对处置结果有异议，可通过申诉机制提出（<Link className="legal-link" href="/enforcement">细则 · 七</Link>）。更多使用问题见<Link className="legal-link" href="/help">帮助中心</Link>。</p>
+        <p>遇到违规内容，可通过帖子 / 评论的「举报」按钮或反馈表单告诉我们；对处置结果有异议，可通过申诉机制提出（<Link className="legal-link" href="/enforcement">细则 · 七</Link>）。更多使用问题见<Link className="legal-link" href="/#faq">官网常见问题</Link>。</p>
       </section>
     </LegalLayout>
   );

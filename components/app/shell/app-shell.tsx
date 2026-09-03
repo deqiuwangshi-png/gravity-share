@@ -105,7 +105,7 @@ export default function AppShell({ children }: Readonly<{ children: React.ReactN
             unread={hasUnread}
             onToggle={() => setNotifyOpen(!notifyOpen)}
           />
-          <UserMenu onOpenSettings={() => setPanel("settings")} onOpenHelp={() => setPanel("help")} />
+          <UserMenu onOpenSettings={() => setPanel("settings")} />
         </div>
       </header>
       <NotificationDrawer open={notifyOpen} onClose={() => setNotifyOpen(false)} />
