@@ -3,7 +3,7 @@
  */
 import { ICONS } from "@/lib/icons";
 
-/** 侧边栏主导航：[图标, 名称, 路由]（首页 / 分类；广场已合并进首页，2026-08-27 方案A） */
+/** 侧边栏主导航：[图标, 名称, 路由]（首页工作台 / 分类；首页内的探索区暂复用广场数据） */
 export const MAIN_NAV = [
   [ICONS.home, "首页", "/home"],
   [ICONS.categories, "分类", "/categories"],

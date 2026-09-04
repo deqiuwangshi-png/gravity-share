@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * 首页（2026-08-27 方案A：广场合并进首页，纯前端零迁移）
- * 顶部：公告走马灯（含 kind=ad 广告海报卡，复用 AnnouncementCarousel）→ 标题 → SquareFeed
- * SquareFeed 承接原广场能力：024 全服通告横幅 + 内容分类导航 + ?q= 搜索 + 四列内容流（.home-grid）
+ * 引力首页工作台：公告 + 需求入口 + 探索区。
+ * 当前探索区暂复用 SquareFeed 数据与组件，但 /home 的产品语义不是“广场”。
+ * SquareFeed 承接探索区能力：024 全服通告横幅 + 内容分类导航 + ?q= 搜索 + 四列内容流（.home-grid）
  * 服务端预取 announcements + initialPosts 作为首帧（SSR 爬虫可见），client 接管交互与增量刷新
  */
 export default async function HomePage() {

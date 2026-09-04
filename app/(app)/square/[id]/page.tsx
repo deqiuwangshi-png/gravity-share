@@ -39,7 +39,7 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
         dangerouslySetInnerHTML={{ __html: jsonLd(seo.article!) }}
       />
       <article className="mx-auto w-full max-w-[720px] px-1 pb-10">
-        {/* 2026-08-27 方案A：广场并入首页，返回目标 /square → /home，文案同步 */}
+        {/* 返回首页工作台；广场详情路由仍独立存在 */}
         <Link className="mb-[22px] inline-block text-[13px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/home">← 返回首页</Link>
 
         {/* P0-2 H1：标题提炼结果（server 渲染，SSR 首帧可见；正文首行与之同文属正常，靠字号/字重区分层级） */}

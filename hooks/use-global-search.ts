@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-/** 搜索落点路由（2026-08-27 方案A 广场合并进首页，?q= 由 SquareFeed 前端过滤） */
+/** 搜索落点路由：首页工作台的探索区，?q= 由 SquareFeed 前端过滤；/home 不等同于广场 */
 const SEARCH_TARGET = "/home";
 
 export function useGlobalSearch() {

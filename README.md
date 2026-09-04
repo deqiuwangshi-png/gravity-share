@@ -105,7 +105,7 @@ tests/        测试柜 —— 单测统一收口（2026-09-03 起）
 | 落地页 | `/` `/about` `/help` `/notice/[slug]` | 公开 |
 | 法律 | `/terms` `/privacy` `/disclaimer` `/governance` `/guidelines` `/enforcement` | 公开 |
 | 认证 | `/login`（登录即注册：邮箱；手机号 OTP 代码保留但临时下架，PHONE_AUTH_ENABLED 开关控制）`/forgot-password` `/reset-password` | 邮箱密码 + GitHub / Google |
-| 应用 | `/home` `/square(/[id])` `/categories(/[slug])` `/tag/[tag]` `/profile(/[id])` | 需登录（proxy.ts 守卫） |
+| 应用 | `/home`（引力首页工作台） `/square(/[id])`（广场内容详情） `/categories(/[slug])` `/tag/[tag]` `/profile(/[id])` | 需登录（proxy.ts 守卫） |
 | 网关 | `/go`（外链出站统一网关） | 公开 |
 
 ---
