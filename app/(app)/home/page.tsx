@@ -31,12 +31,6 @@ export default async function HomePage() {
   return <div className="app-content">
     <div className="min-w-0">
       {announcements.length > 0 && <AnnouncementCarousel items={announcements} />}
-
-      <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
-        <h1 className="m-0 text-2xl tracking-[-0.5px]">发现</h1>
-        <p className="m-0 text-[13px] text-muted">来自互联网不同角落的好东西，在等你探索</p>
-      </header>
-
       {/* useSearchParams 需 Suspense 边界（Next 约定，搜索 q 由 SquareFeed 读取） */}
       <Suspense fallback={<LoadingState />}>
         <SquareFeed initialPosts={initialPosts} />
