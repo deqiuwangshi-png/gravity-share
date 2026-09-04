@@ -10,12 +10,13 @@ import { isRichText } from "@/lib/rich-content";
 
 const SQUARE = "square_posts";
 const SQUARE_CARD_SELECT =
-  "id, content, title, post_type, commission, source_platform, category, tags, url, image_url, gallery, likes_count, comments_count, created_at, url_status, users!square_posts_author_id_fkey(id, name, avatar_url, badge)";
+  "id, preview, title, post_type, commission, source_platform, category, tags, url, image_url, gallery, likes_count, comments_count, created_at, url_status, users!square_posts_author_id_fkey(id, name, avatar_url, badge)";
 
 /** square_posts 行 + 关联作者名——导出供 DTO 映射测试构造 */
 export type SquarePostRow = {
   id: string;
-  content: string;
+  content?: string;
+  preview?: string | null;
   /* 038 可选用户标题（SEO L1；null = 未填写） */
   title: string | null;
   post_type: string;
@@ -53,8 +54,8 @@ export function toSquarePostDTO(
     authorAvatar: row.users?.avatar_url ?? undefined,
     authorBadge: (row.users?.badge as SquarePostDTO["authorBadge"]) ?? "none",
     /* 详情/作者流路径带全文；首页/分类/tag 大列表传 { content: false } 剥离（payload 优化，卡片消费 preview） */
-    content: opts?.content === false ? "" : row.content,
-    preview: cardPreview(row.content),
+    content: opts?.content === false ? "" : (row.content ?? ""),
+    preview: row.preview ?? cardPreview(row.content ?? ""),
     title: row.title ?? undefined,
     postType: (row.post_type as "share" | "opportunity" | "content") ?? "share",
     commission: row.commission ?? undefined,
@@ -88,7 +89,7 @@ export function selectRelatedSquarePosts(
 export async function fetchSquarePosts(supabase: SupabaseClient, limit?: number): Promise<SquarePostDTO[]> {
   const { data } = await supabase
     .from(SQUARE)
-    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
+    .select(SQUARE_CARD_SELECT)
     .order("created_at", { ascending: false })
     .limit(limit ?? 100);
   return (data as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? [];
@@ -164,7 +165,7 @@ export async function fetchSquarePostsByCategory(
 ): Promise<SquarePostDTO[]> {
   const { data } = await supabase
     .from(SQUARE)
-    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
+    .select(SQUARE_CARD_SELECT)
     .eq("category", category)
     .order("created_at", { ascending: false })
     .limit(limit ?? 100);
@@ -175,7 +176,7 @@ export async function fetchSquarePostsByCategory(
 export async function fetchSquarePostsByTag(supabase: SupabaseClient, tag: string): Promise<SquarePostDTO[]> {
   const { data } = await supabase
     .from(SQUARE)
-    .select("*, image_url, users!square_posts_author_id_fkey(id, name, avatar_url, badge)")
+    .select(SQUARE_CARD_SELECT)
     .contains("tags", [tag])
     .order("created_at", { ascending: false });
   return (data as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? [];

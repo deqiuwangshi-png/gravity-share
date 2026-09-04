@@ -23,11 +23,15 @@ export function useProfileContent(userId: string, initialPosts: SquarePostDTO[] 
   }, [userId]);
 
   useEffect(() => {
-    load();
+    if (initialPosts.length === 0) {
+      load();
+    } else {
+      void fetchCommentsByAuthor(createClient(), userId).then(setMyComments).catch(() => {});
+    }
     const onUpdate = () => load();
     window.addEventListener(SQUARE_UPDATED_EVENT, onUpdate);
     return () => window.removeEventListener(SQUARE_UPDATED_EVENT, onUpdate);
-  }, [load]);
+  }, [initialPosts.length, load, userId]);
 
   return { myPosts, myComments, load };
 }

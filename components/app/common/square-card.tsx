@@ -21,7 +21,7 @@ export function SquareCard({ post }: { post: SquarePostDTO }) {
    * 客户端不再逐卡 stripHtml；3 行截断由 CSS line-clamp 承担） */
   const preview = post.preview;
   return (
-    <Link className="home-card flex flex-col rounded-[12px] border border-line bg-surface p-[14px] transition-[border-color,transform,box-shadow] duration-[180ms] hover:-translate-y-0.5 hover:border-line-primary" href={`/square/${post.id}`}>
+    <Link prefetch={false} className="home-card flex flex-col rounded-[12px] border border-line bg-surface p-[14px] transition-[border-color,transform,box-shadow] duration-[180ms] hover:-translate-y-0.5 hover:border-line-primary" href={`/square/${post.id}`}>
       <div className="mb-[10px] flex items-center gap-2">
         <AvatarBox path={post.authorAvatar} name={post.authorName} className="grid size-7 shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-bold text-primary" badge={post.authorBadge} />
         <span className="grid min-w-0 flex-1 gap-[1px]">
