@@ -12,12 +12,13 @@
  *   服务端净化生效后，SSR 首帧的外链同样走 /go（此前 SSR 直出原始外链）。
  */
 import sanitize from "sanitize-html";
+import { externalLinkFromHref, type ExternalLink } from "@/lib/external-links";
 import { safeHref } from "@/lib/links";
 
 /** 白名单清洗（script/事件属性/javascript: URL 等一律剥离；allowedTags/Attributes 白名单 + allowedSchemes 双保险） */
 const ALLOWED_TAGS = [
   "p", "br", "strong", "em", "s", "u", "code", "pre",
-  "h2", "h3", "blockquote", "ul", "ol", "li", "hr", "a", "img",
+  "h2", "h3", "blockquote", "ul", "ol", "li", "hr", "a", "img", "span",
 ];
 
 /** 标签 → 允许属性（sanitize-html 按标签分组白名单；未列出的属性全剥） */
@@ -37,7 +38,7 @@ type SanitizeOptions = NonNullable<Parameters<typeof sanitize>[1]>;
  * ② allowedSchemes 仅 http/https/mailto —— 其它 scheme（tel:/data: 等）一律剥除
  * 对齐 DOMPurify 默认行为：a[target=_blank] 自动补 rel="noopener noreferrer"（浏览器新默认虽已隐式 noopener，双保险保留）
  */
-function purifyOptions(relayLinks: boolean): SanitizeOptions {
+function purifyOptions(relayLinks: boolean, links?: ExternalLink[]): SanitizeOptions {
   return {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRS,
@@ -47,6 +48,11 @@ function purifyOptions(relayLinks: boolean): SanitizeOptions {
       a: (tagName, attribs) => {
         const href = attribs.href;
         if (href && /^https?:\/\//i.test(href)) {
+          if (links) {
+            const link = externalLinkFromHref(href);
+            if (link) links.push(link);
+            return { tagName: "span", attribs: {} };
+          }
           if (relayLinks) {
             /* 渲染端：外部链接 → /go 网关；非法（safeHref null）去链 */
             const relay = safeHref(href);
@@ -77,6 +83,13 @@ export function sanitizeHtml(html: string): string {
  * 非法外部 URL 去链（safeHref 返回 null 时）。存储不落改写结果，编辑表单仍显示原始 URL。 */
 export function sanitizeHtmlForRender(html: string): string {
   return sanitize(html, purifyOptions(true));
+}
+
+/** 渲染富文本并同步抽取外链；外链锚点降级为普通文字，交由底部卡片承载。 */
+export function sanitizeHtmlForRenderWithLinks(html: string): { html: string; links: ExternalLink[] } {
+  const links: ExternalLink[] = [];
+  const safeHtml = sanitize(html, purifyOptions(false, links));
+  return { html: safeHtml, links };
 }
 
 /** 内容是否含 HTML 标签（存量纯文本为 false） */

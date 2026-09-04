@@ -100,6 +100,13 @@ lib（业务动作 · 读查询 · 类型 · 配置 · 纯工具）—— 最底
 - 查库的 Server 页面加 `export const dynamic = "force-dynamic"`（防 build 时固化数据）；列表由 client 组件（SquareFeed 等）拉取则无需
 - Client 组件尽量下沉到叶子节点，避免客户端化整棵子树
 
+### 5.2 外链内容渲染
+
+- 帖子正文中的 `http/https` 外链统一由 `lib/external-links.ts` 抽取、规范化、去重；纯文本和富文本不得各自维护一套 URL 规则。
+- 正文只保留外链文字，不保留正文内可点击外链；详情页在正文主体底部统一渲染外链卡片，独立 `url` 字段与正文链接合并后只展示一次。
+- 外链卡片只使用 `/go` 安全网关地址；非法、私网、userinfo、异常端口和危险协议不生成可点击卡片，不回退到原始 URL。
+- 首版卡片不实时抓取外站 OG 数据，避免 SSR 延迟、外站失败和隐私泄露；后续如需标题/图片，必须增加服务端缓存和超时降级设计。
+
 ## 6. 色板（全站颜色变量，定义在 `globals.css`，唯一真相源）
 
 | 分类 | 变量 | 色值 |
@@ -148,14 +155,6 @@ lib（业务动作 · 读查询 · 类型 · 配置 · 纯工具）—— 最底
 
 | 里程碑 | 状态 | 说明 |
 |---|---|---|
-| Supabase BaaS 上库 + 认证安全闭环 | ✅ | 2026-08-22；RLS/触发器/存储/RPC 体系就位 |
-| SEO 公开化（游客可读） | ✅ | 2026-08-25；/square /categories /profile/[id] 开放，proxy 守卫收口 /home |
-| 029 title 列回收、`square_posts.preview` 下沉 | ✅ | 2026-08-29 / 2026-09-03；卡片摘要走 immutable 触发器 `square_preview()` |
-| 详情页 page 职责拆分 + hooks/ 柜成立 | ✅ | 2026-09-03；数据加载迁 lib/square-detail.ts、SEO 派生迁 lib/seo.ts；useSquarePosts 归位 hooks/ |
-| lib/queries 子目录化 + tests/ 收口 | ✅ | 2026-09-03；queries-*.ts 平铺 → lib/queries/；测试统一迁 tests/ |
-| **商业化四族全删（支付/订阅/投流/广告）** | ✅ | 2026-09-03；平台回归纯内容分发，无付费通道/置顶位/广告位；DB 侧待执行 `045-drop-billing.sql` |
-| 组件职责分层收官 | ✅ | 2026-09-03；48 组件审计 + 4 同源族抽离 + lib actions 体系，组件直写业务表零残留 |
-| 引力号 UID | ✅ | 2026-09-03；迁移 046（GR+8 位） |
 | 架构文档单一真相源收敛（v4.0） | ✅ | 2026-09-03；断链清除，归属总表见 §4 |
 | 规模化前置（CSP nonce / 分页缓存 / CI / 后台治理…） | 🔜 待办 | 触发条件与清单见 `docs/DEBTS.md`；缺陷复盘统一走 `docs/INCIDENTS.md` |
 

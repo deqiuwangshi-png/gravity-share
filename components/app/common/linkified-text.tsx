@@ -6,17 +6,17 @@
 import { URL_PATTERN } from "@/lib/text";
 import { safeHref } from "@/lib/links";
 
-export function LinkifiedText({ text }: { text: string }) {
+export function LinkifiedText({ text, interactive = true }: { text: string; interactive?: boolean }) {
   const parts = text.split(URL_PATTERN);
 
   return (
     <>
       {parts.map((part, index) =>
-        /^https?:\/\//.test(part) ? (
+        /^https?:\/\//.test(part) && interactive && safeHref(part) ? (
           <a
             key={index}
             className="break-all text-primary transition-[color] duration-[180ms] hover:text-primary-dark"
-            href={safeHref(part) ?? part}
+            href={safeHref(part)!}
             target="_blank"
             rel="noopener noreferrer"
           >{part}</a>

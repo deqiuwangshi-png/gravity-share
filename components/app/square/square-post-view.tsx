@@ -15,12 +15,11 @@ import { AuthorLink } from "@/components/app/common/author-link";
 import { AuthorBadge } from "@/components/app/common/author-badge";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { LinkifiedText } from "@/components/app/common/linkified-text";
-import { RichContent } from "@/components/app/common/rich-content";
 import { PostGallery } from "@/components/app/common/post-gallery";
-import { isRichText } from "@/lib/rich-content";
+import { ExternalLinkCards } from "@/components/app/common/external-link-card";
+import { extractPlainTextLinks, mergeExternalLinks } from "@/lib/external-links";
+import { isRichText, sanitizeHtmlForRenderWithLinks } from "@/lib/rich-content";
 import { publicImageUrl } from "@/lib/storage";
-import { sanitizeUrl } from "@/lib/url-policy";
-import { safeHref } from "@/lib/links";
 import { SQUARE_CATEGORY_META } from "@/lib/config";
 import { postHeadline } from "@/lib/post-title";
 import type { SquarePostDTO } from "@/lib/types";
@@ -31,8 +30,6 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
   /* 修复「填了网址不显示」：url 字段入库但从未渲染；正文已含该链接时不重复展示
    * 2026-08-24 安全加固：sanitizeUrl 入库即标准化（协议白名单/拒内网），失败为 null 不渲染；
    * linkHref 走 /go 网关，失败亦不渲染——不再回退原始值（防 javascript:/data: 绕过） */
-  const linkUrl = post.url && !post.content.includes(post.url) ? sanitizeUrl(post.url) : null;
-  const linkHref = linkUrl ? safeHref(linkUrl) : null;
   /* P1-4：封面 = image_url；若封面图已插入正文（精确 URL 匹配）则不重复显示，否则显示。
      用精确 URL 替代脆弱的 "<img" 字面量判断；与 feed 卡片始终用 image_url 作封面对齐。 */
   const coverSrc = post.imageUrl ? publicImageUrl("post", post.imageUrl) : null;
@@ -46,6 +43,8 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
     authorName: post.authorName,
     postType: post.postType,
   });
+  const richContent = isRichText(post.content) ? sanitizeHtmlForRenderWithLinks(post.content) : null;
+  const externalLinks = mergeExternalLinks(richContent?.links ?? extractPlainTextLinks(post.content), post.urlStatus === "blocked" ? null : post.url);
 
   return (
     <>
@@ -82,19 +81,14 @@ export function SquarePostView({ post, isOwner }: { post: SquarePostDTO; isOwner
       ) : (
         <>
           {/* 正文：富文本（sanitize 渲染）/ 纯文本（存量或短帖） */}
-          {isRichText(post.content) ? (
-            <RichContent content={post.content} />
+          {richContent ? (
+            <div className="rich-content" dangerouslySetInnerHTML={{ __html: richContent.html }} />
           ) : (
-            <p className="m-0 whitespace-pre-line text-[15px] leading-[1.85] text-foreground"><LinkifiedText text={post.content} /></p>
+            <p className="m-0 whitespace-pre-line text-[15px] leading-[1.85] text-foreground"><LinkifiedText text={post.content} interactive={false} /></p>
           )}
-          {post.urlStatus === "blocked" ? (
-            <p className="m-0 text-[12px] italic text-soft">该链接已被移除</p>
-          ) : (
-            linkHref && (
-              <a className="mt-[10px] block break-all text-[13px] text-primary transition-[color] duration-[180ms] hover:text-primary-dark" href={linkHref} target="_blank" rel="noopener noreferrer">
-                原文链接：{post.url}
-              </a>
-            )
+          <ExternalLinkCards links={externalLinks} />
+          {post.urlStatus === "blocked" && (
+            <p className="m-0 mt-[10px] text-[12px] italic text-soft">该链接已被移除</p>
           )}
           {/* 图片（037 图集化）：图集非空 → 底部网格 + 点击放大；空（旧帖）→ 回退封面图
               封面（image_url）已入正文则不重复显示，避免与图集首图重复 */}
