@@ -1,15 +1,5 @@
 /**
  * 安全跳转页（/go?url=…，2026-08-23）——「离开引力前的一道闸门」
- * - 独立于 (app) 壳层：无侧边栏 / 顶栏 / 搜索框，全屏深色遮罩 + 居中极简白卡片
- * - 低风险（白名单 link_domains）：服务端 redirect 直接跳转，无感
- * - 未知风险：全屏闸门卡「即将离开引力」→ 显示真实域名 → 大按钮 继续访问（新标签）/ 返回
- * - 高风险（黑名单 / 非法 URL）：全屏「已禁止访问」卡，无继续入口
- * - 020 阶段二：白/黑名单迁库（Table Editor 维护）；每次进入记录一条 url_audit（可审计）
- * - 2026-08-25 M5 安全加固：safeRedirectTarget 严格校验（拒 userinfo @ 伪装 / 反斜杠混淆 / 非 http(s)），
- *   确认页展示完整目标地址供核对；展示与跳转共用同一规范化 href，天然保证 host 一致性
- * - 2026-09-03：样式自 styles/app/go.css 迁 Tailwind（go-card 宿主类保留，大投影收 decor⑩）；
- *   高危「返回引力」按代码注释意图补成大按钮（原 CSS 漏配布局规则，仅主色 inline 文字）
- * 开放重定向缓解：仅白名单域名服务端直接跳；未知/高危必须用户确认且展示真实域名
  */
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
