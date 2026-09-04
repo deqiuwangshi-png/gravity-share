@@ -1,17 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { LoadError } from "@/components/app/common/load-error";
 import { EmptyState } from "@/components/ui/empty-state";
-import { createClient } from "@/lib/supabase/client";
-import { NOTIFICATION_UPDATED_EVENT } from "@/lib/events";
-import {
-  fetchNotifications,
-  markAllNotificationsRead,
-  markNotificationRead,
-} from "@/lib/queries/notifications";
-import type { NotificationDTO } from "@/lib/types";
+import { useNotifications } from "@/hooks/use-notifications";
 
 /**
  * 顶栏消息通知（2c 起读库）：
@@ -21,6 +13,10 @@ import type { NotificationDTO } from "@/lib/types";
  * 点条目：自动已读 + 跳转关联内容（square）；头部「全部已读」
  * 2026-09-02 CSS→Tailwind 迁移：notification.css 已删，抽屉定位 left/top 仍引用
  * decor.css ① 壳变量宿主（--app-sidebar-w/--app-topbar-h），遮罩背景/面板阴影见 decor ⑧
+ *
+ * 2026-09-04 职责收敛（见 deliverables/notification-drawer-srp-audit-2026-09-04.md）：
+ * 数据三态 + 已读编排（写库 → dispatch → load）+ 路由导航下沉 hooks/use-notifications，
+ * 写动作收口 lib/notification-actions；本文件只保留 DOM、ESC 关闭与受控绑定。
  */
 
 export function NotificationTrigger({
@@ -66,26 +62,10 @@ export function NotificationDrawer({
   open: boolean;
   onClose: () => void;
 }) {
-  const [items, setItems] = useState<NotificationDTO[]>([]);
-  const [failed, setFailed] = useState(false);
-  const router = useRouter();
+  /* 数据三态与已读编排在 hooks/use-notifications（写库 → dispatch → load 顺序受其保护） */
+  const { items, failed, retry, openItem, markAll } = useNotifications(open, onClose);
 
-  const load = useCallback(() => {
-    void fetchNotifications(createClient())
-      .then(setItems)
-      .catch(() => setFailed(true));
-  }, []);
-
-  /* 重试（事件处理器内重置状态，避免 effect 内同步 setState） */
-  function retry() {
-    setFailed(false);
-    load();
-  }
-
-  useEffect(() => {
-    if (open) load();
-  }, [open, load]);
-
+  /* ESC 关闭：抽屉自身的 UI 交互，留在组件 */
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
@@ -94,25 +74,6 @@ export function NotificationDrawer({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
-
-  async function onOpenItem(item: NotificationDTO) {
-    if (!item.read) {
-      await markNotificationRead(createClient(), item.id);
-      window.dispatchEvent(new Event(NOTIFICATION_UPDATED_EVENT));
-      load();
-    }
-    if (item.targetType && item.itemId) {
-      onClose();
-      /* 016 内容池归一后通知仅指向 square 帖子 */
-      router.push(`/square/${item.itemId}`);
-    }
-  }
-
-  async function onMarkAll() {
-    await markAllNotificationsRead(createClient());
-    window.dispatchEvent(new Event(NOTIFICATION_UPDATED_EVENT));
-    load();
-  }
 
   const unreadCount = items.filter((n) => !n.read).length;
 
@@ -135,7 +96,7 @@ export function NotificationDrawer({
           <div className="flex items-baseline gap-3">
             {unreadCount > 0 && <span className="text-[12px] text-soft">{unreadCount} 条未读</span>}
             {unreadCount > 0 && (
-              <button type="button" className="cursor-pointer p-0 text-[12px] font-medium text-primary [font:inherit]" onClick={() => void onMarkAll()}>全部已读</button>
+              <button type="button" className="cursor-pointer p-0 text-[12px] font-medium text-primary [font:inherit]" onClick={() => void markAll()}>全部已读</button>
             )}
           </div>
         </header>
@@ -150,7 +111,7 @@ export function NotificationDrawer({
                 type="button"
                 className="relative block w-full cursor-pointer border-b border-line p-[14px_24px_14px_30px] text-left text-inherit transition-[background-color] duration-[180ms] hover:bg-hover last:border-b-0 [font:inherit]"
                 key={item.id}
-                onClick={() => void onOpenItem(item)}
+                onClick={() => void openItem(item)}
               >
                 {/* 未读左侧圆点（原 .unread::before 伪元素，Tailwind 无对应 → 条件真实 span） */}
                 {!item.read && <span className="absolute left-[14px] top-[22px] h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />}

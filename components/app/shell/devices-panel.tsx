@@ -7,89 +7,18 @@
  */
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { Smartphone, Monitor } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { formatRelativeTime } from "@/lib/text";
 import { EmptyState } from "@/components/ui/empty-state";
-
-type Device = {
-  id: string;
-  browser: string;
-  os: string;
-  createdAt: string;
-  lastActive: string;
-};
+import { useDevices } from "@/hooks/use-devices";
 
 /* 通用次要按钮（描边 pill，hover 转红 = 退出类危险操作） */
 const revokeBtn =
   "shrink-0 cursor-pointer rounded-full border border-line bg-surface px-3 py-[5px] text-xs text-muted transition-[border-color,color] duration-[180ms] enabled:hover:border-error enabled:hover:text-error disabled:cursor-default [font:inherit]";
 
-/** 解码 access_token（base64url JWT payload）取 sid——标识当前设备 */
-async function currentSessionId(): Promise<string | null> {
-  try {
-    const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    if (!token) return null;
-    const payload = JSON.parse(
-      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
-    );
-    return (payload.sid as string) ?? null;
-  } catch {
-    return null;
-  }
-}
-
 export function DevicesPanel() {
-  const [devices, setDevices] = useState<Device[] | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [revokingAll, setRevokingAll] = useState(false);
-  const [currentSid, setCurrentSid] = useState<string | null>(null);
-
-  const load = useCallback(() => {
-    void fetch("/api/auth/devices")
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => setDevices(data.devices))
-      .catch(() => setFailed(true));
-    void currentSessionId().then(setCurrentSid);
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  async function onRevoke(sessionId: string) {
-    if (busyId) return;
-    setBusyId(sessionId);
-    try {
-      const res = await fetch("/api/auth/devices", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
-      });
-      if (!res.ok) throw new Error();
-      setBusyId(null);
-      load();
-    } catch {
-      setBusyId(null);
-    }
-  }
-
-  async function onRevokeAll() {
-    if (revokingAll) return;
-    setRevokingAll(true);
-    try {
-      const res = await fetch("/api/auth/devices", { method: "DELETE" });
-      if (!res.ok) throw new Error();
-      window.location.reload();
-    } catch {
-      setRevokingAll(false);
-    }
-  }
+  /* 列表数据加载与撤销动作在 hooks/use-devices（当前设备 sid 解析在 lib/session） */
+  const { devices, failed, busyId, revokingAll, currentSid, revoke, revokeAll } = useDevices();
 
   if (failed) return <p className="text-xs text-error">设备列表加载失败，请稍后重试。</p>;
   if (!devices) return <p className="text-xs text-error">加载中…</p>;
@@ -102,7 +31,7 @@ export function DevicesPanel() {
           <button
             type="button"
             className="shrink-0 cursor-pointer rounded-lg border border-line bg-surface px-3 py-[6px] text-xs text-muted transition-[border-color,color] duration-[180ms] enabled:hover:border-error enabled:hover:text-error [font:inherit]"
-            onClick={() => void onRevokeAll()}
+            onClick={() => void revokeAll()}
             disabled={revokingAll}
           >
             {revokingAll ? "退出中…" : "退出所有设备"}
@@ -132,7 +61,7 @@ export function DevicesPanel() {
                   <button
                     type="button"
                     className={revokeBtn}
-                    onClick={() => void onRevoke(device.id)}
+                    onClick={() => void revoke(device.id)}
                     disabled={busyId === device.id}
                   >{busyId === device.id ? "退出中…" : "退出"}</button>
                 )}

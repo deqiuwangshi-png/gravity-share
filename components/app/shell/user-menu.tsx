@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { User, Settings, MessageCircle, LogOut } from "lucide-react";
 import { AvatarBox } from "@/components/app/common/avatar-box";
 import { FEISHU_FEEDBACK_URL } from "@/lib/config";
+import { useMyProfile } from "@/hooks/use-my-profile";
+import { useSignOut } from "@/hooks/use-sign-out";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,45 +22,11 @@ export function UserMenu({
 }: {
   onOpenSettings: () => void;
 }) {
-  const [initial, setInitial] = useState("U");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [signingOut, setSigningOut] = useState(false);
-  /* null = 登录态未确定（避免游客闪现菜单） */
-  const [authed, setAuthed] = useState<boolean | null>(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      const u = data.user;
-      if (!u) {
-        setAuthed(false);
-        return;
-      }
-      setAuthed(true);
-      /* 2a：昵称以 public.users 为权威；S-1：头像读 avatar_url 显示图片 */
-      const { data: profile } = await supabase
-        .from("users")
-        .select("name, avatar_url")
-        .eq("id", u.id)
-        .maybeSingle();
-      const name =
-        (profile?.name as string) ||
-        (u.user_metadata?.name as string) ||
-        u.email?.split("@")[0] ||
-        "引力用户";
-      setInitial(name.charAt(0).toUpperCase());
-      setAvatarUrl((profile?.avatar_url as string) ?? "");
-    });
-  }, []);
-
-  async function handleSignOut() {
-    setSigningOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
+  /* 身份数据（昵称/头像）与登出编排分别由两个 hook 承载，本组件只做菜单 DOM */
+  const { profile, authed } = useMyProfile();
+  const { signingOut, signOut } = useSignOut();
+  const initial = profile?.name.charAt(0).toUpperCase() ?? "U";
+  const avatarUrl = profile?.avatarUrl ?? "";
 
   /* 游客（未登录）：显示登录/注册入口（公开只读区访问场景，2026-08-25） */
   if (authed === false) {
@@ -122,7 +87,7 @@ export function UserMenu({
           onSelect={(event) => {
             /* 保持菜单开着显示「退出中…」；跳转 /login 后组件随页面卸载 */
             event.preventDefault();
-            void handleSignOut();
+            void signOut();
           }}
         >
           <span className={iconClass}><LogOut size={13} /></span>{signingOut ? "退出中…" : "退出登录"}

@@ -27,7 +27,7 @@
   -webkit-backdrop-filter: blur(14px);
 }
 
-/* ② 搜索框聚焦光晕（.global-search 类名由 app-shell.tsx 保留） */
+/* ② 搜索框聚焦光晕（.global-search 类名由 global-search.tsx 保留，2026-09-04 自 app-shell 拆出） */
 .global-search:focus-within {
   box-shadow: 0 0 0 3px rgba(0, 104, 85, 0.06);
 }

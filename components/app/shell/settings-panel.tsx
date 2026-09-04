@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { updateUserProfile } from "@/lib/user-actions";
+import { useMyProfile } from "@/hooks/use-my-profile";
 import { Input } from "@/components/ui/input";
 import { FieldRow } from "@/components/ui/field-row";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -63,11 +64,12 @@ function SettingRow({
  */
 export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; onClose: () => void }) {
   const [tab, setTab] = useState<PanelId>(initialTab);
-  const [email, setEmail] = useState("");
-  const [bio, setBio] = useState("");
-  const [joined, setJoined] = useState("");
-  const [uid, setUid] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
+  /* 个人资料来自 useMyProfile（2026-09-04 接入：删除组件内 createClient + 直连 users 表读） */
+  const { profile, patchProfile } = useMyProfile();
+  const email = profile?.email ?? "";
+  const bio = profile?.bio ?? "";
+  const joined = profile?.joined ?? "";
+  const uid = profile?.uid ?? "";
 
   /* 简介行内编辑 */
   const [editing, setEditing] = useState<"bio" | null>(null);
@@ -77,24 +79,6 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
 
   /* 敏感操作弹窗：password / email / delete（弹窗本体与状态机在 account-action-dialogs，父仅分发；卸载即销毁 state） */
   const [modal, setModal] = useState<"password" | "email" | "delete" | null>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      const u = data.user;
-      if (!u) return;
-      setUserId(u.id);
-      setEmail(u.email ?? "");
-      const { data: profile } = await supabase
-        .from("users")
-        .select("bio, created_at, uid")
-        .eq("id", u.id)
-        .maybeSingle();
-      setBio((profile?.bio as string) ?? "");
-      setJoined((profile?.created_at as string)?.slice(0, 7) ?? "");
-      setUid((profile?.uid as string) ?? "");
-    });
-  }, []);
 
   /* Esc 关闭（2026-09-03 P1：手写 document keydown effect 删除——Radix Dialog 内置 Esc → onOpenChange，见下方 Dialog） */
 
@@ -109,16 +93,16 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: PanelId; on
   }
 
   async function saveEdit() {
-    if (!userId || !editing) return;
+    if (!profile?.id || !editing) return;
     setSaving(true);
     setError("");
-    const { ok } = await updateUserProfile(createClient(), userId, { bio: draft });
+    const { ok } = await updateUserProfile(createClient(), profile.id, { bio: draft });
     setSaving(false);
     if (!ok) {
       setError("保存失败，请稍后重试");
       return;
     }
-    setBio(draft);
+    patchProfile({ bio: draft });
     setEditing(null);
   }
 

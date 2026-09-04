@@ -3,6 +3,11 @@
  * 修改密码 / 修改邮箱 / 注销账号 —— 各自完整状态机 + re-auth + 提交逻辑，独立演进不触碰面板核心
  * 壳统一 AccountActionModal（common）；密码字段复用 PwdInput（.password-field + lucide 眼睛显隐）
  * 挂载约定：父以条件渲染控制（{modal === "password" && <PasswordDialog/>}），卸载即销毁内部 state，无需手动重置
+ *
+ * 2026-09-04 职责收敛（见 deliverables/client-component-layering-plan-2026-09-04.md）：
+ * auth 写动作收口 lib/auth-actions（改密/改邮/登出/撤销会话/注销）；
+ * busy + error + re-auth 状态机收口 hooks/use-account-action（消除三份重复 re-auth 分支）；
+ * 本文件只保留：表单字段受控 state + 字段级校验 + 成功后的 toast 与导航。
  */
 "use client";
 
@@ -10,7 +15,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { verifyCurrentPassword } from "@/lib/queries/misc";
+import {
+  deleteAccount,
+  revokeOtherDevices,
+  signOut,
+  updateEmail,
+  updatePassword,
+} from "@/lib/auth-actions";
+import { useAccountAction } from "@/hooks/use-account-action";
 import { useToast } from "@/components/app/common/toast";
 import { AccountActionModal } from "@/components/app/common/account-action-modal";
 
@@ -54,8 +66,7 @@ export function PasswordDialog({ onClose }: { onClose: () => void }) {
   const [curPassword, setCurPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const { busy, error, setError, run } = useAccountAction();
   const { show } = useToast();
 
   async function submit() {
@@ -72,25 +83,16 @@ export function PasswordDialog({ onClose }: { onClose: () => void }) {
       setError("请输入当前密码以确认身份");
       return;
     }
-    setBusy(true);
-    setError("");
-    const supabase = createClient();
-    const ok = await verifyCurrentPassword(supabase, curPassword);
-    if (!ok) {
-      setBusy(false);
-      setError("当前密码不正确");
-      return;
+    const { ok } = await run(curPassword, async (supabase) => {
+      if (!(await updatePassword(supabase, newPassword)).ok) return { ok: false };
+      /* 改密成功：撤销其他设备会话（兜底防旧会话残留），保持当前登录 */
+      await revokeOtherDevices();
+      return { ok: true };
+    });
+    if (ok) {
+      show("密码已更新");
+      onClose();
     }
-    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-    setBusy(false);
-    if (updateError) {
-      setError("修改失败，请稍后重试");
-      return;
-    }
-    /* 改密成功：撤销其他设备会话（兜底防旧会话残留），保持当前登录 */
-    await fetch("/api/auth/devices", { method: "DELETE" }).catch(() => {});
-    show("密码已更新");
-    onClose();
   }
 
   return (
@@ -114,8 +116,7 @@ export function PasswordDialog({ onClose }: { onClose: () => void }) {
 export function EmailDialog({ currentEmail, onClose }: { currentEmail: string; onClose: () => void }) {
   const [newEmail, setNewEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const { busy, error, setError, run } = useAccountAction();
   const { show } = useToast();
 
   async function submit() {
@@ -133,23 +134,11 @@ export function EmailDialog({ currentEmail, onClose }: { currentEmail: string; o
       setError("请输入当前密码以确认身份");
       return;
     }
-    setBusy(true);
-    setError("");
-    const supabase = createClient();
-    const ok = await verifyCurrentPassword(supabase, password);
-    if (!ok) {
-      setBusy(false);
-      setError("当前密码不正确");
-      return;
+    const { ok } = await run(password, async (supabase) => updateEmail(supabase, target));
+    if (ok) {
+      show("验证邮件已发送至新邮箱，请点击确认完成变更（旧邮箱会收到通知）");
+      onClose();
     }
-    const { error } = await supabase.auth.updateUser({ email: target });
-    setBusy(false);
-    if (error) {
-      setError("修改失败，请稍后重试");
-      return;
-    }
-    show("验证邮件已发送至新邮箱，请点击确认完成变更（旧邮箱会收到通知）");
-    onClose();
   }
 
   return (
@@ -172,8 +161,7 @@ export function EmailDialog({ currentEmail, onClose }: { currentEmail: string; o
 export function DeleteDialog({ onClose }: { onClose: () => void }) {
   const [text, setText] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const { busy, error, setError, run } = useAccountAction();
   const router = useRouter();
 
   async function submit() {
@@ -182,30 +170,16 @@ export function DeleteDialog({ onClose }: { onClose: () => void }) {
       setError("请输入当前密码以确认身份");
       return;
     }
-    setBusy(true);
-    setError("");
-    const supabase = createClient();
-    const ok = await verifyCurrentPassword(supabase, password);
-    if (!ok) {
-      setBusy(false);
-      setError("当前密码不正确");
-      return;
-    }
-    try {
-      /* R2：当前密码随请求提交，服务端复核（前端 verifyCurrentPassword 仅 UX，非安全边界） */
-      const res = await fetch("/api/account/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      if (!res.ok) throw new Error();
-      await supabase.auth.signOut();
-      router.push("/");
-      router.refresh();
-    } catch {
-      setBusy(false);
-      setError("删除失败，请稍后重试");
-    }
+    /* R2：当前密码随请求提交，服务端复核（前端 re-auth 仅 UX，非安全边界） */
+    const { ok } = await run(
+      password,
+      async () => deleteAccount(password),
+      "删除失败，请稍后重试",
+    );
+    if (!ok) return;
+    await signOut(createClient());
+    router.push("/");
+    router.refresh();
   }
 
   return (

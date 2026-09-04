@@ -1,20 +1,5 @@
 /**
  * og-image 社交分享卡片（D-06 收口，2026-09-03）
- *
- * 机制：Next.js App Router 文件约定（app/opengraph-image.tsx）+ next/og（satori），
- * build 期静态预渲染为一张 1200×630 PNG，自动注入 <head>：
- *   og:image / og:image:alt / og:image:type / og:image:width / og:image:height
- * 刻意不写 metadata.openGraph.images —— 文件约定是唯一源，避免两份互相覆盖。
- *
- * 品牌一致性（ARCHITECTURE §6.1）：
- * - logo 读 public/brand/logo.png（与 favicon 三件套同源）。
- * - 底色 #1A4A40 = 品牌深翡翠（favicon 同底色）。satori 渲染上下文无法引用 CSS 令牌，
- *   该值为品牌资产色而非主题令牌，变更时须与 favicon 资产同步（§6.1 换品牌流程）。
- *
- * 中文字体：app/fonts/og-sc-bold.otf = 思源黑体 Bold 子集（SIL OFL 授权，
- * 允许子集化再分发），由 pyftsubset 按固定文案抽取（约 10KB），
- * 规避 Vercel Linux 容器无中文字体 → 豆腐块问题（2026-08-28 fonts.gstatic.com 教训）。
- * ⚠ 卡片文案改动必须同步更新 app/fonts/og-chars.txt 并重新生成子集，否则新字缺字形。
  */
 import { ImageResponse } from "next/og";
 import { join } from "node:path";
@@ -87,7 +72,7 @@ export default function OgImage() {
         <div style={{ display: "flex", alignItems: "center", gap: 36 }}>
           {/* satori 渲染上下文只能用原生 <img>（next/image 不可用） */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoSrc} width={128} height={128} style={{ borderRadius: 28, display: "flex" }} />
+          <img src={logoSrc} alt="引力 Logo" width={128} height={128} style={{ borderRadius: 28, display: "flex" }} />
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div
               style={{

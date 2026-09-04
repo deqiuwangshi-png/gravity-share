@@ -1,6 +1,7 @@
 /**
  * 查询层 · 通知域（S3 拆分 2026-08-29，自 lib/queries.ts 搬移，零逻辑改动）
- * 我的通知（RLS 本人）+ 已读操作；通知由数据库触发器生成
+ * 只留读查询：我的通知（RLS 本人）；通知由数据库触发器生成。
+ * 2026-09-04：已读写操作迁至 lib/notification-actions.ts——查询层不放写（见 AGENTS.md 分层）
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NotificationDTO } from "@/lib/types";
@@ -49,18 +50,4 @@ export async function fetchNotifications(supabase: SupabaseClient): Promise<Noti
     .order("created_at", { ascending: false })
     .limit(20);
   return (data as NotificationRow[] | null)?.map(toNotificationDTO) ?? [];
-}
-
-/** 单条已读（点条目时） */
-export async function markNotificationRead(supabase: SupabaseClient, id: string): Promise<void> {
-  await supabase.from(NOTIFICATIONS).update({ read: true }).eq("id", id);
-}
-
-/** 全部已读（抽屉头部按钮） */
-export async function markAllNotificationsRead(supabase: SupabaseClient): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-  await supabase.from(NOTIFICATIONS).update({ read: true }).eq("user_id", user.id);
 }
