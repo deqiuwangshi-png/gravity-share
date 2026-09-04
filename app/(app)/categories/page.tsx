@@ -18,11 +18,6 @@ export default async function CategoriesPage() {
 
   return <div className="app-content">
     <div className="min-w-0">
-      <header className="mb-4 flex flex-wrap items-baseline gap-x-3">
-        <h1 className="m-0 text-2xl tracking-[-0.5px]">全部分类</h1>
-        <p className="m-0 text-[13px] text-muted">按方向浏览所有内容分类</p>
-      </header>
-
       {/* 3 列大卡片（≤900 收 2 列、≤480 收 1 列，原 feed.css 断点逐字保留） */}
       <div className="grid grid-cols-3 gap-[14px] max-[900px]:grid-cols-2 max-[480px]:grid-cols-1">
         {SQUARE_CATEGORIES.map((name) => {
