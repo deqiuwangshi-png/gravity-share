@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toCommentDTO } from "@/lib/queries/comments";
-import { toSquarePostDTO } from "@/lib/queries/posts";
+import { selectRelatedSquarePosts, toSquarePostDTO } from "@/lib/queries/posts";
 import type { CommentRow } from "@/lib/queries/comments";
 import type { SquarePostRow } from "@/lib/queries/posts";
 
@@ -70,5 +70,53 @@ describe("toCommentDTO（评论映射）", () => {
     expect(dto.content).toBe("不错，收藏了");
     expect(dto.likes).toBe(3);
     expect(dto.authorName).toBe("李四");
+  });
+});
+
+describe("selectRelatedSquarePosts（相关文章规则）", () => {
+  const post = (id: string, category: string): SquarePostRow => ({
+    id,
+    content: id,
+    title: null,
+    post_type: "share",
+    commission: null,
+    source_platform: null,
+    category,
+    tags: [],
+    url: null,
+    image_url: null,
+    gallery: null,
+    likes_count: 0,
+    comments_count: 0,
+    created_at: "2026-08-23T00:00:00.000Z",
+    url_status: "normal",
+    users: null,
+  });
+  const dto = (id: string, category: string) => toSquarePostDTO(post(id, category), { content: false });
+
+  it("同分类达到 4 条时只返回同分类，最多 6 条", () => {
+    const same = Array.from({ length: 7 }, (_, index) => dto(`same-${index}`, "工具"));
+    const others = [dto("other-1", "技术")];
+    expect(selectRelatedSquarePosts(same, others).map((item) => item.id)).toEqual([
+      "same-0",
+      "same-1",
+      "same-2",
+      "same-3",
+      "same-4",
+      "same-5",
+    ]);
+  });
+
+  it("同分类不足 4 条时按顺序补充其他分类", () => {
+    const same = [dto("same-1", "工具"), dto("same-2", "工具")];
+    const others = [dto("other-1", "技术"), dto("other-2", "项目"), dto("other-3", "资源"), dto("other-4", "作品")];
+    expect(selectRelatedSquarePosts(same, others).map((item) => item.id)).toEqual([
+      "same-1",
+      "same-2",
+      "other-1",
+      "other-2",
+      "other-3",
+      "other-4",
+    ]);
   });
 });

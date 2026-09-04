@@ -9,6 +9,8 @@ import { formatRelativeTime, safeName, stripHtml } from "@/lib/text";
 import { isRichText } from "@/lib/rich-content";
 
 const SQUARE = "square_posts";
+const SQUARE_CARD_SELECT =
+  "id, content, title, post_type, commission, source_platform, category, tags, url, image_url, gallery, likes_count, comments_count, created_at, url_status, users!square_posts_author_id_fkey(id, name, avatar_url, badge)";
 
 /** square_posts 行 + 关联作者名——导出供 DTO 映射测试构造 */
 export type SquarePostRow = {
@@ -71,6 +73,16 @@ export function toSquarePostDTO(
   };
 }
 
+/** 相关文章规则：同分类优先，不足 4 条时按时间补充其他分类，最多返回 limit 条。 */
+export function selectRelatedSquarePosts(
+  sameCategory: SquarePostDTO[],
+  otherCategories: SquarePostDTO[],
+  limit = 6,
+): SquarePostDTO[] {
+  if (sameCategory.length >= 4) return sameCategory.slice(0, limit);
+  return [...sameCategory, ...otherCategories].slice(0, limit);
+}
+
 /** 广场话题流（时间倒序；limit 供详情页相关区控制拉取量）
  * 2026-09-03：商业化模块删除 → 移除 024 置顶位（featured_until 双查询拆分），回归纯自然时间流 */
 export async function fetchSquarePosts(supabase: SupabaseClient, limit?: number): Promise<SquarePostDTO[]> {
@@ -80,6 +92,45 @@ export async function fetchSquarePosts(supabase: SupabaseClient, limit?: number)
     .order("created_at", { ascending: false })
     .limit(limit ?? 100);
   return (data as SquarePostRow[] | null)?.map((row) => toSquarePostDTO(row, { content: false })) ?? [];
+}
+
+/** 详情页相关文章：数据库先按分类和时间过滤，避免拉取全站最新 100 条后在 Node 内存筛选。 */
+export async function fetchRelatedSquarePosts(
+  supabase: SupabaseClient,
+  category: string,
+  excludeId: string,
+  limit = 6,
+): Promise<SquarePostDTO[]> {
+  const sameResult = await supabase
+    .from(SQUARE)
+    .select(SQUARE_CARD_SELECT)
+    .eq("category", category)
+    .neq("id", excludeId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (sameResult.error) throw sameResult.error;
+  const sameCategory = ((sameResult.data as unknown as SquarePostRow[] | null) ?? []).map((row) =>
+    toSquarePostDTO(row, { content: false }),
+  );
+  if (sameCategory.length >= 4 || sameCategory.length >= limit) {
+    return sameCategory.slice(0, limit);
+  }
+
+  const otherLimit = limit - sameCategory.length;
+  const otherResult = await supabase
+    .from(SQUARE)
+    .select(SQUARE_CARD_SELECT)
+    .neq("category", category)
+    .neq("id", excludeId)
+    .order("created_at", { ascending: false })
+    .limit(otherLimit);
+
+  if (otherResult.error) throw otherResult.error;
+  const otherCategories = ((otherResult.data as unknown as SquarePostRow[] | null) ?? []).map((row) =>
+    toSquarePostDTO(row, { content: false }),
+  );
+  return selectRelatedSquarePosts(sameCategory, otherCategories, limit);
 }
 
 /** 广场帖子详情（按 id） */

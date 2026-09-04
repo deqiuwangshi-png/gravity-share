@@ -10,7 +10,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { fetchComments } from "@/lib/queries/comments";
-import { fetchSquarePostById, fetchSquarePosts } from "@/lib/queries/posts";
+import { fetchRelatedSquarePosts, fetchSquarePostById } from "@/lib/queries/posts";
 import type { CommentDTO } from "@/lib/types";
 import type { SquarePostDTO } from "@/lib/types";
 
@@ -20,15 +20,16 @@ export const getPost = cache(async (id: string): Promise<SquarePostDTO | null> =
   return fetchSquarePostById(supabase, id);
 });
 
-/** 相关文章（P0-6）：同分类优先（排除自身），不足 4 条按时间补其他分类，最多 6 条（仅 loadSquareDetail 编排内部使用，非对外 API） */
+/** 相关文章（P0-6）：查询层负责分类过滤和数量控制（仅 loadSquareDetail 编排内部使用，非对外 API） */
 const getRelated = cache(
   async (category: string, excludeId: string): Promise<SquarePostDTO[]> => {
     const supabase = await createClient();
-    const posts = await fetchSquarePosts(supabase, 100);
-    const same = posts.filter((post) => post.category === category && post.id !== excludeId);
-    if (same.length >= 4) return same.slice(0, 6);
-    const others = posts.filter((post) => post.id !== excludeId && post.category !== category);
-    return [...same, ...others].slice(0, 6);
+    try {
+      return await fetchRelatedSquarePosts(supabase, category, excludeId, 6);
+    } catch (error) {
+      console.error("Failed to load related square posts", error);
+      return [];
+    }
   },
 );
 
