@@ -19,6 +19,12 @@ const APP_EXACT_PATHS = ["/profile"];
 /** 认证路由前缀（route group (auth)） */
 const AUTH_PREFIXES = ["/login", "/register", "/forgot-password"];
 
+function redirectWithSession(url: URL, response: NextResponse) {
+  const redirectResponse = NextResponse.redirect(url);
+  response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+  return redirectResponse;
+}
+
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -56,14 +62,14 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    return redirectWithSession(url, response);
   }
 
   if (isAuthPage && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/home";
     url.search = "";
-    return NextResponse.redirect(url);
+    return redirectWithSession(url, response);
   }
 
   return response;

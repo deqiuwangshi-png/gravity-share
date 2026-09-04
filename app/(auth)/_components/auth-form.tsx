@@ -51,8 +51,6 @@ export default function AuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const [verifyModal, setVerifyModal] = useState<{ open: boolean; email: string }>({ open: false, email: "" });
-  const closeVerifyModal = () => setVerifyModal({ open: false, email: "" });
   const [submitting, setSubmitting] = useState(false);
   /* 手机号 OTP */
   const [phone, setPhone] = useState("");
@@ -86,15 +84,19 @@ export default function AuthForm() {
   /** 第三方登录（GitHub / Google；由 OAUTH_PROVIDERS 驱动） */
   async function handleOAuth(provider: Provider) {
     setError("");
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext())}` },
-    });
-    if (authError) setError("第三方登录暂不可用，请稍后重试");
+    try {
+      const supabase = createClient();
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext())}` },
+      });
+      if (authError) setError("第三方登录暂不可用，请稍后重试");
+    } catch {
+      setError("第三方登录暂不可用，请稍后重试");
+    }
   }
 
-  /** 邮箱通道：登录即注册（登录失败 → signUp 试探区分 新用户 / 密码错） */
+  /** 邮箱通道：只负责登录；注册由 /register 独立负责 */
   async function submitEmail(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -103,31 +105,20 @@ export default function AuthForm() {
     const email = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
     if (!email || !password) return;
-    const supabase = createClient();
-
     setSubmitting(true);
-    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-    if (!loginError) {
-      setSubmitting(false);
+    try {
+      const { error: loginError } = await createClient().auth.signInWithPassword({ email, password });
+      if (loginError) {
+        setError("邮箱或密码不正确，请重试，或使用“忘记密码”找回。");
+        return;
+      }
       router.push(safeNext());
       router.refresh();
-      return;
+    } catch {
+      setError("登录服务暂不可用，请稍后重试。");
+    } finally {
+      setSubmitting(false);
     }
-
-    /* 登录失败 → 尝试自动建档（登录即注册）；保留邮箱验证：建档成功提示查收邮件 */
-    const { error: signUpError } = await supabase.auth.signUp({ email, password });
-    setSubmitting(false);
-    if (!signUpError) {
-      setVerifyModal({ open: true, email });
-      return;
-    }
-    /* 邮箱已存在 → 是密码错（Supabase 登录与注册对同一邮箱的错误码可区分此分支）
-     * 文案中性化（审计 P1）：不直接点出「密码不正确」，降低邮箱存在性的直接信号 */
-    if (signUpError.message.includes("already registered")) {
-      setError("邮箱或密码不正确，请重试，或使用「忘记密码」找回。");
-      return;
-    }
-    setError(signUpError.message.includes("Invalid login credentials") ? "邮箱或密码不正确。" : signUpError.message);
   }
 
   /** 手机号通道：发送 OTP（shouldCreateUser=true：号码不存在自动建档 = 登录即注册） */
@@ -141,18 +132,23 @@ export default function AuthForm() {
     setError("");
     setInfo("");
     setSubmitting(true);
-    const { error: sendError } = await createClient().auth.signInWithOtp({
-      phone: normalized,
-      options: { shouldCreateUser: true },
-    });
-    setSubmitting(false);
-    if (sendError) {
-      setError("验证码发送失败，请稍后重试（短信网关配置后可用）。");
-      return;
+    try {
+      const { error: sendError } = await createClient().auth.signInWithOtp({
+        phone: normalized,
+        options: { shouldCreateUser: true },
+      });
+      if (sendError) {
+        setError("验证码发送失败，请稍后重试（短信网关配置后可用）。");
+        return;
+      }
+      setOtpSent(true);
+      setOtpCooldown(60);
+      setInfo("验证码已发送，请输入验证码。");
+    } catch {
+      setError("认证服务暂不可用，请稍后重试。");
+    } finally {
+      setSubmitting(false);
     }
-    setOtpSent(true);
-    setOtpCooldown(60);
-    setInfo("验证码已发送，请输入验证码。");
   }
 
   /** 手机号通道：校验 OTP → 进入（OTP 即身份验证，无需邮箱验证） */
@@ -170,18 +166,23 @@ export default function AuthForm() {
     setError("");
     setInfo("");
     setSubmitting(true);
-    const { error: verifyError } = await createClient().auth.verifyOtp({
-      phone: phone.trim(),
-      token,
-      type: "sms",
-    });
-    setSubmitting(false);
-    if (verifyError) {
-      setError("验证码不正确或已过期，请重试。");
-      return;
+    try {
+      const { error: verifyError } = await createClient().auth.verifyOtp({
+        phone: phone.trim(),
+        token,
+        type: "sms",
+      });
+      if (verifyError) {
+        setError("验证码不正确或已过期，请重试。");
+        return;
+      }
+      router.push(safeNext());
+      router.refresh();
+    } catch {
+      setError("认证服务暂不可用，请稍后重试。");
+    } finally {
+      setSubmitting(false);
     }
-    router.push(safeNext());
-    router.refresh();
   }
 
   return (
@@ -189,8 +190,7 @@ export default function AuthForm() {
       <div className="mx-auto w-full max-w-[414px]">
         <div>
           <h2 className="m-0 text-[34px] tracking-[-1.5px]">欢迎来到引力</h2>
-          {/* 新用户注册引导（登录即注册：无独立注册页，2026-08-27 新增） */}
-          <p className="mt-3 text-sm text-muted">没有账号？输入邮箱和密码即可注册。</p>
+          <p className="mt-3 text-sm text-muted">登录你的引力账号，继续发现和分享。</p>
         </div>
 
       {PHONE_AUTH_ENABLED && (
@@ -217,7 +217,7 @@ export default function AuthForm() {
             <Link href="/forgot-password" className="font-semibold text-primary">忘记密码？</Link>
           </div>
           {error && <p className="-mt-1 text-xs text-primary" role="alert">{error}</p>}
-          <AuthSubmit className="mt-1 justify-between pl-5 pr-[17px]" disabled={submitting}>{submitting ? "登录中…" : "登录 / 注册"}<span aria-hidden="true">→</span></AuthSubmit>
+          <AuthSubmit className="mt-1 justify-between pl-5 pr-[17px]" disabled={submitting}>{submitting ? "登录中…" : "登录"}<span aria-hidden="true">→</span></AuthSubmit>
         </form>
       ) : (
         <form key="phone" className="mt-[22px] grid gap-[15px]" onSubmit={submitPhone}>
@@ -232,9 +232,11 @@ export default function AuthForm() {
           </AuthField>
           {error && <p className="-mt-1 text-xs text-primary" role="alert">{error}</p>}
           {info && <p className="-mt-1 text-xs text-primary" role="status">{info}</p>}
-          <AuthSubmit className="mt-1 justify-between pl-5 pr-[17px]" disabled={submitting || !otpSent}>{submitting ? "验证中…" : "登录 / 注册"}<span aria-hidden="true">→</span></AuthSubmit>
+          <AuthSubmit className="mt-1 justify-between pl-5 pr-[17px]" disabled={submitting || !otpSent}>{submitting ? "验证中…" : "登录"}<span aria-hidden="true">→</span></AuthSubmit>
         </form>
       )}
+
+      <p className="mt-[18px] text-center text-[13px] text-muted">还没有账号？<Link href="/register" className="font-semibold text-primary">创建账号</Link></p>
 
       <div className="mb-[14px] mt-5 flex items-center gap-[14px] text-xs text-soft">
         <span className="h-px flex-1 bg-line" aria-hidden="true" />
@@ -254,21 +256,6 @@ export default function AuthForm() {
         ))}
       </div>
     </div>
-      {verifyModal.open && (
-        <div className="auth-modal-backdrop" onClick={closeVerifyModal} role="presentation">
-          <div className="auth-modal-box" role="dialog" aria-modal="true" aria-labelledby="verify-title" onClick={(event) => event.stopPropagation()}>
-            <div className="auth-modal-icon" aria-hidden="true">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="5" width="18" height="14" rx="2" />
-                <path d="M3 7l9 6 9-6" />
-              </svg>
-            </div>
-            <h2 id="verify-title">验证邮件已发送</h2>
-            <p>我们已向 <strong>{verifyModal.email}</strong> 发送了一封验证邮件，请查收并点击邮件中的链接激活账号。激活后即可使用邮箱登录。</p>
-            <AuthSubmit type="button" className="justify-center" onClick={closeVerifyModal}>我知道了</AuthSubmit>
-          </div>
-        </div>
-      )}
     </>
   );
 }
