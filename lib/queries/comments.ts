@@ -35,12 +35,13 @@ export function toCommentDTO(row: CommentRow): CommentDTO {
 
 /** 评论列表（square 帖子，时间正序；内容池归一后仅 square） */
 export async function fetchComments(supabase: SupabaseClient, targetId: string): Promise<CommentDTO[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from(COMMENTS)
     .select("*, users!comments_author_id_fkey(id, name, avatar_url, badge)")
     .eq("target_type", "square")
     .eq("target_id", targetId)
     .order("created_at", { ascending: true });
+  if (error) throw error;
   return (data as CommentRow[] | null)?.map(toCommentDTO) ?? [];
 }
 
@@ -56,50 +57,26 @@ export async function fetchCommentsByAuthor(supabase: SupabaseClient, userId: st
 
 /* ---------- 017 评论点赞（comment_likes 表 + 触发器维护 comments.likes） ---------- */
 
-/** 我是否已赞该评论（内部辅助，toggleCommentLike 用） */
-async function isCommentLiked(supabase: SupabaseClient, commentId: string): Promise<boolean> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-  const { data } = await supabase
-    .from(COMMENT_LIKES)
-    .select("comment_id")
-    .eq("user_id", user.id)
-    .eq("comment_id", commentId)
-    .maybeSingle();
-  return !!data;
-}
-
 /** 批量取我的评论点赞态（评论区挂载时一次 in 查询，避免每评论一次 N+1） */
 export async function fetchCommentLikeMap(supabase: SupabaseClient, commentIds: string[]): Promise<Record<string, boolean>> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || commentIds.length === 0) return {};
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from(COMMENT_LIKES)
     .select("comment_id")
     .eq("user_id", user.id)
     .in("comment_id", commentIds);
+  if (error) throw error;
   const map: Record<string, boolean> = {};
   for (const row of data ?? []) map[row.comment_id as string] = true;
   return map;
 }
 
-/** 评论点赞 toggle，返回新状态；失败抛错（调用方回滚）；计数由触发器维护（017） */
+/** 评论点赞 toggle，使用数据库原子操作；计数由触发器维护（017） */
 export async function toggleCommentLike(supabase: SupabaseClient, commentId: string): Promise<boolean> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-  const liked = await isCommentLiked(supabase, commentId);
-  if (liked) {
-    const { error } = await supabase.from(COMMENT_LIKES).delete().eq("user_id", user.id).eq("comment_id", commentId);
-    if (error) throw new Error("操作失败，请重试");
-    return false;
-  }
-  const { error } = await supabase.from(COMMENT_LIKES).insert({ user_id: user.id, comment_id: commentId });
+  const { data, error } = await supabase.rpc("toggle_comment_like", { p_comment_id: commentId });
   if (error) throw new Error("操作失败，请重试");
-  return true;
+  return data === true;
 }

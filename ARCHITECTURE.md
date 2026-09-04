@@ -27,7 +27,7 @@ components/   组件柜 —— 用到两次才抽，按「访问区 → feature�
 hooks/        hook 柜 —— 可复用 client 状态机唯一归宿（2026-09-03 起；lib/ 禁放 React hook）
 lib/          数据·业务·工具柜 —— 动作（*-actions）/ 读查询（queries/）/ 类型（types.ts）/ 配置 / 纯函数
 styles/       样式柜 —— globals.css 令牌 + 按访问区分目录（app / marketing / auth），单文件 ≤ 400 行
-supabase/     迁移柜 —— 数据库唯一真相（001-046，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
+supabase/     迁移柜 —— 数据库唯一真相（001-047，幂等可重跑；手动复制 SQL 到 Dashboard 执行，不引入 CLI）
 tests/        测试柜 —— 单测统一收口（2026-09-03 起；lib/ 只放源码）
 ```
 

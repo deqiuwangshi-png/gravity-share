@@ -22,14 +22,17 @@ export type CreateCommentInput = {
 export async function createComment(
   supabase: SupabaseClient,
   input: CreateCommentInput,
-): Promise<{ ok: boolean }> {
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const content = input.content.trim();
+  if (!content) return { ok: false, message: "评论内容不能为空" };
+  if (content.length > 1000) return { ok: false, message: "评论内容不能超过 1000 个字符" };
   const { error } = await supabase.from("comments").insert({
     id: `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     author_id: input.authorId,
     target_type: "square",
     target_id: input.postId,
     ...(input.parentId ? { parent_id: input.parentId } : {}),
-    content: input.content,
+    content,
   });
-  return { ok: !error };
+  return error ? { ok: false, message: "发布失败，请重试" } : { ok: true };
 }

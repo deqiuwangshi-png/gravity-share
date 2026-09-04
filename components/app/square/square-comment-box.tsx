@@ -28,9 +28,9 @@ export function SquareCommentBox({ postId, onCreated }: { postId: string; onCrea
     setSending(true);
     setError(false);
     /* 写库收口于 lib/comment-actions.createComment */
-    const { ok } = await createComment(supabase, { authorId: user.id, postId, content });
+    const result = await createComment(supabase, { authorId: user.id, postId, content });
     setSending(false);
-    if (!ok) {
+    if (!result.ok) {
       setError(true);
       return;
     }

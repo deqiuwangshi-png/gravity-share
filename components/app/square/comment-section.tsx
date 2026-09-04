@@ -33,6 +33,7 @@ export function CommentSection({
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
   const [replyText, setReplyText] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
+  const [replyError, setReplyError] = useState(false);
 
   const topComments = useMemo(() => comments.filter((c) => !c.parentId), [comments]);
   const repliesByParent = useMemo(() => {
@@ -68,6 +69,7 @@ export function CommentSection({
   function startReply(comment: CommentDTO) {
     setReplyTo({ id: comment.id, name: comment.authorName });
     setReplyText("");
+    setReplyError(false);
   }
 
   async function sendReply() {
@@ -80,9 +82,12 @@ export function CommentSection({
     if (!user) return;
     setSendingReply(true);
     /* 写库收口于 lib/comment-actions.createComment（回复带 parentId） */
-    const { ok } = await createComment(supabase, { authorId: user.id, postId, content, parentId: replyTo.id });
+    const result = await createComment(supabase, { authorId: user.id, postId, content, parentId: replyTo.id });
     setSendingReply(false);
-    if (!ok) return;
+    if (!result.ok) {
+      setReplyError(true);
+      return;
+    }
     setReplyTo(null);
     setReplyText("");
     void refresh();
@@ -136,6 +141,7 @@ export function CommentSection({
                     className="min-h-10 resize-y border-0 bg-transparent px-[2px] py-1 text-[13px] leading-[1.6] text-foreground outline-none placeholder:text-soft [font:inherit]"
                   />
                   <div className="flex justify-end gap-2">
+                    {replyError && <p className="mr-auto m-0 self-center text-[12px] text-error" role="alert">回复失败，请重试</p>}
                     <Button variant="outline" size="sm" onClick={() => setReplyTo(null)}>取消</Button>
                     <Button
                       variant="default"
