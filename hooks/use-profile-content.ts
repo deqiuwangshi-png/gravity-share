@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { SQUARE_UPDATED_EVENT } from "@/lib/events";
+import { SQUARE_UPDATED_EVENT, type SquareUpdateDetail } from "@/lib/events";
 import { fetchCommentsByAuthor } from "@/lib/queries/comments";
 import { fetchSquarePostsByAuthor } from "@/lib/queries/posts";
 import type { CommentDTO, SquarePostDTO } from "@/lib/types";
@@ -28,7 +28,11 @@ export function useProfileContent(userId: string, initialPosts: SquarePostDTO[] 
     } else {
       void fetchCommentsByAuthor(createClient(), userId).then(setMyComments).catch(() => {});
     }
-    const onUpdate = () => load();
+    const onUpdate = (event: Event) => {
+      const detail = (event as CustomEvent<SquareUpdateDetail>).detail;
+      if (detail?.authorId && detail.authorId !== userId) return;
+      load();
+    };
     window.addEventListener(SQUARE_UPDATED_EVENT, onUpdate);
     return () => window.removeEventListener(SQUARE_UPDATED_EVENT, onUpdate);
   }, [initialPosts.length, load, userId]);

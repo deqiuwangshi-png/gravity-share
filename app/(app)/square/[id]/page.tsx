@@ -48,7 +48,7 @@ export default async function SquareDetailPage({ params }: { params: Promise<{ i
         {/* 帖子主体：发帖头 + 三点菜单（本人 删/改/复/享，他人 举报/复/享）+ 正文（可编辑）+ 配图 */}
         <SquarePostView post={post} isOwner={post.authorId === myId} />
 
-        <SquareActions postId={post.id} likes={post.likes} />
+        <SquareActions postId={post.id} likes={post.likes} myId={myId} />
 
         {/* P0-6 相关内容：同分类优先内链（帖子→帖子，形成内容网络；纯 server 渲染，爬虫可沿链接深入） */}
         {related.length > 0 && (

@@ -58,15 +58,17 @@ export async function fetchCommentsByAuthor(supabase: SupabaseClient, userId: st
 /* ---------- 017 评论点赞（comment_likes 表 + 触发器维护 comments.likes） ---------- */
 
 /** 批量取我的评论点赞态（评论区挂载时一次 in 查询，避免每评论一次 N+1） */
-export async function fetchCommentLikeMap(supabase: SupabaseClient, commentIds: string[]): Promise<Record<string, boolean>> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user || commentIds.length === 0) return {};
+export async function fetchCommentLikeMap(
+  supabase: SupabaseClient,
+  commentIds: string[],
+  userId?: string,
+): Promise<Record<string, boolean>> {
+  const uid = userId ?? (await supabase.auth.getUser()).data.user?.id;
+  if (!uid || commentIds.length === 0) return {};
   const { data, error } = await supabase
     .from(COMMENT_LIKES)
     .select("comment_id")
-    .eq("user_id", user.id)
+    .eq("user_id", uid)
     .in("comment_id", commentIds);
   if (error) throw error;
   const map: Record<string, boolean> = {};

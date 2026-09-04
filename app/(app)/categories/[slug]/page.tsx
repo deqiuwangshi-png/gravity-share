@@ -44,7 +44,7 @@ export default async function CategoryDetailPage({ params }: PageProps) {
   const { name, meta, posts } = detail;
 
   return <div className="app-content">
-    <SquareRefreshWatcher />
+    <SquareRefreshWatcher category={name} />
     <div className="min-w-0">
       <Link className="mb-4 inline-block text-[13px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/categories">← 返回全部分类</Link>
 

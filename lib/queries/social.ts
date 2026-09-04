@@ -18,8 +18,8 @@ async function currentUserId(supabase: SupabaseClient): Promise<string | null> {
 /* ---------- 2c 帖子点赞（likes 表 + 触发器维护 square_posts.likes_count） ---------- */
 
 /** 我是否已赞（square 帖子） */
-export async function isLiked(supabase: SupabaseClient, targetId: string): Promise<boolean> {
-  const uid = await currentUserId(supabase);
+export async function isLiked(supabase: SupabaseClient, targetId: string, userId?: string): Promise<boolean> {
+  const uid = userId ?? await currentUserId(supabase);
   if (!uid) return false;
   const { data } = await supabase
     .from(LIKES)

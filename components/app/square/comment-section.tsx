@@ -34,6 +34,7 @@ export function CommentSection({
   const [replyText, setReplyText] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [replyError, setReplyError] = useState(false);
+  const [pendingLikes, setPendingLikes] = useState<Record<string, boolean>>({});
 
   const topComments = useMemo(() => comments.filter((c) => !c.parentId), [comments]);
   const repliesByParent = useMemo(() => {
@@ -46,7 +47,8 @@ export function CommentSection({
   useEffect(() => {
     const ids = comments.map((c) => c.id);
     if (ids.length === 0) return;
-    void fetchCommentLikeMap(createClient(), ids).then(setLikedMap).catch(() => {});
+    if (!myId) return;
+    void fetchCommentLikeMap(createClient(), ids, myId).then(setLikedMap).catch(() => {});
     /* eslint-disable-next-line react-hooks/exhaustive-deps -- 仅挂载查一次，新评论默认未赞 */
   }, []);
 
@@ -57,6 +59,8 @@ export function CommentSection({
   }
 
   async function onToggleLike(commentId: string) {
+    if (pendingLikes[commentId]) return;
+    setPendingLikes((map) => ({ ...map, [commentId]: true }));
     try {
       const next = await toggleCommentLike(createClient(), commentId);
       setLikedMap((m) => ({ ...m, [commentId]: next }));
@@ -64,6 +68,13 @@ export function CommentSection({
         list.map((c) => (c.id === commentId ? { ...c, likes: c.likes + (next ? 1 : -1) } : c)),
       );
     } catch { /* 写失败保持原状态（P1-3 回滚） */ }
+    finally {
+      setPendingLikes((map) => {
+        const next = { ...map };
+        delete next[commentId];
+        return next;
+      });
+    }
   }
 
   function startReply(comment: CommentDTO) {
@@ -106,6 +117,7 @@ export function CommentSection({
         onClick={() => void onToggleLike(comment.id)}
         aria-pressed={likedMap[comment.id] ?? false}
         aria-label={likedMap[comment.id] ? "取消赞" : "赞"}
+        disabled={pendingLikes[comment.id] ?? false}
       >
         <Heart size={13} />{comment.likes}
       </button>

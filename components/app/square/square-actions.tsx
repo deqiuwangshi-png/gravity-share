@@ -9,14 +9,15 @@ import { createClient } from "@/lib/supabase/client";
 import { isLiked, toggleLike } from "@/lib/queries/social";
 import { Heart } from "lucide-react";
 
-export function SquareActions({ postId, likes }: { postId: string; likes: number }) {
+export function SquareActions({ postId, likes, myId }: { postId: string; likes: number; myId: string }) {
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState(likes);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    void isLiked(createClient(), postId).then(setLiked);
-  }, [postId]);
+    if (!myId) return;
+    void isLiked(createClient(), postId, myId).then(setLiked);
+  }, [myId, postId]);
 
   async function onToggle() {
     if (busy) return;
