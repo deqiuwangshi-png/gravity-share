@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { SITE_URL, buildOrganization, buildWebSite, jsonLd } from "@/lib/seo";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 /* 全站 metadata 基座（2026-08-25 SEO 方案 M1）：metadataBase + title template + OG + canonical + JSON-LD 种子 */
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(buildOrganization()) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(buildWebSite()) }} />
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
