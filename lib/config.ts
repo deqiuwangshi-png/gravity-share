@@ -44,13 +44,8 @@ export const SQUARE_CATEGORY_META: Record<string, { slug: string; icon: string; 
   其他: { slug: "others", icon: ICONS.search, desc: "不好分类的内容" },
 };
 
-/**
- * 站点合规信息（C3：备案占位统一，营销页 footer 与个人主页 aside 共用；
- * 上线前在 Supabase 后台 / 备案完成后替换为真实备案号）
- */
+/** 站点版权信息 */
 export const SITE_INFO = {
-  icp: "ICP备案号待公示",
-  police: "公安备案待公示",
   copyright: "© 2026 引力",
 } as const;
 

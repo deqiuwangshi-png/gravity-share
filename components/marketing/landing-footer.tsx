@@ -40,7 +40,6 @@ export function LandingFooter() {
       </div>
       <div className="flex items-center justify-between gap-4 pt-[22px] text-xs text-soft">
         <span>{SITE_INFO.copyright}</span>
-        <span>{SITE_INFO.icp}</span>
       </div>
     </footer>
   );

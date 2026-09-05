@@ -167,7 +167,7 @@ export default function ProfileView({
         </div>
       </div>
 
-      {/* 右栏：站点信息占位（≤900px 单列隐藏） */}
+      {/* 右栏：站点信息（≤900px 单列隐藏） */}
       <aside className="sticky top-4 max-[900px]:hidden">
         <div className="flex flex-wrap gap-x-[14px] gap-y-[6px] border-b border-line pb-3">
           <Link className="text-[12px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/guidelines">引力社区规范</Link>
@@ -176,8 +176,6 @@ export default function ProfileView({
           <Link className="text-[12px] text-muted transition-[color] duration-[180ms] hover:text-primary" href="/enforcement">举报与处罚细则</Link>
         </div>
         <p className="mt-3 text-[11px] leading-[1.9] text-soft">
-          {SITE_INFO.icp}<br />
-          {SITE_INFO.police}<br />
           {SITE_INFO.copyright}. All rights reserved.
         </p>
       </aside>
